@@ -10,6 +10,7 @@ input, textarea, select,  input.checkbox
 
 td.holdlogo
 {
+	padding:2px;
 	padding-left:10px;
 }
 
@@ -43,6 +44,8 @@ table.upperbanner
 td.upperbanner
 {
     vertical-align:bottom;
+	padding-left:10px;
+	padding-top:10px;
 }
 
 div.upperbanner
@@ -50,7 +53,7 @@ div.upperbanner
     text-align:left;
     font-size:11px;
     color:#666666;
-    margin-left:20px;
+    margin-left:10px;
 }
 
 a.uplink

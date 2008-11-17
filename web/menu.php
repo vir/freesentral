@@ -86,7 +86,7 @@ function get_content()
 	<table class="container" cellspacing="0" cellpadding="0">
 		<tr>
 			<td class="holdlogo">
-				 <img src="images/logo2.jpg"/>
+				 <img src="images/logo2.png"/>
 			</td>
 		</tr>
 		<tr>
