@@ -82,7 +82,7 @@ function setState($newstate)
 	    break;
 	case "beep":
 	    $m = new Yate("chan.attach");
-	    $m->params["source"] = "wave/play/$vm_base/beep.gsm";
+	    $m->params["source"] = "wave/play/$vm_base/beep.au";
 	    $m->params["notify"] = $ourcallid;
 	    $m->Dispatch();
 	    break;
