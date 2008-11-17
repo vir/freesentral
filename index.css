@@ -1,0 +1,73 @@
+label#username,label#password
+{
+	width: 4em;
+	text-align: right;
+	margin-right: 0.5em
+	display: block
+}
+
+
+input.submit
+{
+	color: white;
+	background: #376EA4;/*#104a73; /*portocaliu*/
+	border: 2px outset #d7b9c9;
+}
+input#username,input#password
+{
+	color: #104a73;
+	background: white;
+	border: 1px solid #376EA4;/* #104a73;*/
+	margin-left:3px;	
+}
+
+
+fieldset.login
+{
+	border: 1px solid #376EA4;/*#104a73;*/
+	width: 17em;
+	margin-left:3em;
+	padding:1em;
+	padding-top:0px;
+	text-align:right;
+	background-color:#eee;
+	position:relative; 
+}
+
+legend.login
+{
+	color: white;
+	background: #376EA4;/*#104a73;*/
+	border: 1px solid #376EA4;/*#104a73;*/
+	padding: 2px 6px;
+	position:relative; 
+	top: -.9em; 
+}
+
+div.vonix
+{
+	float:left;
+	font-size:40px;
+	text-align:center;
+	margin-left:150px;
+	display:inline;
+}
+
+div.login-div
+{
+	float:right;
+	margin-right:100px;
+	margin-top:200px;
+}
+
+td.trailer
+{
+	text-align:right;
+}
+
+p.wellcome_to
+{
+	text-align:center;
+	font-size:14px;
+	color:#376EA4;/*#104a73;*/
+}
