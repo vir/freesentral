@@ -67,16 +67,16 @@ function setState($newstate)
     switch ($newstate) {
 	case "novmail":
 	    $m = new Yate("chan.attach");
-	    $m->params["source"] = "wave/play/$vm_base/novmail.u";
+	    $m->params["source"] = "wave/play/$vm_base/novmail.au";
 	    $m->params["notify"] = $ourcallid;
 	    $m->Dispatch();
 	    break;
 	case "greeting":
 	    $m = new Yate("chan.attach");
-	    if (is_file("$user/greeting.u"))
-		$m->params["source"] = "wave/play/$user/greeting.u";
+	    if (is_file("$user/greeting.au"))
+			$m->params["source"] = "wave/play/$user/greeting.au";
 	    else
-		$m->params["source"] = "wave/play/$vm_base/greeting.u";
+			$m->params["source"] = "wave/play/$vm_base/nogreeting.au";
 	    $m->params["notify"] = $ourcallid;
 	    $m->Dispatch();
 	    break;

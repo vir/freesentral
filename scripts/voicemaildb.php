@@ -36,7 +36,7 @@ function promptUser()
     global $vm_base;
     $collect_user = "";
     $m = new Yate("chan.attach");
-    $m->params["source"] = "wave/play/$vm_base/usernumber.u";
+    $m->params["source"] = "wave/play/$vm_base/usernumber.au";
     $m->Dispatch();
 }
 
@@ -47,7 +47,7 @@ function promptPass()
     global $vm_base;
     $collect_pass = "";
     $m = new Yate("chan.attach");
-    $m->params["source"] = "wave/play/$vm_base/password.u";
+    $m->params["source"] = "wave/play/$vm_base/password.au";
     $m->Dispatch();
 }
 
@@ -65,7 +65,7 @@ function setState($newstate)
 
     // are we exiting?
     if ($state == "")
-	return;
+		return;
 
     Yate::Debug("setState('$newstate') state: $state");
 
@@ -74,7 +74,7 @@ function setState($newstate)
 	case "prompt":
 	    $state = $newstate;
 	    $m = new Yate("chan.attach");
-	    $m->params["source"] = "wave/play/$vm_base/menu.u";
+	    $m->params["source"] = "wave/play/$vm_base/menu.au";
 	    $m->Dispatch();
 	    $m = new Yate("chan.attach");
 	    $m->params["consumer"] = "wave/record/-";
@@ -95,7 +95,7 @@ function setState($newstate)
 	    if (is_file("$f"))
 		$m->params["source"] = "wave/play/$f";
 	    else
-		$m->params["source"] = "wave/play/$vm_base/deleted.u";
+		$m->params["source"] = "wave/play/$vm_base/deleted.au";
 	    $m->params["consumer"] = "wave/record/-";
 	    $m->params["maxlen"] = 100000;
 	    $m->params["notify"] = $ourcallid;
@@ -126,17 +126,17 @@ function setState($newstate)
 	case "record":
 	    $m = new Yate("chan.attach");
 	    $m->params["source"] = "wave/play/-";
-	    $m->params["consumer"] = "wave/record/$dir/greeting.u";
+	    $m->params["consumer"] = "wave/record/$dir/greeting.au";
 	    $m->params["maxlen"] = 80000;
 	    $m->params["notify"] = $ourcallid;
 	    $m->Dispatch();
 	    break;
 	case "play":
 	    $m = new Yate("chan.attach");
-	    if (is_file("$dir/greeting.u"))
-		$m->params["source"] = "wave/play/$dir/greeting.u";
+	    if (is_file("$dir/greeting.au"))
+			$m->params["source"] = "wave/play/$dir/greeting.au";
 	    else
-		$m->params["source"] = "wave/play/$vm_base/nogreeting.u";
+			$m->params["source"] = "wave/play/$vm_base/nogreeting.au";
 	    $m->params["consumer"] = "wave/record/-";
 	    $m->params["maxlen"] = 100000;
 	    $m->params["notify"] = $ourcallid;
@@ -173,9 +173,9 @@ function checkUser()
 {
     global $collect_user;
     if ($collect_user == "")
-	setState("goodbye");
+		setState("goodbye");
     else
-	setState("pass");
+		setState("pass");
 }
 
 /* Transition to authentication state if password is not empty else exit */
@@ -184,12 +184,12 @@ function checkPass()
     global $collect_user;
     global $collect_pass;
     if ($collect_pass == "")
-	setState("goodbye");
+		setState("goodbye");
     else {
-	setState("auth");
-	$m = new Yate("user.auth");
-	$m->params["username"] = $collect_user;
-	$m->Dispatch();
+		setState("auth");
+		$m = new Yate("user.auth");
+		$m->params["username"] = $collect_user;
+		$m->Dispatch();
     }
 }
 
@@ -201,11 +201,10 @@ function checkAuth($pass)
     global $mailbox;
 //    Yate::Debug("checking passwd if '$collect_pass' == '$pass'");
     if ($collect_pass == $pass) {
-	$mailbox = $collect_user;
-	initUser();
-    }
-    else
-	setState("goodbye");
+		$mailbox = $collect_user;
+		initUser();
+    }else
+		setState("goodbye");
     $collect_pass = "";
 }
 
@@ -248,7 +247,7 @@ function listenTo($n)
     global $current;
 
     if (($n < 0) || ($n >= count($files)))
-	return;
+		return;
     $current = $n;
     setState("listen");
 }
@@ -300,30 +299,30 @@ function gotDTMF($text)
     switch ($state) {
 	case "user":
 	    if ($text == "*") {
-		promptUser();
-		return;
+			promptUser();
+			return;
 	    }
 	    if ($text == "#")
-		checkUser();
+			checkUser();
 	    else
-		$collect_user .= $text;
+			$collect_user .= $text;
 	    return;
 	case "pass":
 	    if ($text == "*") {
-		promptPass();
-		return;
+			promptPass();
+			return;
 	    }
 	    if ($text == "#")
-		checkPass();
+			checkPass();
 	    else
-		$collect_pass .= $text;
+			$collect_pass .= $text;
 	    return;
 	case "record":
 		setState("prompt");
 		return;
     }
     if ($mailbox == "")
-	return;
+		return;
 
     navigate($text);
 }
