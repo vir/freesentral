@@ -179,6 +179,8 @@ function files($level)
 				print "<td class=\"separator\">&nbsp;</td>";
 			print "<td class=\"firstmenu\"><a class=\"link\" href=\"main.php?module=$name\">";
 		}
+		if($name == "dids")
+			$name = "DIDs";
 		print '<div>'.str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$name))).'</div>';
 		print "</a></td>";
 		$i++;
@@ -210,6 +212,17 @@ function submenu()
 	$max = 9;
 	print '<table class="secondmenu"> 
 			<tr>';
+	print '<td class="padd">&nbsp;</td>';
+
+	if(!$method) {
+		if(in_array("manage", $struct["$dir"."_".$module]))
+			$method = "manage";
+		elseif(in_array($module, $struct["$dir"."_".$module]))
+			$method = $module;
+		else
+			$method = $struct["$dir"."_".$module][0];
+	}
+
     foreach($struct["$dir"."_".$module] as $option) {
 		if($i % $max == 0 && $i){
 			print("<td class=\"fillfree\">&nbsp;</td>");
