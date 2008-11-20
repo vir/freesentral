@@ -41,7 +41,7 @@ function home()
 										print '<img src="images/auto-attendant.png"/>';
 									print '</td>';
 									print '<td class="hometable description">';
-										print 'Auto Attendant';
+										print 'Auto&nbsp;Attendant';
 									print '</td>';
 								print '</tr>
 							</table>
@@ -53,7 +53,7 @@ function home()
 											print '<img src="images/extension.png"/>';
 										print '</td>';
 										print '<td class="hometable description">';
-												print 'Add Extension';
+												print 'Add&nbsp;Extension';
 										print '</td>';
 									print '</tr>
 								</table>
@@ -68,7 +68,7 @@ function home()
 										print '<img src="images/gateways.png"/>';
 									print '</td>';
 									print '<td class="hometable description">';
-										print 'Add Gateway';
+										print 'Add&nbsp;Gateway';
 									print '</td>';
 								print '</tr>
 							</table>
@@ -80,7 +80,7 @@ function home()
 										print '<img src="images/address_book.png"/>';
 									print '</td>';
 									print '<td class="hometable description">';
-										print 'New Address Book entry';
+										print 'New&nbsp;Address&nbsp;Book&nbsp;Entry';
 									print '</td>';
 								print '</tr>
 							</table>
@@ -95,7 +95,7 @@ function home()
 										print '<img src="images/dial_plan.png"/>';
 									print '</td>';
 									print '<td class="hometable description">';
-										print 'Add Dial Plan';
+										print 'Add&nbsp;Dial&nbsp;Plan';
 									print '</td>';
 								print '</tr>
 							</table>
@@ -107,7 +107,7 @@ function home()
 										print '<img src="images/dids.png"/>';
 									print '</td>';
 									print '<td class="hometable description">';
-										print 'Add DID';
+										print 'Add&nbsp;DID';
 									print '</td>';
 								print '</tr>
 							</table>
