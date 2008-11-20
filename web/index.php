@@ -44,7 +44,7 @@ if ($level) {
 	header ("Location: main.php");
 }else
 	if ($username || $password)
-		$login = "<h3>Wrong login<h3>";
+		$login = "<h4>Wrong login</h4>";
 	else
 		session_unset();
 ?>
