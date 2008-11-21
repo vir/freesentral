@@ -12,6 +12,7 @@ td.holdlogo
 {
 	padding:2px;
 	padding-left:10px;
+	padding-top:8px;
 }
 
 body.mainbody
@@ -29,7 +30,6 @@ table.container
 	border-color:#0189d7;
 	border-width:1px;
 	border-bottom-width:2px;
-	padding:7px;
 	margin-left:1%;
 }
 
@@ -45,7 +45,8 @@ td.upperbanner
 {
     vertical-align:bottom;
 	padding-left:10px;
-	padding-top:10px;
+	padding-top:1px;
+	padding-bottom:11px;
 }
 
 div.upperbanner
@@ -95,7 +96,7 @@ a.status
 
 table.firstmenu
 {
-    margin-top:5px;
+  /*  margin-top:5px;*/
     margin-left:1%;
    /* margin-right:20px;*/
     width:90%;
@@ -295,8 +296,8 @@ td.option
     /*background-color: #404040;/*#376EA4;/*#104a73;*/
     padding-left:5px;
     padding-right:5px;
-    padding-top:5px;
-    padding-bottom:5px;
+    padding-top:7px;
+    padding-bottom:7px;
     text-align: center;
 	width:40px;
 /*	width:50px;*/

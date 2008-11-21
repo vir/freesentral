@@ -11,6 +11,9 @@ if(substr($method,0,4) == "add_")
 if($method == "edit_admin")
 	$method = "edit_user";
 
+if($method == "manage")
+	$method = "admins";
+
 if($action)
 	$call = $method.'_'.$action;
 else

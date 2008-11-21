@@ -24,9 +24,10 @@ $login = "";
 $user = new User;
 $user->username = $username;
 $user->password = $password;
-if($user->login())
+if($user->login()){
 	$level = 'admin';
-else{
+	$_SESSION["wizard"] = $user->wizard;
+}else{
 	$extension = new Extension;
 	$extension->extension = $username;
 	$extension->password = $password;
