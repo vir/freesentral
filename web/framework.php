@@ -92,6 +92,10 @@ class Database
 	public static function connect()
 	{
 		global $db_host,$db_user,$db_database,$db_passwd;
+
+		if(!function_exists("pg_connect"))
+			die("You don't have php-pgsql package installed.");
+
 		if (self::$_connection === true)
 			self::$_connection = pg_connect("host='$db_host' dbname='$db_database' user='$db_user' password='$db_passwd'") or die("Could not connect to the database");
 		return self::$_connection;
@@ -1441,12 +1445,17 @@ class Model
 			else
 				self::$_modified = true;
 
+			if (!method_exists($object,"index"))
+				continue;
 			if ($index = @call_user_func(array($class,"index")))
 				Database::createIndex($table,$index);
 		}
 		if(self::$_modified)
-			foreach(self::$_models as $class => $vars) 
-				$res = call_user_func(array($class,"defaultObject"));
+			foreach(self::$_models as $class => $vars) {
+				$object = new $class;
+				if(method_exists($object, "defaultObject"))
+					$res = call_user_func(array($class,"defaultObject"));
+			}
 		return true;
 	}
 
@@ -1644,7 +1653,7 @@ class Model
 	 * Returns a WHERE clause for a query
 	 * @param $conditions Array defining the conditions for a query
 	 * Array is formed by pairs of $key=>$value. $value can also be an array
-	 * Ex to buid AND : "date"=>(">2008-07-07 00:00:00", "<2008-07-07 12:00:00") means WHERE date>'2008-07-07 00:00:00' AND date<'2008-07-07 12:00:00'
+	 * Ex to buid AND : "date"=>array(">2008-07-07 00:00:00", "<2008-07-07 12:00:00") means WHERE date>'2008-07-07 00:00:00' AND date<'2008-07-07 12:00:00'
 	 * EX to build OR : ("date"=>"<2008-07-07 00:00:00", "date"=>">2008-07-07 12:00:00") means WHERE date<'2008-07-07 00:00:00' OR date>'2008-07-07 12:00:00'
 	 * @param $only_one_table Bool value specifing if inside the query only one table is referred
 	 * Value is true when method is called from within a method that never returns extended objects.
