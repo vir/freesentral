@@ -86,7 +86,7 @@ function errormess($text, $path=NULL)
 
 	if(!$path)
 		$path = '';
-	print "<br/><font color=\"red\" style=\"font-weight:bold;\" > Error!!</font> <bold style=\"font-weight:bold;\">$text</bold><br/>";
+	print "<br/><font class=\"error\"> Error!!</font> <bold style=\"font-weight:bold;\">$text</bold><br/>";
 	if($path != 'no')
 		print '<a class="information" href="main.php?module=' .$module.  '&method=' . $path . '">Go back to application</a><br/>';
 }
@@ -894,7 +894,7 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 						$column_value = $db_false;
 				}
 			}
-			if($column_value)
+			if($column_value !== NULL)
 				print $column_value;
 			else
 				print "&nbsp;";
@@ -1627,7 +1627,7 @@ function notice($message, $next=NULL, $no_error = true)
 	if($no_error)
 		print '<div class="notice">'.$message.'</div>';
 	else
-		print '<div class="notice"><font class="error">Error </font>'.$message.'</div>';
+		print '<div class="notice"><font class="error">Error!! </font>'.$message.'</div>';
 
 	if($next != "no")
 		$next();
