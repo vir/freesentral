@@ -1,0 +1,762 @@
+<?
+global $module, $method, $path, $action, $page, $target_path, $iframe;
+
+if($_SESSION["level"] != "admin")
+{
+	forbidden();
+}
+
+function set_step($nr,$message,$img,$brs=2)
+{
+	print '<div class="notify">';
+	print "Step ".$nr." :: ".$message;
+	if($img == "complete")
+		print '<img src="images/complete.gif" alt="complete" title="Complete"/>';
+	else
+		print '<img src="images/incomplete.gif" alt="incomplete" title="Incomplete"/>';
+	for($i=0;$i<$brs;$i++)
+		print "<br/>";
+	print "</div>";
+}
+
+
+function activate($error = NULL)
+{
+	global $method;
+
+	$method = "activate";
+
+//	print 'In order to activate the Auto Attendant you need to add a did(direct inward dialing) to it.';
+	$did = new Did;
+	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
+	$dids = $did->extendedSelect(array("destination"=>"external/nodata/auto_attendant.php"),"number");
+	if(count($dids))
+	{
+		if($_SESSION["wizard"] != "notused")
+			set_step(4,"Activate did for Auto Attendant","complete");
+
+		$formats = array("did", "number", "destination", "function_get_default_destination:default_destination"=>"extension,group");
+
+		if($_SESSION["wizard"] != "notused")
+			$actions =  array("&module=dids&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&module=dids&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
+		else
+			$actions = array();
+
+		tableOfObjects($dids, $formats, "did", $actions);
+	}else{
+		if($_SESSION["wizard"] != "notused")
+			set_step(4,"Activate did for Auto Attendant","incomplete");
+		if($error)
+			errornote($error);
+
+		$did = new Did;
+		$did->did_id = getparam("did_id");
+		$did->select();
+	
+		if($error) {
+			$did->number = getparam("number");
+			$did->did = getparam("did");
+			$did->destination = getparam("destination");
+			$did->default_destination = getparam("default_destination");
+		}
+	
+		$extensions = Model::selection("extension", NULL, "extension");
+		$extensions = Model::objectsToArray($extensions,array("extension_id"=>"", "extension"=>""),true);
+		$groups = Model::selection("group", NULL, '"group"');
+		$groups = Model::objectsToArray($groups,array("group_id"=>"", "group"=>""),true);
+	
+		if($did->default_destination == "extension")
+			$extensions["selected"] = $did->extension_id;
+		if($did->default_destination == "group")
+			$groups["selected"] = $did->group_id;
+	
+		$options = array("extension", "group");
+		$options["selected"] = $did->default_destination;
+		$fields = array(
+						"did"=>array("value"=>"auto attendant","compulsory"=>true, "comment"=>"Name used for identifing the Auto Attendant"),
+						"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
+						"destination"=>array("value"=>"external/nodata/auto_attendant.php", "display"=>"fixed", "compulsory"=>true),
+						"default_destination"=>array($options, "display"=>"select", "comment"=>"Choose between an extension or a group. Use this field when 'Destination' is a script. If caller doesn't insert anything he will be sent to this default destination."),
+						"extension"=>array($extensions, "display"=>"select", "comment"=>"Select only when default destination is an extension"),
+						"group"=>array($groups,"display"=>"select", "comment"=>"Select only when default destination is a group"),
+						"description"=>array("display"=>"textarea")
+					);
+		start_form();
+		addHidden("database",array("did_id"=>$did->did_id));
+		if($did->did_id)
+			$title = "Edit Direct inward dialing";
+		else
+			$title = "Add Direct inward dialing";
+		editObject($did,$fields,$title,"Save",true);
+		end_form();
+	}
+}
+
+function activate_database()
+{
+	$default_destination = getparam("default_destination");
+
+	if(!getparam("did") || !getparam("number") || $default_destination == "Not selected") {
+		errormess("You didn't complete all the required fields", "no");
+		activate();
+		return;
+	}
+	$extension_id = NULL;
+	$group_id = NULL;
+	if($default_destination == "extension") {
+		$extension_id = getparam("extension");
+		if(!$extension_id || $extension_id == 'Not selected') {
+			errormess("Please select an extension.", "no");
+			activate();
+			return;
+		}
+	}elseif($default_destination == "group") {
+		$group_id = getparam("group");
+		if(!$group_id || $group_id == "Not selected") {
+			errormess("Please select a group.", "No");
+			activate();
+			return;
+		}
+	}
+
+	$did = new Did;
+	$did->did_id = getparam("did_id");
+	$did->number = getparam("number");
+	if($did->ObjectExists()) {
+		errormess("This 'Number' has already a destination defined.");
+		activate();
+		return;
+	}
+	$did2 = new Did;
+	$did2->did_id = getparam("did_id");
+	$did2->did = getparam("did");
+	if($did2->objectExists()) {
+		errormess("This 'Did' was already defined.", "no");
+		activate();
+		return;
+	}
+	$did->did = $did2->did;
+	$did->destination = "external/nodata/auto_attendant.php";
+	$did->default_destination = $default_destination;
+	$did->extension_id = $extension_id;
+	$did->group_id = $group_id;
+	$did->description = getparam("description");
+
+	$res = ($did->did_id) ? $did->update() : $did->insert();
+	
+	if($_SESSION["wizard"] == "notused")
+		aut_activate_did();
+	else
+		wizard();
+}
+
+function keys($wizard = false)
+{
+	global $method;
+	$method  = "keys";
+
+	$prompt = Model::selection("prompt",array("status"=>"online"));
+	if(!count($prompt))
+		return;
+	$prompt_id = $prompt[0]->prompt_id;
+	$key = new Key;
+	$key->extend(array("status"=>"prompts"));
+	$keys = $key->extendedSelect(NULL,"status,key");
+
+	if($wizard) {
+		print '<br/>';
+		if(count($key))
+			set_step(2,"Define keys","complete");
+		else
+			set_step(2,"Define keys","incomplete",0);
+	}
+
+	if(count($keys) || $_SESSION["wizard"] != "notused"){
+		if($_SESSION["wizard"] != "notused")
+			$actions = array("&method=edit_key"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_key"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
+		else
+			$actions = array();
+		tableOfObjects($keys, array("status", "key","destination","description"), "key for auto attendant", $actions, array("&method=edit_key"=>"Add key"));
+	}else
+		edit_key();
+
+	return count($keys);
+}
+
+function edit_key($status = "online", $error = NULL)
+{
+	global $method;
+	$method = "edit_key";
+
+	if($error)
+		errornote($error);
+
+	print '<br /><font class="error">Note !!</font> The keys must match the uploaded prompts.<br /><br />';
+
+	$key = new Key;
+	$key->key_id = getparam("key_id");
+	$key->select();
+
+	$statuss = array("online", "offline");
+	if(!$key->key_id) {
+		$statuss["selected"] = $status;
+		$key->key = getparam("key");
+		$key->destination = getparam("destination");
+		$key->description = getparam("description");
+		if(getparam("status") && getparam("status") != "Not selected")
+			$statuss["selected"] = getparam("status");
+	} else {
+		$prompt = new Prompt;
+		$prompt->prompt_id = $key->prompt_id;
+		$prompt->select();
+		$statuss["selected"] = $prompt->status;
+	}
+
+	$all_groups = Model::selection("group",NULL,"\"group\"");
+	$groups = Model::objectsToArray($all_groups,array("group_id"=>"", "group"=>""),true);
+	for($i=0; $i<count($all_groups); $i++)
+	{
+		if($all_groups[$i]->extension == $key->destination) {
+			$groups["selected"] = $all_groups[$i]->group_id;
+			break;
+		}
+	}
+
+	$number = (!isset($groups["selected"])) ? $key->destination : NULL;
+
+	$keys = array(0,1,2,3,4,5,6,7,8,9);
+	$keys["selected"] = $key->key;
+
+	$fields = array(
+					"key" => array($keys, "display"=>"select", "compulsory"=>true,"comment"=>"Prompt will be like: Press 1 for Sales, press 2 for Support."),
+					"group" => array($groups, "display"=>"select", "comment"=>"If key points to a group select one from this list. You have to select a group or insert a number in the below field.", "javascript"=>'onChange="comute_destination(\'group\');"'),
+					"number" => array("value"=>$number,"comment"=>"Numeric. Ex: 090(extension) or 40744224422(phone number).", "javascript"=>'onClick="comute_destination(\'number\');"'),
+					"status" => array("compulsory"=>true,$statuss, "display"=>"select", "comment"=>"Select status of Auto Attendant for which you wish to define a key"),
+					"description" => array("display"=>"textarea")
+				);
+
+	$title = ($key->key_id) ? "Edit key for ".strtoupper($status)." AutoAttendant" : "Add key for ".strtoupper($status)." AutoAttendant";
+
+	start_form();
+	addHidden("database", array("key_id"=>$key->key_id, "prompt_id"=>$key->prompt_id));
+	editObject($key,$fields,$title,"Save");
+	end_form();
+}
+
+function edit_key_database()
+{
+	$key = new Key;
+	$key->key_id = getparam("key_id");
+
+	$status = getparam("status");
+	if(!$status || $status == "Not selected") {
+		edit_key(NULL,"You have to set the status of the Auto Attendant in order to add a key.");
+		return;
+	}
+	$prompt = Model::selection("prompt", array("status"=>$status));
+	if(!count($prompt))
+	{
+		errormess("You should add the prompts before definning the keys");
+		return;
+	}
+	$prompt_id = $prompt[0]->prompt_id;
+	$key->key = getparam("key");
+
+	if(!$key->key && $key->key !== "0")
+	{
+		edit_key($status,"Field 'Key' is required.");
+		return;
+	}
+	if(Numerify($key->key) == "NULL")
+	{
+		edit_key($status, "Field 'Key' must be numeric");
+		return;
+	}
+	$key->prompt_id = $prompt_id;
+	if($key->objectExists())
+	{
+		edit_key($status,"This key was previously inserted.");
+		return;
+	}
+	$key->select();
+	$key->key = getparam("key");
+	$key->prompt_id = $prompt_id;
+
+	$group_id = getparam("group");
+	if($group_id && $group_id != "Not selected") {
+		$group = new Group;
+		$group->group_id = $group_id;
+		$group->select();
+		$key->destination = $group->extension;
+	}elseif(($number = getparam("number"))){
+		if(Numerify($number) == "NULL"){
+			edit_key($status, "Field number must be numeric");
+			return;
+		}
+		$key->destination = $number;
+	}else{
+		edit_key($status, "You must select a group or insert a number");
+		return;
+	}
+
+	$key->description = getparam("description");
+	if($_SESSION["wizard"] != "notused") {
+		if($key->key_id)
+			notify($key->update());
+		else
+			notify($key->insert());
+	}else{
+		$res = $key->insert();
+		notice($res[1], 'no', $res[0]);
+		aut_define_keys();
+		return;
+	}
+}
+
+function delete_key()
+{
+	ack_delete("key", getparam("key"), NULL, "key_id", getparam("key_id"));
+}
+
+function delete_key_database()
+{
+	$key = new Key;
+	$key->key_id = getparam("key_id");
+	if(!$key->key_id) 
+	{
+		errormess("Don't have key id in order to delete key");
+		return;
+	}
+	notify($key->objDelete());
+}
+
+function scheduling($error = NULL,	$wizard=false)
+{
+	global $method;
+	$method = "scheduling";
+	if($error)
+		errornote($error);
+
+	$prompt = Model::selection("prompt", array("status"=>"online"));
+	if(!count($prompt))
+		$prompt_id = NULL;
+	else
+		$prompt_id = $prompt[0]->prompt_id;
+	$days = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+	for($i=0; $i<count($days); $i++)
+	{
+		$fields[$days[$i]] = array("value"=>"$prompt_id","display"=>"set_period");
+	}
+	if($wizard) 
+	{
+		$time_frame = new Time_Frame;
+		$nr = $time_frame->fieldSelect("count(*)");
+		if($nr) 
+			set_step(3,"Schedule online Auto Attendant","complete",1);
+		else
+			set_step(3,"Schedule online Auto Attendant","incomplete",1);
+	}
+
+	start_form(NULL,NULL,false,"wizard2");
+	addHidden("database", array(/*"iframe"=>"true"*/));
+	editObject(NULL,$fields, "Scheduling online Auto Attendant ","Save",false,false,"edit",NULL,array("left"=>"160px","right"=>"290px"));
+	end_form();
+}
+
+function scheduling_database()
+{
+	$prompt = Model::selection("prompt", array("status"=>"online"));
+	if(!count($prompt)) {
+		scheduling("You first need to upload the prompts");
+		return;
+	}
+	$prompt = $prompt[0];
+	$days = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+	for($i=0; $i<count($days); $i++)
+	{
+		$start = getparam("start_".$days[$i]);
+		$end = getparam("end_".$days[$i]);
+		if($start=="Not selected" || $end=="Not selected") {
+			$start = '';
+			$end = '';
+		}
+		$time_frame = new Time_Frame;
+		$time_frame->select(array("prompt_id"=>$prompt->prompt_id, "day"=>$days[$i]));
+		$time_frame->prompt_id = $prompt->prompt_id;
+		$time_frame->day = $days[$i];
+		$time_frame->start_hour = $start;
+		$time_frame->end_hour = $end;
+		$time_frame->numeric_day = $i;
+		if($time_frame->time_frame_id)
+			$time_frame->update();
+		else
+			$time_frame->insert();
+	}
+
+	if($_SESSION["wizard"] != "notused")
+		wizard();
+	else
+		aut_scheduling();
+}
+
+function set_period($value, $name)
+{
+	$time_frame = Model::selection("time_frame", array("prompt_id"=>$value, "day"=>$name));
+	if(count($time_frame))
+	{
+		$start = $time_frame[0]->start_hour;
+		$end = $time_frame[0]->end_hour;
+	}else{
+		$start = 0;
+		$end = 0;
+	}
+
+	print 'From <select name="start_'.$name.'">';
+	print '<option>Not selected</option>';
+	for($i=1; $i<25; $i++) {
+		print '<option';
+		if($start == $i)
+			print " SELECTED";
+		print '>'.$i.'</option>';
+	}
+	print '</select>';
+	print '&nbsp;&nbsp;To <select name="end_'.$name.'">';
+	print '<option>Not selected</option>';
+	for($i=1; $i<25; $i++){
+		print '<option';
+		if($end == $i)
+			print " SELECTED";
+		print '>'.$i.'</option>';
+	}
+	print '</select>';
+}
+
+function days_of_week($name, $value=NULL)
+{
+	$days = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+	for($i=0; $i<count($days); $i++) {
+		print '<input type="checkbox" name="'.$name.strtolower($days[$i]).'">'.$days[$i] . "&nbsp;&nbsp;";
+		if(($i+1)%3 == 0)
+			print '<br/>';
+	}
+}
+
+function prompts($wizard=false)
+{
+	$prompts = Model::selection("prompt",NULL,"status DESC");
+
+	if($wizard) {
+		if(count($prompts) >= 2)
+			set_step(1,"Set prompts for Auto Attendant","complete");
+		else
+			set_step(1,"Set prompts for Auto Attendant","incomplete");
+		}
+	if(!count($prompts))
+	{
+		print "The first step for setting the Auto Attendant is to define the prompts. There are two types of prompts: 'Online' and 'Offline'.<br/><br/>";
+
+		upload_prompts();
+		return;
+	}
+
+	if($_SESSION["wizard"] != "notused")
+		$actions = array("&method=edit_prompt"=>'<img src="images/edit.gif" alt="edit" title="Edit"/>', "&method=listen_prompt"=>'<img src="images/listen.gif" alt="play" title="Listen"/>', "&method=reupload_prompt"=>'<img src="images/upload.gif" alt="upload" title="Upload"/>');
+	else
+		$actions = array();
+
+	tableOfObjects($prompts, array("status", "prompt", "function_getfilesize:size"=>"prompt"), "prompt", $actions);
+
+	return count($prompts);
+}
+
+function getfilesize($prompt)
+{
+	global $target_path;
+	$path = "$target_path/auto_attendant/$prompt";
+	$filesize = filesize($path);
+	return bytestostring($filesize,2);
+}
+
+function upload_prompts($error=NULL)
+{
+	global $method;
+	$method = "upload_prompts";
+
+	if($error)
+		errornote($error);
+
+	$fields = array(
+					"online" => array("display"=>"file", "comment"=>"Accepted format .wav. Upload prompt for online Auto Attendant."),
+					"offline" => array("display"=>"file", "comment"=>"Accepted formats .wav. Upload prompt for offline Auto Attendant.")
+				);
+
+	start_form(NULL,"post",true);
+	addHidden("database",array(/*"iframe"=>"true",*/ "MAX_FILE_SIZE"=>"10000000000"));
+	editObject(NULL,$fields, "Upload prompts Auto Attendant", "Save");
+	end_form();
+}
+
+function reupload_prompt_database()
+{
+	global $target_path;
+
+	if(!getparam("prompt_id")) {
+		errormess("Don't have prompt id");
+		return;
+	}
+
+	$filename = basename($_FILES["prompt"]["name"]);
+	if(strtolower(substr($filename,-4)) != ".mp3")
+	{
+		reupload_prompt("File format must be .mp3");
+		return;
+	}	
+	$path = "$target_path/auto_attendant";
+
+	if(!is_dir($path))
+		mkdir($path);
+
+	$file = "$path/$filename";
+	if (!move_uploaded_file($_FILES["prompt"]['tmp_name'],$file)) {
+		errormess("Could not upload file.");
+		return;
+	}
+
+	$prompt = new Prompt;
+	$prompt->prompt_id = getparam("prompt_id");
+	$prompt->select();
+
+//	$au = str_replace(".wav",".au",$file);
+//	passthru("sox $file -r 22000 -c 1 -b 16 -A $au");
+	$slinfile = str_replace(".mp3", ".slin", $file);
+	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slinfile\" \"$file\"");
+
+	if($prompt->prompt != $filename) {
+		$nr = $prompt->fieldSelect("count(*)",array("prompt"=>$prompt->prompt));
+		if($nr == 1) {
+			unlink("$path/".$prompt->prompt);
+			$slin = str_replace(".mp3",".slin","$path/".$prompt->prompt);
+			unlink($au);
+		}
+	}
+
+	$prompt->prompt = $filename;
+	$prompt->description = getparam("description");
+	notify($prompt->update());
+}
+
+function upload_prompts_database()
+{
+	global $target_path;
+
+	$online = basename($_FILES['online']['name']);
+	$offline = basename($_FILES['offline']['name']);
+
+	if(strtolower(substr($online,-4)) != ".mp3" || strtolower(substr($offline,-4)) != ".mp3")
+	{
+		if($_SESSION["wizard"] == "notused") {
+			notice("File format must be .mp3", "no", false);
+			aut_set_prompts();
+		}else
+			wizard("File format must be .mp3");
+		return;
+	}
+
+	$prompts = array("online"=>$online, "offline"=>$offline);
+
+	$path = "$target_path/auto_attendant";
+
+	if(!is_dir($path))
+		mkdir($path);
+	$online_file = "$path/$online";
+	$offline_file = "$path/$offline";
+
+	Database::transaction();
+	$prompt = new Prompt;
+	$nr = $prompt->fieldSelect("count(*)");
+	if($nr) 
+	{
+		Database::rollback();
+		if($_SESSION["wizard"] == "notused") {
+			notice("There are already $nr prompts uploaded", "no", false);
+			aut_set_prompts();
+		}else
+			errormess("There are already $nr prompts uploaded");
+		return;
+	}
+
+	if (!move_uploaded_file($_FILES["online"]['tmp_name'],$online_file)) {
+		Database::rollback();
+		if($_SESSION["wizard"] == "notused") {
+			notice("Could not upload file for online mode", "no", false);
+			aut_set_prompts();
+		}else
+			errormess("Could not upload file for online mode");
+		return;
+	}
+	if (!move_uploaded_file($_FILES["offline"]['tmp_name'],$offline_file)) {
+		Database::rollback();
+		if($_SESSION["wizard"] == "notused") {
+			notice("Could not upload file for offline mode", "no", false);
+			aut_set_prompts();
+		}else
+			errormess("Could not upload file for offline mode");
+		return;
+	}
+
+	$slin_online = str_replace(".mp3",".slin",$online_file);
+	$slin_offline = str_replace(".mp3",".slin",$offline_file);
+
+//	passthru("sox $online_file -r 8000 -c 1 -b -A $auonline");
+
+//	passthru("sox $offline_file -r 8000 -c 1 -b -A $auoffline");
+
+	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slin_online\" \"$online_file\"");
+	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slin_offline\" \"$offline_file\"");
+
+	if(!is_file($slin_online) || !is_file($slin_offline)) {
+		Database::rollback();
+		if($_SESSION["wizard"] == "notused") {
+			notice("Could not convert files in .au format.", "no", false);
+			aut_set_prompts();
+		}else
+			errormess("Could not convert files in .au format.");
+		return;
+	}
+
+	foreach($prompts as $status=>$prompt_name)
+	{
+		$prompt = new Prompt;
+		$prompt->prompt = $prompt_name;
+		$prompt->status = $status;
+		$res = $prompt->insert();
+		if(!$res[0]) {
+			Database::rollback();
+			if($_SESSION["wizard"] == "notused") {
+				notice("Could not upload the prompts. Please try again", "no", false);
+				aut_set_prompts();
+			}else
+				errormess("Could not upload the prompts. Please try again");
+			return;
+		}
+	}
+	Database::commit();
+
+	if($_SESSION["wizard"] == "notused")
+		aut_set_prompts();
+	else
+		wizard();
+}
+
+function reupload_prompt($error = NULL)
+{
+	if($error)
+		errornote($error);
+
+	$prompt = new Prompt;
+	$prompt->prompt_id = getparam("prompt_id");
+	$prompt->select();
+
+	if(!$prompt->prompt_id) {
+		errormess("Don't have prompt_id. Can't re-upload this prompt.");
+		return;
+	}
+
+	$statuss = array("online", "offline");
+	$statuss["selected"] = $prompt->status;
+	$fields = array(
+					"prompt"=>array("display"=>"file"),
+					"status"=>array("display"=>"fixed"),
+					"description"=>array("display"=>"textarea")
+				);
+	
+	start_form(NULL,NULL,true);
+	addHidden("database",array("prompt_id"=>getparam("prompt_id")));
+	editObject($prompt,$fields, "Upload prompts for each Auto Attendant Mode", "Save");
+	end_form();
+}
+
+function edit_prompt()
+{
+	$prompt = new Prompt;
+	$prompt->prompt_id = getparam("prompt_id");
+	$prompt->select();
+
+	$fields = array(
+					"prompt" =>array("comment"=>"Name of the file. Please don't change extension", "compulsory"=>true),
+					"status" => array("display"=>"fixed"),
+					"description" => array("display"=>"textarea")
+				); 
+
+	start_form();
+	addHidden("database", array("prompt_id"=>$prompt->prompt_id));
+	editObject($prompt,$fields,"Edit prompt","Save",true);
+	end_form();
+}
+
+function edit_prompt_database()
+{
+	global $target_path;
+
+	$prompt = new Prompt;
+	$prompt->prompt_id = getparam("prompt_id");
+	$prompt->select();
+
+	if(!$prompt->status) {
+		errormess("Don't have the status attribute for this prompt.");
+		return;
+	}
+	$path = $target_path."/auto_attendant/";
+	$new_name = getparam("prompt");
+	if(!$new_name) {
+		errormess("Field 'Prompt' is compulsory");
+		return;
+	}
+	if($prompt->prompt != $new_name) {
+		if(strtolower(substr($new_name,-4)) != strtolower(substr($prompt->prompt,-4))) {
+			errormess("You tried to change the extension of the file. Please use the upload option in order to upload a new file.");
+			return;
+		}
+		$oldfile = $path .$prompt->prompt;
+		$newfile = $path .$new_name;
+		if(!rename($oldfile,$newfile)) {
+			errormess("Could not rename file");
+			return;
+		}
+		$prompt->prompt = $new_name;
+	}
+	$prompt->description = getparam("description");
+	notify($prompt->update());
+}
+
+function listen_prompt()
+{
+	global $target_path;
+
+	$setting = Model::selection("setting", array("param"=>"path"));
+	if(!count($setting)) {
+		errormess("Path to music on hold is not specified. It must be defined in the Settings section.",$path);
+		return;
+	}
+
+	$filepath = $setting[0]->value . "/auto_attendant/";
+
+	$prompt = new Prompt;
+	$prompt->prompt_id = getparam("prompt_id");
+	$prompt->select();
+
+	editObject($prompt, array("prompt"=>array("display"=>"fixed"), "size"=>array("value"=>getfilesize($prompt->prompt), "display"=>"fixed")), "Playing prompt for ".$prompt->status." Auto Attendant","Save");
+	//$filename = str_replace(".wav", ".au", $prompt->prompt);
+
+	$filepath .= $prompt->prompt;
+?>
+	<center>
+	<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="450" height="40" id="home" align="center">
+		<param name="movie" value='flash_movie.php?size=160&nostart=true&mp3=<?print $filepath;?>' />
+		<param name="quality" value="high" />
+		<embed src='flash_movie.php?size=160&nostart=true&mp3=<?print $filepath;?>' quality="high" width="450" height="40"  name="home" align="" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+	</object>
+	</center>
+<?
+}
+?>
