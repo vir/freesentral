@@ -21,7 +21,7 @@ class Setting extends Model
 
 	public static function defaultObject()
 	{
-		$params = array('vm'=>array('external/nodata/leavemaildb.php','script used for leaving a voicemail message'), "version"=>'1', "path"=>array("/var/spool/voicemail",'path to prompts and voicemail message'));
+		$params = array('vm'=>array('external/nodata/leavemaildb.php','script used for leaving a voicemail message'), "version"=>'1', "path"=>array("/var/spool/voicemail",'path to prompts and voicemail message'), "wizard"=>array('notused', "whether the admin used the wizard to configure the system"));
 		$setting = new Setting;
 		$nr_settings = $setting->fieldSelect("count(*)");
 		if ($nr_settings>=count($params))
