@@ -1,5 +1,7 @@
 <div class="content wide">
 <?
+require_once("lib_gateways.php");
+
 global $module,$method,$action;
 
 if(!$method)
@@ -20,38 +22,6 @@ function outbound()
 	gateways();
 }
 
-function gateway_status($enabled,$status,$username)
-{
-	if(!$username)
-	{
-		print "&nbsp;";
-		return;
-	}
-	if($enabled != "t")
-		print '<img src="images/gray_dot.gif" title="Not enabled" alt="Not enabled"/>';
-	elseif($status == "online")
-		print '<img src="images/green_dot.gif" title="Online" alt="Online"/>';
-	else
-		print '<img src="images/red_dot.gif" title="Offline" alt="Offlibe"/>';
-}
-
-function gateway_type($username)
-{
-	if ($username)
-		return "Yes";
-	return "No";
-}
-
-function registration_status($status,$username)
-{
-	if(!$username)
-		return "&nbsp;";
-	elseif(!$status)
-		return "offline";
-	else
-		return $status;
-}
-
 function gateways()
 {
 	global $method, $action;
@@ -63,7 +33,7 @@ function gateways()
 
 	tableOfObjects($gateways, $formats, "gateway", array("&method=edit_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_gateway"=>"Add gateway"));
 }
-
+/*
 function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 {
 	if($error)
@@ -384,7 +354,7 @@ function edit_gateway_database()
 		}
 	}
 	notice($res[1], "gateways", $res[0]);
-}
+}*/
 
 function delete_gateway()
 {
@@ -418,179 +388,6 @@ function dial_plan()
 
 	$formats = array("dial_plan","prefix","priority","gateway","protocol");
 	tableOfObjects($dial_plans, $formats, "dial plan", array("&method=edit_dial_plan"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_dial_plan"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>', "&method=modify_number"=>'<img src="images/modify_numbers.gif" title="Modify number" alt="modify number"/>'), array("&method=add_dial_plan"=> "Add Dial Plan"));
-}
-
-function edit_dial_plan($error = NULL)
-{
-	if($error)
-		errornote($error);
-
-	$dial_plan = new Dial_Plan;
-	$dial_plan->dial_plan_id = getparam("dial_plan_id");
-	$dial_plan->select();
-
-	$gateways = Model::selection("gateway", NULL, "gateway");
-	$gateways = Model::objectsToArray($gateways, array("gateway_id"=>"", "gateway"=>""), "all");
-	$gateways["selected"] = $dial_plan->gateway_id;
-
-	$check_to_match_everything = (($dial_plan->prefix == "" && $dial_plan->dial_plan_id) || (getparam("check_to_match_everything") == "on")) ? 't' : 'f';
-
-	$fields = array(
-					"dial_plan" => array("compulsory" => true),
-					"gateway" => array("compulsory" => true, $gateways, "display"=>"select"),
-					"priority" => array("comment" => "Numeric. Priority 1 is higher than 10","compulsory"=>true), 
-					"prefix" => array("compulsory" => true), 
-					"check_to_match_everything" => array("value" => $check_to_match_everything, "display" => "checkbox", "comment" => "If you wish this route to match all prefixes"),
-				);
-
-	if($error)
-	{
-		foreach($fields as $field_name=>$field_format)
-		{
-			$fields[$field_name]["value"] = getparam($field_name);
-		}
-		$fields["gateway"][0]["selected"] = getparam("gateway");
-	}
-
-	$title = ($dial_plan->dial_plan_id) ? "Edit Dial Plan" : "Add Dial Plan";
-
-	start_form();
-	addHidden("database",array("dial_plan_id"=>$dial_plan->dial_plan_id));
-	editObject($dial_plan,$fields,$title,"Save",true);
-	end_form();
-}
-
-function modify_number()
-{
-	$dial_plan = new Dial_Plan;
-	$dial_plan->dial_plan_id = getparam("dial_plan_id");
-	$dial_plan->select();
-
-	$fields2 = array(
-					"examples" => array("value"=>"Click on the question mark to show/hide the examples.","display"=>"fixed","comment"=>"
-Number: 0744224022<br/>
-You wish to send the number in international format: +40744334011<br/>
-You should set :
-Position to start adding : 1<br/>
-Digits to add: +4<br/><br/>
-
-Number: 5550744224011<br/>
-You wish to send the number in international format: +40744334011<br/>
-
-You can achieve this in 2 ways:<br/>
-1)<br/>
-Position to start replacing: 1<br/>
-Nr of digits to replace: 3<br/>
-Digits to replace with: +4<br/>
-2)<br/>
-Position to start cut: 1<br/>
-Nr of digits to cut: 3<br/>
-Position to start add: 1<br/>
-Digits to add: +4<br/>
-<br/>
-
-Number: 0744224022555<br/>
-You wish to send the number without the last 555 like this: 0744224022<br/>
-
-Position to start cutting: -3<br/>
-Nr of digits to cut: 3
-"),
-					"position_to_start_cutting" => array("comment" => "The first position in the number is 1. If inserted number is negative, position will be taken from the end of the number. Unless you insert the 'Nr of digits to cut' this field will be ignored. Order for performing operations on the phone number : cut, replace, add."),
-					"nr_of_digits_to_cut" => array("comment" => "Number of digits you wish to remove from the number starting from the position inserted above. Unless you insert the 'position to start cutting' this field will be ignored."),
-					"position_to_start_replacing" => array("comment" => "The first position in the number is 1. If inserted number is negative, position will be taken from the end of the number.Unless you insert the 'No of digits to replace' and 'Digits to replace with' this field will be ignored"),
-					"nr_of_digits_to_replace" => array("comment" => "Unless you insert the Position to start replacing and the Digits to replace with, this field will be ignored"),
-					"digits_to_replace_with" => array("comment" => "Digits that will replace the Number of digits to replace starting at 'Position to start replacing'"),
-					"position_to_start_adding" => array("comment" => "If inserted number is negative, position will be taken from the end of the number.Unless 'Digits' to add is inserted this field will be ignored"),
-					"digits_to_add" => array("comment"=>"Digits that will be added in the 'Position to start adding'"),
-				);
-
-	start_form();
-	addHidden("database",array("dial_plan_id"=>$dial_plan->dial_plan_id));
-	editObject($dial_plan,$fields2,"Options for modifying phone number <br/>when call is sent through this gateway","Save",true);
-	end_form();
-}
-
-function modify_number_database()
-{
-	global $path;
-	$path .= "&method=dial_plan";
-
-	$dial_plan = new Dial_Plan;
-	$dial_plan->dial_plan_id = getparam("dial_plan_id");
-	$dial_plan->select();
-	$fields = array("position_to_start_cutting"=>"int", "nr_of_digits_to_cut"=>"int", "position_to_start_replacing"=>"int", "nr_of_digits_to_replace"=>"int", "digits_to_replace_with"=>"", "position_to_start_adding"=>"", "digits_to_add"=>"");
-
-	foreach($fields as $field_name=>$field_type)
-	{
-		$value = getparam($field_name);
-		if($field_type == "int" && $value) {
-			if(Numerify($value) == "NULL") {
-				edit_dial_plan("Field '".ucfirst(str_replace("_"," ",$field_name))."' must be numeric when inserted.");
-				return;
-			}
-		}
-		$dial_plan->{$field_name} = $value;
-	}
-	//notify($dial_plan->update());
-	$res = $dial_plan->update();
-	notice($res[1], "dial_plan", $res[0]);
-}
-
-function edit_dial_plan_database()
-{
-	global $path;
-	$path .= "&method=dial_plan";
-
-	$dial_plan = new Dial_Plan;
-	$dial_plan->dial_plan_id = getparam("dial_plan_id");
-	$dial_plan->dial_plan = getparam("dial_plan");
-	if(!$dial_plan->dial_plan)
-	{
-		edit_dial_plan("Field 'Dial Plan' is required");
-		return;
-	}
-	if($dial_plan->objectExists())
-	{
-		edit_dial_plan("A dial plan with this name already exists");
-		return;
-	}
-	$dial_plan->dial_plan = NULL;
-	$dial_plan->priority = getparam("priority");
-	if(!strlen($dial_plan->priority))
-	{
-		edit_dial_plan("Field 'Priority' is required");
-		return;
-	}
-	if(Numerify($dial_plan->priority) == "NULL")
-	{
-		edit_dial_plan("Field 'Priority' must be numeric");
-		return;
-	}
-	if($dial_plan->objectExists())
-	{
-		edit_dial_plan("This priority was already assigned to another gateway");
-		return;
-	}
-	$dial_plan->dial_plan = getparam("dial_plan");
-	if(getparam("check_to_match_everything") != "on" && !getparam("prefix"))
-	{
-		edit_dial_plan("Please insert the prefix you wish to match or check to match everything");
-		return;
-	}
-	$dial_plan->prefix = (getparam("check_to_match_everything") == "on") ? NULL : getparam("prefix");
-	$dial_plan->gateway_id = getparam("gateway");
-	if($dial_plan->gateway_id == "Not selected" || !$dial_plan->gateway_id)
-	{
-		edit_dial_plan("You must select a gateway");
-		return;
-	}
-
-//	if($dial_plan->dial_plan_id)
-//		notify($dial_plan->update(),$path);
-//	else
-//		notify($dial_plan->insert(true),$path);
-	$res = ($dial_plan->dial_plan_id) ? $dial_plan->update() : $dial_plan->insert(true);
-	notice($res[1],"dial_plan",$res[0]);
 }
 
 function delete_dial_plan()
