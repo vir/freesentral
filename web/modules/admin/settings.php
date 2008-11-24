@@ -105,7 +105,7 @@ function settings()
 	global $method;
 	$method = "settings";
 
-	$settings = Model::selection("setting",array("param"=>"!=version"),"param");
+	$settings = Model::selection("setting",array("param"=>array("!=version", "!=wizard")),"param");
 
 	$formats = array("setting"=>"param", "value", "description");
 	tableOfObjects($settings,$formats,"setting", array("&method=edit_setting"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>'));
