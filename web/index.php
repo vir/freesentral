@@ -26,7 +26,9 @@ $user->username = $username;
 $user->password = $password;
 if($user->login()){
 	$level = 'admin';
-	$_SESSION["wizard"] = $user->wizard;
+	$setting = Model::selection("setting", array("param"=>"wizard"));
+	if(count($setting))
+		$_SESSION["wizard"] = $setting[0]->value;
 }else{
 	$extension = new Extension;
 	$extension->extension = $username;

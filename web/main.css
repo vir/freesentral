@@ -406,7 +406,7 @@ td.allleft, th.allleft
 }
 
 /* style for editing an object */
-table.edit, table.widder_edit
+table.edit, table.widder_edit, table.smaller_edit,table.smaller_edit2,table.smaller_edit3
 {
     font:12px  Arial, Verdana, Helvetica, sans-serif;
 	border:1px solid #0189d7;
@@ -420,7 +420,20 @@ table.widder_edit
 	width:530px;
 }
 
-th.edit,th.widder_edit
+table.smaller_edit
+{
+	width:327px;
+}
+
+table.smaller_edit2
+{
+	width:255px;
+}
+table.smaller_edit3
+{
+	width:295px;
+}
+th.edit,th.widder_edit, th.smaller_edit,th.smaller_edit2,th.smaller_edit3
 {
 	background-color: #0189d7;/*#104a73;*/
 	color: white;
@@ -430,7 +443,7 @@ th.edit,th.widder_edit
 	padding-bottom:5px;
 }
 
-td.edit, td.widder_edit
+td.edit, td.widder_edit, td.smaller_edit,td.smaller_edit2,td.smaller_edit3
 {
 	padding-left:5px;
 	padding-right:5px;
@@ -449,14 +462,14 @@ font.compulsory
 td.left_td
 {
 	text-align:left;
-	width:40%;
+	width:30%;
 	vertical-align:top;
 }
 
 td.right_td
 {
 	text-align:left;
-	width:60%;
+	width:70%;
 	vertical-align:top;
 }
 
@@ -578,4 +591,69 @@ div.systemstatus
 {
 	padding:10px;
 	background-color:#ffffa5;
+}
+
+div.message_wizard
+{
+	border:2px solid #0189D7;
+	width:60%;
+	text-align:left;
+	font-size:13px;
+	padding:10px;
+	background-color:white;
+}
+
+font.welcome
+{
+	color: #0189D7;
+	font-size:14px;
+}
+
+font.font_button
+{
+	padding:3px;
+	padding-left:10px;
+	padding-right:10px;
+	background-color:#0189D7;
+	color:white;
+	cursor:pointer;
+}
+
+font.error
+{
+	color:red;
+	font-weight:bold; 
+}
+
+div.subtitle
+{
+	color:#0189D7;
+	font-weight:bold; 
+	font-size:14px;
+	margin-bottom:15px;
+}
+
+td.import, td.adddialplan
+{
+	vertical-align:top;
+}
+
+td.addrange
+{
+	padding-left:0px;
+	padding-right:10px;
+	vertical-align:top;
+}
+
+td.addextension, td.addgateway
+{
+	padding-right:10px;
+	vertical-align:top;	
+}
+
+table.col3
+{
+	text-align:center; 
+	margin-left:auto; 
+	margin-right:auto;
 }
