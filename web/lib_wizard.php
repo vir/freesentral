@@ -2,6 +2,9 @@
 require_once("conf_wizard.php");
 global $trigger_name, $upload_path;
 
+/**
+ *	Class that will be used to define a wizard
+ */
 class Wizard
 {
 	public $logo;
@@ -15,6 +18,13 @@ class Wizard
 
 	public $reserved_names = array("step_description"=>"", "step_image"=>"", "step_name"=>"", "upload_form"=>"", "on_submit"=>"");
 
+	/**
+	 * Construct an object of type Wizard, handle the verifications,passing to the next step, call function that takes information from $_SESSION and sets the info in the database
+	 * @param $_steps Array that should be set in conf_wizard.php that defines all steps
+	 * @param $_logo Text, path and name of the image used as logo
+	 * @param $_title Text, title of the wizard, will be displayed on the same line as the logo, during all steps 
+	 * @param $function_for_finish Name of the function that should be called after Finish is pressed
+	 */
 	function __construct($_steps, $_logo, $_title, $function_for_finish)
 	{
 		$this->steps = $_steps;
@@ -46,16 +56,22 @@ class Wizard
 			// $function_for_finish() must return something like array(true/false, $message) where true shows that the process is finished, while false shows that it's wasn't finished, $message is a message returned by the function that will be printed
 			if($this->error == '')
 				$this->finished_settings = $function_for_finish();
-		}//elseif(getparam("submit") == "Retry") {
+		}elseif(getparam("submit") == "Retry") {
 			//print '<br/><br/>submit is Retry<br/><br/>';
-		//}
+			// do nothing :)
+		}
 		if(!$this->finished_settings)
 			$this->loadStep();
 
 		$this->htmlFrame();
 	}
 
-	// 
+	/**
+	 * Load a certain step: take the fields from the current step number from the configuration array,
+	 * and if any of the fields were already set, modify the fields accordingly
+	 * In this step default fields and those that have "display"=>"message" are ignored
+	 * In case "display"=>"file" and files were already uploaded and a "fake_".fieldname of type hidden in added that will prevent the error that field is required, in case it is.
+	 */
 	function loadStep()
 	{
 		global $fields;
@@ -116,6 +132,7 @@ class Wizard
 	 * the page and sets the fields into the session. Checks for required fields and sets 
 	 * $this->error in case some required fields are missing
 	 * @param $skip Bool value, true when  you wish to skip the verifications with required fields
+	 * Note! If files were uploaded they will be moved to $upload_path and in $_SESSION["fields"][$step_nr][$field_name] will be an array with [orig_name] => name the file [path] => path were it was uploaded
 	 */
 	function setStep($skip = false)
 	{
@@ -227,6 +244,9 @@ class Wizard
 
 	/**
 	 * Create the form for the current step_nr
+	 * First step has : 2 submits: Next and Skip (is skip is pressed then page is redirected to home page, if setted)
+	 * All steps exept last one: 3 submits: Previous, Next(if pressed the javascript function can be called if set), Skip (if presses then error for required fields won't be printed)
+	 * Last step: Previous, Finish, Skip (both Finish and Skip submit all pages just that on Finish javascript to verify fields can be called)
 	 */
 	function htmlFrame()
 	{
@@ -310,7 +330,7 @@ class Wizard
 				else
 					print '<input type="submit" name="submit" value="Next" onClick="return on_submit(\''.$this->reserved_names["on_submit"].'\');">&nbsp;&nbsp;';
 				if($this->step_nr == 0)
-					print '<input type="button" name="submit" value="Skip" onClick="location.href=\'main.php?module=HOME\'">';
+					print '<input type="button" name="submit" value="Skip" onClick="location.href=\'main.php\'">';
 				else
 					print '<input type="submit" name="submit" value="Skip"/>';
 			}else{
@@ -357,7 +377,7 @@ class Wizard
 				print '</tr>';
 				print '<tr>';
 				print '<td class="fillall wizard_submit" colspan="2">';
-				print '<input type="button" name="submit" value="Close" onClick="location.href=\'main.php?module=HOME\'">';
+				print '<input type="button" name="submit" value="Close" onClick="location.href=\'main.php\'">';
 				print '</td>';
 				print '</tr>';
 				unset($_SESSION["fields"]);
@@ -373,7 +393,7 @@ class Wizard
 				print '<tr>';
 				print '<td class="fillall wizard_submit" colspan="2">';
 				print '<input type="submit" name="submit" value="Retry" />&nbsp;&nbsp;';
-				print '<input type="button" name="submit" value="Close" onClick="location.href=\'main.php?module=HOME\'">';
+				print '<input type="button" name="submit" value="Close" onClick="location.href=\'main.php\'">';
 				print '</td>';
 				print '</tr>';
 			}	
