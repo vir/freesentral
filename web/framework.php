@@ -15,28 +15,32 @@ class Variable
 	public $_owner;
 	public $_critical;
 	public $_matchkey;
+	public $_join_type;
+	public $_required;
 	/**
 	 * Constructor for Variable class. Name of variable must not be a string
 	 * @param $type Text representing the type of object: serial, text, int2, bool, interval etc
-	 * @param $def_value Text or number representing the default value
+	 * @param $def_value Text or number representing the default value. Exception: if $def_value is set to !null then $required parameter is considered true. Exception was added so that we don't set a list false and null default params and to maintain compatibility
 	 * @param $foreign_key Name of the table this column is a foreign key to. Unless $match_key is defined, this is a foreign
 	 * key to a column with the same name in the $foreign_key table
 	 * @param $critical Bool value. 
 	 * true for ON DELETE CASCADE, if referenced row is deleted then this one will also be deleted
 	 * false for ON DELETE SET NULL, if referenced is deleted then this column will be set to null
 	 * @param $match_key Referenced variable name (Text representing the name of the column from the $foreign_key table to which this variable(column) will
-	 * @param $join_type Usually setted when extending objects. Possible values: LEFT, RIGHT, FULL, INNER. Default is LEFT is queries.
 	 * be a foreign key to).If not given the name is the same as this variable's
+	 * @param $join_type Usually setted when extending objects. Possible values: LEFT, RIGHT, FULL, INNER. Default is LEFT is queries.
+	 * @param $required Bool value specifing whether this field can't be null in the database. Default value is false
 	 */
-	function __construct($type, $def_value = NULL, $foreign_key = NULL, $critical = false, $match_key = NULL, $join_type = NULL)
+	function __construct($type, $def_value = NULL, $foreign_key = NULL, $critical = false, $match_key = NULL, $join_type = NULL, $required = false)
 	{
 		$this->_type = $type;
-		$this->_value = $def_value;
+		$this->_value = (strtolower($def_value) != "!null") ? $def_value : NULL;
 		$this->_key = $foreign_key;
 		$this->_critical = $critical;
 		$this->_owner = null;
 		$this->_matchkey = $match_key;
 		$this->_join_type = $join_type;
+		$this->_required = ($required === true || strtolower($def_value) == "!null") ? true : false;
 	}
 
 	/**
@@ -77,6 +81,11 @@ class Variable
 			default:
 				return "'" . addslashes($value) . "'";
 		}
+	}
+
+	public function isRequired()
+	{
+		return $this->_required;
 	}
 }
 
@@ -354,6 +363,10 @@ class Model
 	protected $_model;
 	//if $_invalid is setted to true, this object can't be setted as a key for update or delete clauses 
 	protected $_invalid;
+	//whether the params for a certain object were set or not. It is setted to true in setParams dar is called from setObj
+	protected $_setted;
+	//whether a select or extendedSelect was performed on the object 
+	protected $_retrieved;
 
 	protected static $_models = false;
 	protected static $_modified = false;
@@ -367,6 +380,8 @@ class Model
 	{
 		$this->_invalid = false;
 		$this->_model = self::getVariables(get_class($this));
+		$this->_setted = false;
+		$this->_retrieved = false;
 		foreach ($this->_model as $name => $var)
 			$this->$name = $var->_value;
 	}
@@ -656,7 +671,7 @@ class Model
 		if(!is_array($order))
 			if(substr($order,0,3) == 'oid')
 				// if we need to order by the oid then add oid to the columns
-				$columns = 'distinct('.$my_table.'.oid),'.$columns;
+				$columns = 'distinct '.$my_table.'.oid,'.$columns;
 
 		// we asume that this query will return more than one row
 		$single_object = false;
@@ -688,6 +703,56 @@ class Model
 			return $this->buildArrayOfObjects($res);
 	}
 
+	/**
+	 * Set the params for this object in the database.
+	 * @param $params Array of type $field_name => $field_value
+	 * @return Array where [0] is bool value showing whether query succesed , [1] is the default message
+	 */
+	public function setObj($params)
+	{
+		if(!$this->_setted)
+			$this->setParams($params);
+		return array(true, '');
+	}
+
+	/**
+	 * Set the variables of object and insert it in the database
+	 * @param Array of param_name=>param_value used for setting the variables of this object
+	 * @param $retrieve_id Bool value, true if you want the id of the inserted object to be retrived or not
+	 * @param $keep_log Bool value, true when you wish to insert a log entry for that action
+	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user
+	 */
+	public function add($params=NULL, $retrieve_id=true, $keep_log=true)
+	{
+		if($params) {
+			$res = $this->setObj($params);
+			if(!$res[0])
+				return $res;
+		}
+		return $this->insert($retrieve_id, $keep_log);
+	}
+
+	public function edit($params, $conditions = NULL)
+	{
+		if($params) {
+			$res = $this->setObj($params);
+			if(!$res[0])
+				return $res;
+		}
+		return $this->update($conditions);
+	}
+
+	/**
+	 * Set the params for $this object
+	 */
+	public function setParams($params)
+	{
+		$this->_setted = true;
+
+		foreach($params as $param_name=>$param_value)
+			if($this->variable($param_name))
+				$this->{$param_name} = $param_value;
+	}
 
 	/**
 	 * Insert this object in the database
@@ -702,6 +767,7 @@ class Model
 		$values = "";
 		$serials = array();
 		$insert_log = "";
+		$error = "";
 		foreach ($this->_model as $var_name => $var)
 		{
 			$value = $this->$var_name;
@@ -724,6 +790,11 @@ class Model
 			}
 			if (!$var)
 				continue;
+			if (!$value && $var->isRequired()) {
+				$error .= " Required field '".$var_name."' not set.";
+				// gather other errors as well
+				continue;
+			}
 			if ($columns != "")
 			{
 				$columns .= ",";
@@ -737,10 +808,14 @@ class Model
 		if ($columns == "")
 			return;
 		$table = $this->getTableName();
-		$query = "INSERT INTO $table($columns) VALUES($values)";
+
+		if($error != "")
+			return array(false, "Failed to insert into $table.".$error);
+
+		$query = "INSERT INTO \"$table\"($columns) VALUES($values)";
 		$res = Database::query($query);
 		if (!$res)
-			return array(false,"Failed to insert into $table");
+			return array(false,"Failed to insert into $table.");
 		if($retrieve_id)
 			if (count($serials))
 			{
@@ -748,8 +823,8 @@ class Model
 				if ($oid === false)
 					return array(false,"There are no OIDs on table $table");
 				$columns = implode(",",array_keys($serials));
-				$query = "SELECT $columns FROM $table WHERE oid=$oid";
-				$res = Database::query($query);
+				$query_oid = "SELECT $columns FROM $table WHERE oid=$oid";
+				$res = Database::query($query_oid);
 				if (!$res)
 					return array(false,"Failed to select serials");
 				foreach (array_keys($serials) as $var_name)
@@ -772,6 +847,7 @@ class Model
 		$where = "";
 		$variables = "";
 		$update_log = "";
+		$error = "";
 
 		if (count($conditions)) 
 			$where = $this->makeWhereClause($conditions, true);
@@ -796,16 +872,26 @@ class Model
 				$variables .= ", ";
 				$update_log .= ", ";
 			}
+
+			if(!$this->{$var_name} && $var->isRequired()) {
+				$error .= " Required field '".$var_name."' not set.";
+				continue;
+			}
+
 			$variables .= "\"$var_name\""."=".$var->escape($this->{$var_name})."";
 			$update_log .= "$var_name='".$this->{$var_name}."'"; 
 		}
-		$query = "UPDATE ".$this->getTableName()." SET $variables $where";
+		$obj_name = strtolower(str_replace("_"," ",get_class($this)));
+		if($error != "")
+			return array(false,'Failed to update '.$obj_name.".".$error);
+		$table = $this->getTableName();
+		$query = "UPDATE \"$table\" SET $variables $where";
 		//print "query-update:$query";
 		$res = Database::query($query);
 		if(!$res) 
-			return array(false,'Failed to update '.strtolower(str_replace("_"," ",get_class($this))),0);
+			return array(false,'Failed to update '.$obj_name.".",0);
 		else{
-			$message = 'Succesfully updated '.pg_affected_rows($res).' ' .strtolower(str_replace("_"," ",get_class($this)));
+			$message = 'Succesfully updated '.pg_affected_rows($res).' ' .$obj_name;
 			if (pg_affected_rows($res) != 1)
 				$message .= 's';
 			$update_log = "updated ".$this->getNameInLogs().": $update_log $where";
@@ -951,8 +1037,12 @@ class Model
 				$fields .= "\"$var_name\""."=".$var->escape($this->{$var_name})."";
 			}
 		}
-		if($fields == '')
-			exit("Don't have setted variables for this object");
+		if($fields == '') {
+			//print ("Don't have setted variables for this object. This verification must be made after you set the value that you need to be unique.");
+
+			// the above message would be more appropriate. This message will appear when verifing that an unset required field is unique => i will use the below one since it's directed to the user and not the developer.
+			return "Please set all required fields before submitting the page.";
+		}
 
 		$var = $this->variable($id_name);
 		$value_id = $var->escape($this->{$id_name});
@@ -960,8 +1050,10 @@ class Model
 		$query = self::buildSelect($id_name,$table,$where);
 		$res = Database::query($query);
 
-		if(!$res)
-			exit("Could not do: $query");
+		if(!$res) {
+			print ("Operation was blocked because query failed: '$query'.");
+			return true;
+		}
 
 		if(pg_num_rows($res)) {
 			return pg_fetch_result($res,0,0);
@@ -992,14 +1084,21 @@ class Model
 			{
 				$var = $this->variable($id_name);
 				$id_value = $var->escape($this->{$id_name});
-				if(!$id_value)
+				if(!$id_value || $id_value == "NULL")
 					$where = '';
 				else
-					$where = " where \"$id_name\"='$id_value'";
+					$where = " where \"$id_name\"=$id_value";
 			}else
 				$where = '';
 		}else
 			$where = $this->makeWhereClause($conditions, true);
+
+		if($where == '') 
+			return array(false, "Don't have any condition for deleting.");
+
+		//check if this object was already retrieved from the database
+		if(!$this->_retrieved)
+			$this->select($conditions);
 
 		// array of pairs object_name=>array(var_name=>var_value) in which we have to check for deleting on cascade
 		$to_delete = array();
@@ -1054,14 +1153,14 @@ class Model
 		if($res)
 			if ($cnt) 
 			{
-				self::writeLog("deleted ".$this->getNameInLogs()." $where");
+				self::writeLog("deleted ".$this->getNameInLogs()." $where","$query");
 				print "<br/>\nSuccesfully deleted ".pg_affected_rows($res)." object";
 				if(pg_affected_rows($res) != 1)
 					print "s";
 				print " of type ".get_class($this).'<br/>'."\n";
 			}
 			else
-				return array(true, "Succesfully deleted ".pg_affected_rows($res)." objects of type ".get_class($this));
+				return array(true, "Succesfully deleted ".pg_affected_rows($res)." object(s) of type ".get_class($this));
 		else
 			if ($cnt)
 				print "<br/>\nCould not delete object of class ".get_class($this).'<br/>'."\n";
@@ -1559,8 +1658,8 @@ class Model
 	 */
 	public static function warning($warn)
 	{
-		if(isset($_SESSION["warnings_on"]))
-			print "<br/>\nWarning : $message<br/>\n";
+		if(isset($_SESSION["warning_on"]))
+			print "<br/>\nWarning : $warn<br/>\n";
 	}
 
 	/**
@@ -1570,7 +1669,7 @@ class Model
 	public static function notice($note)
 	{
 		if(isset($_SESSION["notice_on"]))
-			print "<br/>\nNotice : $message<br/>\n";
+			print "<br/>\nNotice : $note<br/>\n";
 	}
 
 	/**
@@ -1607,6 +1706,7 @@ class Model
 			return $name;
 		}
 		//it might be possible that the object was defined without a numeric id
+		return NULL;
 	}
 
 	/**
@@ -1614,7 +1714,7 @@ class Model
 	 */
 	protected function invalidate()
 	{
-		self::warning("Invalidating object.");
+		self::warning("Invalidating object: ".get_class($this).".");
 		$this->_invalid = true;
 	}
 
@@ -1977,7 +2077,7 @@ class Model
 			$this->invalidate();
 			return;
 		}
-
+		$this->_retrieved = true;
 		foreach(pg_fetch_array($result,0) as $var_name=>$value) 
 			$this->{$var_name} = stripslashes($value);
 	}
@@ -2003,6 +2103,7 @@ class Model
 			foreach(pg_fetch_array($result,$i) as $var_name=>$value) 
 				$clone->{$var_name} = stripslashes($value);
 			$objects[$i] = $clone;
+			$objects[$i]->_retrieved = true;
 		} 
 		return $objects;
 	}
