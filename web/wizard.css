@@ -1,0 +1,115 @@
+table.wizard
+{
+	background-color:white;
+	width:65%;
+	border:1px solid #0189d7;
+	font-size:12px;
+	padding:10px;
+}
+
+.fillall
+{
+	width:100%;
+}
+
+td.title_wizard
+{
+	text-align:left;
+}
+
+table.wizard_step_description
+{
+	font-size:12px;
+}
+
+td.wiz_description
+{
+	width:35%;
+}
+
+td.wizard_content
+{
+	width:65%;
+	vertical-align:top;
+}
+
+td.wizard_submit
+{
+	text-align:right;
+	padding:5px;
+	padding-right:5px;
+	padding-top:15px;
+}
+
+th.wizard_content
+{
+	text-align:left;
+	padding-bottom:10px;
+	padding-top:10px;
+	font-size:13px;
+}
+
+table.wizard_step_description
+{
+	margin:10px;
+	border:1px solid #ccc;
+	padding:10px;
+}
+
+td.wiz_description
+{
+/*	border:1px solid #ccc;*/
+	/*padding:5px;*/
+	margin-top:2px;
+	vertical-align:top;
+	/*padding-top:10px;*/
+}
+
+td.step_description
+{
+	padding-top:15px;
+	text-align:justify;
+}
+
+table.wizard_content
+{
+	padding:10px;
+	padding-bottom:0px;
+}
+
+table.wizard_fields
+{
+	font-size:12px;
+}
+
+td.wizedit
+{
+	padding-bottom:3px;
+	padding-top:5px;
+	border-bottom:1px solid #ccc;
+}
+
+
+td.double_column
+{
+	border-bottom:none;
+	font-size:12px;
+	text-align: justify;
+	padding:5px;
+	padding-bottom:10px;
+	padding-top:10px;
+	border:none;
+}
+
+td.wizard_error
+{
+	padding-bottom:10px;
+}
+
+font.wizlink
+{
+	cursor:pointer;
+	color: #0189d7;
+	text-decoration:underline;
+	float:right;
+}

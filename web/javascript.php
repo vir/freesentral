@@ -36,6 +36,7 @@
 </script>
 
 <script type="text/javascript" language="JavaScript1.2">
+
 function copacClick(lin,col,role)
 {
 //	alert(lin+" "+col+" "+role);
@@ -293,6 +294,53 @@ function advanced(identifier)
 	img.src = imgarray.join("/");
 }
 
+function show_fields(nr)
+{
+	var elems = document.wizard.elements;
+	var tr_elem, tr_elem_id, elem_name;
+
+	elem_name = "add"+(nr-1);
+	tr_elem_id = "tr_"+"add"+(nr-1);
+	tr_elem = document.getElementById(tr_elem_id);
+		
+	if(tr_elem == null) {
+		return;
+	}
+	if(tr_elem_id.substr(elem_name.length+2, tr_elem_id.length) != (nr-1)){
+		return;
+	}
+	tr_elem.style.display = "none";
+	for(var i=0; i<elems.length; i++)
+	{
+		elem_name = elems[i].name;
+		tr_elem_id = "tr_"+elem_name;
+		tr_elem = document.getElementById(tr_elem_id);
+		
+		if(tr_elem == null)
+			continue;
+
+		if(tr_elem_id.substr(elem_name.length+2, tr_elem_id.length) != nr)
+			continue;
+
+	/*	if(tr_elem.style.display == "table-row")
+			tr_elem.style.display = "none";
+		else*/
+		tr_elem.style.display = "table-row";
+	}
+
+	elem_name = "add"+nr;
+	tr_elem_id = "tr_"+"add"+nr;
+	tr_elem = document.getElementById(tr_elem_id);
+		
+	if(tr_elem == null) {
+		return;
+	}
+	if(tr_elem_id.substr(elem_name.length+2, tr_elem_id.length) != nr){
+		return;
+	}
+	tr_elem.style.display = "table-row";
+}
+
 function comute_destination(elem_type)
 {
 	var elem = document.getElementById(elem_type);
@@ -335,6 +383,275 @@ this.bgColor =  "red";
 	else
 	this.bgColor = "#eeeeee";*/
 //alert("exit");
+}
+
+function error(error)
+{
+	alert(error);
+}
+
+function is_numeric(val)
+{  
+     return !isNaN(val);  
+} 
+
+function on_submit(function_name)
+{
+	if(typeof function_name == "string" && eval('typeof ' + function_name) == 'function')
+		var res = eval(function_name + '()');
+	else
+		res = false;//true;
+//alert(res);
+
+	if(res == null)
+		res = false;
+	return res;
+	/*if(res == true) 
+		document.wizard.submit();
+	else
+		return false;*/
+}
+
+function verify_password()
+{
+	var new_password = document.wizard.new_password.value;
+	var retype_password = document.wizard.retype_new_password.value;
+	if(new_password == '' || retype_password == '') {
+		error("Please set all required fields.");
+		return false;
+	}
+	if(new_password.length < 5) {
+		error("Password must be at least 5 digits long.");
+		return false;
+	}
+	if(new_password != retype_password) {
+		error("The passwords don't match.");
+		return false;
+	}
+	return true;
+}
+
+function verify_extensions()
+{
+	var from = document.wizard.from.value;
+	var to = document.wizard.to.value;
+
+	if(from == '' || to == '') {
+		error("Please set all the required fields.");
+		return false;
+	}
+	if(from.length != to.length) {
+		error("The 'From' and 'To' fields must have the same length.");
+		return false;
+	}
+	if(from > to) {
+		error("'From' field must be smaller than 'To'.");
+		return false;
+	}
+	if(!is_numeric(from) || !is_numeric(to))
+	{
+		error("Fields must be numeric.");
+		return false;
+	}
+	if(from.length < 3) {
+		error("Fields must be at least 3 digits long.");
+		return false;
+	}
+	return true;
+}
+
+function verify_groups()
+{
+//	var fields = new Array("group", "extension", "members", "from", "to");
+	var total = 4;
+	var nr;
+	var group, extension, members, from, to;
+
+	for(var i=1; i<=total; i++)
+	{
+		nr = (i==1) ? '' : i;
+		group = eval("document.wizard.group"+nr+".value");
+		extension = eval("document.wizard.extension"+nr+".value");
+		members = eval("document.wizard.members"+nr+".value");
+		from = eval("document.wizard.from"+nr+".value");
+		to = eval("document.wizard.to"+nr+".value");
+		if(group == '' || extension == '')
+			if(i == 1) {
+				error("Please set all the required fields.");
+				return false;
+			}else{
+				for(j=i; j<=total;j++) {
+					eval("document.wizard.group"+j+".value='';");
+					eval("document.wizard.extension"+j+".value='';");
+					eval("document.wizard.members"+j+".value='';");
+					eval("document.wizard.from"+j+".value=''");
+					eval("document.wizard.to"+j+".value='';")
+				}
+				break;
+			}
+		if(members == '' && (to == '' || from == '')) {
+			error("You must either complete the Members"+nr+" fields or the To"+nr+" and From"+nr+" fields.");
+			return false;
+		}
+		if(extension.length != 2) {
+			error("Field 'Extension"+nr+"' must be 2 digits long.");
+			return false;
+		}
+		if(to != '' && from != '') {
+			if(from.length != to.length) {
+				error("The 'From"+nr+"' and 'To"+nr+"' fields must have the same length.");
+				return false;
+			}
+			if(from > to) {
+				error("'From"+nr+"' field must be smaller than 'To"+nr+"'.");
+				return false;
+			}
+			if((typeof parseInt(from)) != "number" || (typeof parseInt(to)) != "number")
+			{
+				error("Fields must be numeric.");
+				return false;
+			}
+			if(from.length < 3) {
+				error("Fields must be at least 3 digits long.");
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+function verify_gateway()
+{
+	var protocol = document.wizard.protocol.value;
+	var username = document.wizard.username.value;
+	var password = document.wizard.password.value;
+	var server = document.wizard.server.value;
+
+	if(protocol == '' || server == '') {
+		error("Please set all the required fields.");
+		return false;
+	}
+	if((username == '' && password != '') || (username != '' && password == '')) {
+		error("Please set both username and password.");
+		return false;
+	}
+	return true;
+}
+
+function verify_voicemail()
+{
+	var number = document.wizard.number.value;
+	if(number == '') {
+		error("Please set the 'Number' field.");
+		return false;
+	}
+	if(!is_numeric(number)) {
+		error("Field 'Number' must be numeric.");
+		return false;
+	}
+	return true;
+}
+
+var notified = false;
+/*
+function verify_auto_attendant()
+{
+	var number = document.wizard.number.value;
+	var extension = document.wizard.extension.value;
+	var online_prompt = document.wizard.online_prompt.value;
+	var offline_prompt = document.wizard.offline_prompt.value;
+	var start, end, not;
+alert("enter");
+	// i suppose he did't want to set the auto attendant
+	if(number == '')
+		return true;
+	if(number == '' || extension == '' || online_prompt == '' || offline_prompt == '')
+	{
+		error("Please set all the required fields.");
+		return false;
+	}
+alert("i reach here");
+
+	var days = new Array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+}*/
+
+
+function verify_auto_attendant()
+{
+	var number = document.wizard.number.value;
+	var extension = document.wizard.extension.value;
+	var online_prompt = (document.wizard.online_prompt.value != '') ? document.wizard.online_prompt.value : document.wizard.fake_online_prompt.value;
+	var offline_prompt = (document.wizard.offline_prompt.value != '') ? document.wizard.offline_prompt.value : document.wizard.fake_offline_prompt.value;
+	var start, end, not;
+
+	if(number == '' || extension == '' || online_prompt == '' || offline_prompt == '')
+	{
+		error("Please set all the required fields. number="+number+" extension="+extension+" online_prompt="+online_prompt+"offline_prompt"+offline_prompt);
+		return false;
+	}
+
+	var days = new Array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+	var scheduled = false;
+	for(var i=0; i<days.length; i++) {
+		start = eval("document.wizard.start_"+days[i]+".value");
+		end = eval("document.wizard.end_"+days[i]+".value");
+		if(start != "Not selected" && end != "Not selected") {
+			scheduled = true;
+			break;
+		}
+	}
+
+	if(scheduled == false) {
+		not = confirm("You didn't scheduled the online AutoAttendant. Are you sure you want to continue?");
+		if(not == false)
+			return false;
+	}
+
+	var total = 5;
+	var aut_type, key, number, group, keys_defined;
+
+	keys_defined = false;
+	for(i=1; i<=total; i++) {
+		key = eval("document.wizard.key"+i+".value");
+		aut_type = eval("document.wizard.type"+i+".value");
+		number = eval("document.wizard.number"+i+".value");
+		group = eval("document.wizard.group"+i+".value");
+
+		if(aut_type != '' && key != '') {
+			keys_defined = true;
+		}else
+			continue;
+		if((number == '' && group == '') || (number != '' && group != '')) {
+			error("You must set one of the two fields Number"+i+" or Group"+i+".");
+			return false;
+		}
+	}
+	if(keys_defined == false) {
+		not = confirm("You didn't defined any keys for your Auto Attendant. Are you sure you want to continue?");
+		if(not == false)
+			return false;
+	}
+
+	return true;
+}
+
+function verify_moh()
+{
+	var max_files =  5;
+	var setted = false;
+	for(var i=1; i<=5; i++)
+	{
+		if(eval("document.wizard.file"+i+".value") != "")
+			setted = true;
+	}
+	if(setted == false){
+		not = confirm("You didn't upload any files for Music on hold. Are you sure you want to continue?");
+		if(not == false)
+			return false;
+	}
+
+	return true;
+		
 }
 
 </script>

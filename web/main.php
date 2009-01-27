@@ -77,13 +77,13 @@ if($method == "manage")
 $_SESSION["main"] = "main.php";
 $iframe = getparam("iframe");
 /*
+// old wizard
 if(!isset($_SESSION["verified_settings"]))
+	$module = "verify_settings";
+if($level == "admin" && $_SESSION["wizard"] == "notused")
 	$module = "verify_settings";
 */
 
-if($level == "admin" && $_SESSION["wizard"] == "notused") {
-	$module = "verify_settings";
-}
 ?>
 
 <html>
@@ -91,6 +91,7 @@ if($level == "admin" && $_SESSION["wizard"] == "notused") {
 <title>FreeSentral</title>
 <?    include "javascript.php"; ?>
 <link type="text/css" rel="stylesheet" href="main.css"/>
+<link type="text/css" rel="stylesheet" href="wizard.css"/>
 </head>
 <!-- <body style="margin: 0 0 0 0;" background="images/sigla.png" bgproperties="fixed"> -->
 <body class="mainbody">
