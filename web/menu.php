@@ -25,8 +25,8 @@ function get_login_form()
 						print "<p>&nbsp;</p>";	
 				?>
 				<p class="wellcome_to">Welcome to FreeSentral!</p>
-				<p align="right"><label id="username">Username:&nbsp;</label> <input type="text" name="username" id="username" size="19"/></p>
-				<p align="right"><label id="password">Password:&nbsp;</label> <input type="password" name="password" id="password" size="19" /></p>
+				<p align="right"><label id="username">Username:&nbsp;</label><input type="text" name="username" id="username" size="19"/></p>
+				<p align="right"><label id="password">Password:&nbsp;</label><input type="password" name="password" id="password" size="19" /></p>
 				<p align="right"><input type="submit" value="Send" class="submit"/></p>
 				<div align="center">
 		<?

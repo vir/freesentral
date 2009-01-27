@@ -319,6 +319,9 @@ function navbuttons($params=array(),$class = "llink")
 
 function check_valid_mail($mail)
 {
+	if(!$mail)
+		return true;
+
 	$pattern = '^([_a-z0-9-]+)(\.[_a-z0-9-]+)*@([a-z0-9-]+)(\.[a-z0-9-]+)*(\.[a-z]{2,4})$' ;
 	return eregi($pattern, $mail);
 }
@@ -410,160 +413,8 @@ function editObject($object, $fields, $title, $submit="Submit", $compulsory_noti
 		}
 	}
 	foreach($fields as $field_name=>$field_format)
-	{
-		if(isset($field_format["advanced"]))
-			$have_advanced = true;
-		if($object)
-			$value = (!is_array($field_name) && isset($object->{$field_name})) ? $object->{$field_name} : NULL;
-		else
-			$value = NULL;
-		if(isset($field_format["value"]))
-			$value = $field_format["value"];
+		display_pair($field_name, $field_format, $object, $form_identifier, $css, $show_advanced, $td_width);
 
-		print '<tr id="tr_'.$form_identifier.$field_name.'" class="'.$css.'"';
-		if(isset($field_format["advanced"]))
-		{
-			if(!$show_advanced)
-				print ' style="display:none;"';
-			else
-				print ' style="display:table-row;"';
-		}	
-		print '>';
-		// if $var_name is an array we won't use it
-		$var_name = (isset($field_format[0])) ? $field_format[0] : $field_name;
-		$display = (isset($field_format["display"])) ? $field_format["display"] : "text";
-
-		if($object)
-		{
-			$variable = (!is_array($var_name)) ? $object->variable($var_name) : NULL;
-			if($variable)
-				if($variable->_type == "bool")
-					$display = "checkbox";
-		}
-
-		print '<td class="'.$css.' left_td"';
-		if(isset($td_width["left"]))
-			print ' style="width:'.$td_width["left"].'"';
-		print '>'.ucfirst(str_replace("_","&nbsp;",$field_name));
-		if(isset($field_format["required"]))
-			$field_format["compulsory"] = $field_format["required"];
-		if(isset($field_format["compulsory"]))
-			if($field_format["compulsory"] === true || $field_format["compulsory"] == "yes" || $field_format["compulsory"] == "t" || $field_format["compulsory"] == "true")
-				print '<font class="compulsory">*</font>';
-		print '</td>';
-		print '<td class="'.$css.' right_td"';
-		if(isset($td_width["right"]))
-			print ' style="width:'.$td_width["right"].'"';
-		print '>';
-
-		switch($display)
-		{
-			case "textarea":
-				print '<textarea class="'.$css.'" name="'.$form_identifier.$field_name.'" cols="20" rows="10">';
-				print $value;
-				print '</textarea>';
-				break;
-			case "select":
-				print '<select class="'.$css.'" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'" ';
-				if(isset($field_format["javascript"]))
-					print $field_format["javascript"];
-				print '>';
-				print '<option>Not selected</option>';
-				$options = (is_array($var_name)) ? $var_name : array();
-				if(isset($options["selected"]))
-					$selected = $options["selected"];
-				elseif(isset($options["SELECTED"]))
-					$selected = $options["SELECTED"];
-				else
-					$selected = "";
-				foreach ($options as $var=>$opt) {
-					if ($var === "selected" || $var === "SELECTED")
-						continue;
-					if(count($opt) == 2) {
-						$optval = $field_name.'_id';
-						$name = $field_name;
-						if ($opt[$optval] == $selected)
-							print '<option value=\''.$opt[$optval].'\' SELECTED >' . $opt[$name] . '</option>';
-						else
-							print '<option value=\''.$opt[$optval].'\'>' . $opt[$name] . '</option>';
-					}else{
-						if ($opt == $selected)
-						print '<option SELECTED >' . $opt . '</option>';
-						else
-						print '<option>' . $opt . '</option>';
-					}
-				}
-				print '</select>';
-				break;
-			case "radios":
-			case "radio":
-				$options = (is_array($var_name)) ? $var_name : array();
-				if(isset($options["selected"]))
-					$selected = $options["selected"];
-				elseif(isset($options["SELECTED"]))
-					$selected = $options["SELECTED"];
-				else
-					$selected = "";
-				foreach ($options as $var=>$opt) {
-					if ($var === "selected" || $var === "SELECTED")
-						continue;
-					if(count($opt) == 2) {
-						$optval = $key.'_id';
-						$name = $key;
-						$value = $opt[$optval];
-						$name = $opt[$name];
-					}else{
-						$value = $opt;
-						$name = $opt;
-					}
-					print '<input class="'.$css.'" type="radio" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'" value=\''.$value.'\'';
-					if ($value == $selected)
-						print ' CHECKED ';
-					if(isset($field_format["javascript"]))
-						print $field_format["javascript"];
-					print '>' . $name . '&nbsp;&nbsp;';
-				}
-				break;
-			case "checkbox":
-				print '<input class="'.$css.'" type="checkbox" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'"';
-				if($value == "t")
-					print " CHECKED";
-				print '/>';
-				break;
-			case "text":
-			case "password":
-			case "file":
-				print '<input class="'.$css.'" type="'.$display.'" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'"';
-				if($display == "text")
-					print ' value="'.$value.'"';
-				if(isset($field_format["javascript"]))
-					print $field_format["javascript"];
-				print '>';
-				break;
-			case "fixed":
-				if(strlen($value))
-					print $value;
-				else
-					print "&nbsp;";
-				break;
-			default:
-				// need to do a callback here
-				// it might be that we don't have the name seeted to that the javascript function that display the advanced settings could work 
-				if(isset($field_format["advanced"]))
-					print '<input type="hidden" name="'.$form_identifier.$field_name.'">';
-				$value = $display($value,$form_identifier.$field_name); 
-				if($value)
-					print $value;
-		}
-		if(isset($field_format["comment"]))
-		{
-			$comment = $field_format["comment"];
-			print '&nbsp;&nbsp;<img class="pointer" src="images/question.jpg" onClick="show_hide_comment(\''.$form_identifier.$field_name.'\');"/>';
-			print '<font class="comment" style="display:none;" id="comment_'.$form_identifier.$field_name.'">'.$comment.'</font>';
-		}
-		print '</td>';
-		print '</tr>';
-	}
 	if($have_advanced && !$compulsory_notice)
 	{
 		print '<tr class="'.$css.'">';
@@ -622,6 +473,191 @@ function editObject($object, $fields, $title, $submit="Submit", $compulsory_noti
 	}
 	print '</table>';
 	print '</center>';
+}
+
+function display_pair($field_name, $field_format, $object, $form_identifier, $css, $show_advanced, $td_width)
+{
+		if(isset($field_format["advanced"]))
+			$have_advanced = true;
+
+		if(isset($field_format["triggered_by"]))
+			$needs_trigger = true;
+
+		if($object)
+			$value = (!is_array($field_name) && isset($object->{$field_name})) ? $object->{$field_name} : NULL;
+		else
+			$value = NULL;
+		if(isset($field_format["value"]))
+			$value = $field_format["value"];
+
+		print '<tr id="tr_'.$form_identifier.$field_name.'"';
+//		if($needs_trigger == true)	
+//			print 'name="'.$form_identifier.$field_name.'triggered'.$field_format["triggered_by"].'"';
+		print ' class="'.$css.'"';
+		if(isset($field_format["advanced"]))
+		{
+			if(!$show_advanced)
+				print ' style="display:none;"';
+			elseif(isset($field_format["triggered_by"])){
+				if($needs_trigger)
+					print ' style="display:none;"';
+				else
+					print ' style="display:table-row;"';
+			}else
+				print ' style="display:table-row;"';
+		}elseif(isset($field_format["triggered_by"])){
+			if($needs_trigger)
+				print ' style="display:none;"';
+			else
+				print ' style="display:table-row;"';
+		}
+		print '>';
+		// if $var_name is an array we won't use it
+		$var_name = (isset($field_format[0])) ? $field_format[0] : $field_name;
+		$display = (isset($field_format["display"])) ? $field_format["display"] : "text";
+
+		if($object)
+		{
+			$variable = (!is_array($var_name)) ? $object->variable($var_name) : NULL;
+			if($variable)
+				if($variable->_type == "bool")
+					$display = "checkbox";
+		}
+
+		if($display == "message") {
+			print '<td class="'.$css.' double_column" colspan="2">';
+			print $value;
+			print '</td>';
+			print '</tr>';
+			return;
+		}
+
+		if($display != "hidden") {
+			print '<td class="'.$css.' left_td"';
+			if(isset($td_width["left"]))
+				print ' style="width:'.$td_width["left"].'"';
+			print '>'.ucfirst(str_replace("_","&nbsp;",$field_name));
+			if(isset($field_format["required"]))
+				$field_format["compulsory"] = $field_format["required"];
+			if(isset($field_format["compulsory"]))
+				if($field_format["compulsory"] === true || $field_format["compulsory"] == "yes" || $field_format["compulsory"] == "t" || $field_format["compulsory"] == "true")
+					print '<font class="compulsory">*</font>';
+			print '</td>';
+			print '<td class="'.$css.' right_td"';
+			if(isset($td_width["right"]))
+				print ' style="width:'.$td_width["right"].'"';
+			print '>';
+		}
+		switch($display)
+		{
+			case "textarea":
+				print '<textarea class="'.$css.'" name="'.$form_identifier.$field_name.'" cols="20" rows="10">';
+				print $value;
+				print '</textarea>';
+				break;
+			case "select":
+				print '<select class="'.$css.'" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'" ';
+				if(isset($field_format["javascript"]))
+					print $field_format["javascript"];
+				print '>';
+				print '<option value="">Not selected</option>';
+				$options = (is_array($var_name)) ? $var_name : array();
+				if(isset($options["selected"]))
+					$selected = $options["selected"];
+				elseif(isset($options["SELECTED"]))
+					$selected = $options["SELECTED"];
+				else
+					$selected = '';
+				foreach ($options as $var=>$opt) {
+					if ($var === "selected" || $var === "SELECTED")
+						continue;
+					if(count($opt) == 2) {
+						$optval = $field_name.'_id';
+						$name = $field_name;
+						if ($opt[$optval] === $selected)
+							print '<option value=\''.$opt[$optval].'\' SELECTED >' . $opt[$name] . '</option>';
+						else
+							print '<option value=\''.$opt[$optval].'\'>' . $opt[$name] . '</option>';
+					}else{
+						if ($opt === $selected)
+						print '<option SELECTED >' . $opt . '</option>';
+						else
+						print '<option>' . $opt . '</option>';
+					}
+				}
+				print '</select>';
+				break;
+			case "radios":
+			case "radio":
+				$options = (is_array($var_name)) ? $var_name : array();
+				if(isset($options["selected"]))
+					$selected = $options["selected"];
+				elseif(isset($options["SELECTED"]))
+					$selected = $options["SELECTED"];
+				else
+					$selected = "";
+				foreach ($options as $var=>$opt) {
+					if ($var === "selected" || $var === "SELECTED")
+						continue;
+					if(count($opt) == 2) {
+						$optval = $key.'_id';
+						$name = $key;
+						$value = $opt[$optval];
+						$name = $opt[$name];
+					}else{
+						$value = $opt;
+						$name = $opt;
+					}
+					print '<input class="'.$css.'" type="radio" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'" value=\''.$value.'\'';
+					if ($value == $selected)
+						print ' CHECKED ';
+					if(isset($field_format["javascript"]))
+						print $field_format["javascript"];
+					print '>' . $name . '&nbsp;&nbsp;';
+				}
+				break;
+			case "checkbox":
+				print '<input class="'.$css.'" type="checkbox" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'"';
+				if($value == "t" || $value == "on")
+					print " CHECKED";
+				print '/>';
+				break;
+			case "text":
+			case "password":
+			case "file":
+			case "hidden":
+				print '<input class="'.$css.'" type="'.$display.'" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'"';
+				if($display != "file")
+					print ' value="'.$value.'"';
+				if(isset($field_format["javascript"]))
+					print $field_format["javascript"];
+				print '>';
+				break;
+			case "fixed":
+				if(strlen($value))
+					print $value;
+				else
+					print "&nbsp;";
+				break;
+			default:
+				// need to do a callback here
+				// it might be that we don't have the name seeted to that the javascript function that display the advanced settings could work 
+				if(isset($field_format["advanced"]))
+					print '<input type="hidden" name="'.$form_identifier.$field_name.'">';
+				$value = $display($value,$form_identifier.$field_name); 
+				if($value)
+					print $value;
+		}
+		if($display != "hidden") {
+			if(isset($field_format["comment"]))
+			{
+				$comment = $field_format["comment"];
+				print '&nbsp;&nbsp;<img class="pointer" src="images/question.jpg" onClick="show_hide_comment(\''.$form_identifier.$field_name.'\');"/>';
+				print '<font class="comment" style="display:none;" id="comment_'.$form_identifier.$field_name.'">'.$comment.'</font>';
+			}
+			print '</td>';
+		}
+		print '</tr>';
 }
 
 function find_field_value($res, $line, $field)
@@ -1631,6 +1667,21 @@ function notice($message, $next=NULL, $no_error = true)
 
 	if($next != "no")
 		$next();
+}
+
+function form_params($fields)
+{
+	$params = array();
+	for($i=0; $i<count($fields); $i++)
+		$params[$fields[$i]] = getparam($fields[$i]);
+	return $params;
+}
+
+function field_value($field, $array)
+{
+	if(isset($array[$field]))
+		return $array[$field];
+	return NULL;
 }
 
 /* vi: set ts=8 sw=4 sts=4 noet: */
