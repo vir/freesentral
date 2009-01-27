@@ -43,7 +43,7 @@ function wizard_database()
 			continue;
 		if($functions[$index] == '')
 			continue;
-		print "<br/>entering ".$functions[$index]."<br/>";
+		//print "<br/>entering ".$functions[$index]."<br/>";
 		$ret = (isset($fields[$index])) ? $functions[$index]($fields[$index]) : $functions[$index]();
 		if($ret[0])
 			$message .= $ret[1];
@@ -116,7 +116,7 @@ function define_extensions($fields)
 			continue;
 		}
 		$extension->password = rand(100000,999999);
-		$res = $extension->insert(false);
+		$res = $extension->insert();
 		if(!$res[0])
 			return $res;
 	}

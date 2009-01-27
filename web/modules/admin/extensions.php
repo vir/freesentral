@@ -250,9 +250,7 @@ function join_group_database()
 		return;
 	}
 	$group_member = new Group_Member;
-	$group_member->extension_id = $extension_id;
-	$group_member->group_id = $group_id;
-	$res = $group_member->insert();
+	$res = $group_member->add(array("extension_id"=>$extension_id, "group_id"=>$group_id));
 
 	$extension = new Extension;
 	$extension->extension_id = $extension_id;

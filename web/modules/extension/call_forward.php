@@ -81,14 +81,10 @@ function makeupdate($param,$value,$oldtimeout,$extension_id)
 	$pbx_settings = Model::selection('pbx_setting',array("extension_id"=>$extension_id, "param"=>$param));
 	if(!count($pbx_settings)) {
 		$pbx_setting = new Pbx_Setting;
-		$pbx_setting->extension_id = $extension_id;
-		$pbx_setting->param = $param;
-		$pbx_setting->value = $value;
-		$res = $pbx_setting->insert();
+		$res = $pbx_setting->add(array("extension_id"=>$extension_id, "param"=>$param, "value"=>$value));
 	}elseif(count($pbx_settings) == 1) {
 		$pbx_setting = $pbx_settings[0];
-		$pbx_setting->value = $value;
-		$res = $pbx_setting->update();
+		$res = $pbx_setting->edit(array("value"=>$value));
 	}
 
 	if (!$res[0])

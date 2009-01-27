@@ -145,7 +145,6 @@ function edit_setting_database()
 		return;
 	}
 	$setting->description = getparam("description");
-	//notify($setting->update());
 	$res = $setting->update();
 	notice($res[1],NULL,$res[0]);
 }

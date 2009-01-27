@@ -137,10 +137,6 @@ function account_modify_database()
 		return;
 	}	
 	$extension = $extension[0];
-
-	$extension->firstname = getparam("firstname");
-	$extension->lastname = getparam("lastname");
-	$extension->address = getparam("address");
 /*	if(getparam("equipment") && getparam("equipment") != "Not selected")
 	{
 		$extension->equipment_id = getparam("equipment");
@@ -156,8 +152,8 @@ function account_modify_database()
 		print "Ignoring field mac address since you didn't select an equipment";
 	}*/
 
-	//notify($extension->update());
-	$res = $extension->update();
+	$fields = form_params(array("firstname","lastname","address"));
+	$res = $extension->edit($fields);
 	notice($res[1],NULL,$res[0]);
 }
 

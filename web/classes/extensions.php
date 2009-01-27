@@ -51,7 +51,8 @@ class Extension extends Model
 
 	public function setObj($params)
 	{
-		$this->extension = field_value("extension", $params);
+		if(($ext = field_value("extension", $params)))
+			$this->extension = $ext;
 		if(Numerify($this->extension) == "NULL")
 			return array(false, "Field extension must be numeric");
 		if(strlen($this->extension) < 3)

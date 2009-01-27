@@ -103,13 +103,11 @@ function upload_music_on_hold_database()
 	$au = str_replace(".mp3",".au",$file);
 	passthru("sox $file  -r 8000 -c 1 -b -A $au");
 
-	$music_on_hold->select();
-	$music_on_hold->music_on_hold = $filename;
-	$music_on_hold->description = getparam("description");
+	$params = array("music_on_hold"=>$filename, "description"=>getparam("description"));
 	if($music_on_hold->music_on_hold_id)
-		$res = $music_on_hold->update();
+		$res = $music_on_hold->edit($params);
 	else
-		$res = $music_on_hold->insert();
+		$res = $music_on_hold->add($params);
 
 	if($res[0])
 		//message("Succesfully uploaded music on hold song",$path);
@@ -122,8 +120,13 @@ function upload_music_on_hold_database()
 function edit_music_on_hold()
 {
 	$music_on_hold = new Music_on_Hold;
-	$music_on_hold->music_on_hold_id = getparam("music_on_hold_id");
-	$music_on_hold->select();
+	if(getparam("music_on_hold_id")) {
+		$music_on_hold->music_on_hold_id = getparam("music_on_hold_id");
+		$music_on_hold->select();
+	}elseif(getparam("music_on_hold")) {
+		$music_on_hold->music_on_hold = getparam("music_on_hold");
+		$music_on_hold->select('music_on_hold');
+	}
 
 	start_form();
 	addHidden("database", array("music_on_hold_id"=>$music_on_hold->music_on_hold_id));
@@ -138,6 +141,7 @@ function edit_music_on_hold_database()
 
 	$music_on_hold = new Music_on_Hold;
 	$music_on_hold->music_on_hold_id = getparam("music_on_hold_id");
+	$music_on_hold->select();
 	$params = form_params(array("description"));
 	$res = $music_on_hold->edit($params);
 	notice($res[1], "music_on_hold", $res[0]);
@@ -337,8 +341,7 @@ function insert_item_database()
 		notice("Could not add item to playlist: incomplete information", "playlists", false);
 		return;
 	}
-	//notify($playlist_item->insert(false));
-	$res = $playlist_item->insert(false);
+	$res = $playlist_item->add(array());
 	notice($res[1], NULL, $res[0]);
 }
 
