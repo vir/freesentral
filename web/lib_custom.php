@@ -297,5 +297,39 @@ function voicemail_database()
 	voicemail();
 }
 
+function wiz_period($value, $name)
+{
+	$start = 0;
+	$end = 0;
 
+	print 'From <select name="start_'.$name.'">';
+	print '<option>Not selected</option>';
+	for($i=1; $i<25; $i++) {
+		print '<option';
+		if($start == $i)
+			print " SELECTED";
+		print '>'.$i.'</option>';
+	}
+	print '</select>';
+	print '&nbsp;&nbsp;To <select name="end_'.$name.'">';
+	print '<option>Not selected</option>';
+	for($i=1; $i<25; $i++) {
+		print '<option';
+		if($end == $i)
+			print " SELECTED";
+		print '>'.$i.'</option>';
+	}
+	print '</select>';	
+}
+
+
+function days_of_week($name, $value=NULL)
+{
+	$days = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+	for($i=0; $i<count($days); $i++) {
+		print '<input type="checkbox" name="'.$name.strtolower($days[$i]).'">'.$days[$i] . "&nbsp;&nbsp;";
+		if(($i+1)%3 == 0)
+			print '<br/>';
+	}
+}
 ?>

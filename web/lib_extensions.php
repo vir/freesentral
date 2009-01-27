@@ -110,80 +110,19 @@ function import_database()
 	extensions();
 }
 
-
 function edit_extension_database()
 {
 	global $module;
 
 	$extension = new Extension;
 	$extension->extension_id = getparam("extension_id");
-	$extension->extension = getparam("extension");
-	if(!$extension->extension)
-	{
-		edit_extension("Field extension is compulsory.");
-		return;
-	}
-	if(Numerify($extension->extension) == "NULL")
-	{
-		edit_extension("Field extension must be numeric");
-		return;
-	}
-	if(strlen($extension->extension) < 3)
-	{
-		edit_extension("Field extension must be minimum 3 digits");
-		return;
-	}
-	if($extension->objectExists())
-	{
-		edit_extension("This extension already exists");
-		return;
-	}
-	$extension->select();
-	$extension->extension = getparam("extension");
-	$extension->firstname = getparam("firstname");
-	$extension->lastname = getparam("lastname");
-	$extension->address = getparam("address");
-	if(getparam("max_minutes"))
-		$extension->max_minutes = minutes_to_interval(getparam("max_minutes"));
-/*	$extension->mac_address = getparam("mac_address");
-	if($extension->mac_address)
-	{
-		if(getparam("equipment") != "Not selected")
-			$extension->equipment_id = getparam("equipment");
-		else{
-			edit_extension("Please select equipment you wish to provision.");
-			return;
-		}
-	}*/
+	$params = form_params(array("extension", "firstname", "lastname", "address", "max_minutes", "password"));
 	if(getparam("generate_password") == "on")
-		$extension->password = rand(100000, 999999);
-	elseif(getparam("password"))
-		$extension->password = getparam("password");
-	if(!$extension->password)
-	{
-		edit_extension("Field password is compulsory.");
-		return;
-	}
-	if(strlen($extension->password) < 6)
-	{
-		edit_extension("Password must be at least 6 digits long");
-		return;
-	}
-	if(Numerify($extension->password) == "NULL")
-	{
-		edit_extension("Field password must be numeric");
-		return;
-	}
-		
-//	if($extension->extension_id)
-//		notify($extension->update());
-//	else
-//		notify($extension->insert());
-	$res = ($extension->extension_id) ? $extension->update() : $extension->insert();
+		$params["password"] = rand(100000, 999999);
+	$res = ($extension->extension_id) ? $extension->edit($params) : $extension->add($params);
 	notice($res[1],"no",$res[0]);
 	extensions();
 }
-
 
 function edit_range_database()
 {
@@ -193,33 +132,24 @@ function edit_range_database()
 
 	$from = getparam("from");
 	$to = getparam("to");
+	$error = '';
 	if(strlen($from) < 3)
-	{
-		notice("Field 'From' must have minimum 3 digits", "no", false);
-		$call();
-		return;
-	}
+		$error .= " Field 'From' must have minimum 3 digits";
+
 	if(Numerify($from) == "NULL")
-	{
-		notice("Field 'From' must be numeric", "no", false);
-		$call();
-		return;
-	}
+		$error .= "Field 'From' must be numeric";
+
 	if(strlen($to) != strlen($from))
-	{
-		notice("Field 'To' must have the same number of digits as the 'From' field.", "no", false);
-		$call();
-		return;
-	}
+		$error .= "Field 'To' must have the same number of digits as the 'From' field.";
+
 	if(Numerify($to) == "NULL")
-	{
-		notice("Field 'To' must be numeric", "no", false);
-		$call();
-		return;
-	}
+		$error .= "Field 'To' must be numeric";
+
 	if($from > $to)
+		$error .= "Field 'From' must be smaller than 'To'";
+
+	if($error != "")
 	{
-		notice("Field 'From' must be smaller than 'To'", "no", false);
 		$call();
 		return;
 	}
@@ -238,7 +168,7 @@ function edit_range_database()
 		}
 		if($generate_password == "on")
 			$extension->password = rand(100000,999999);
-		$extension->insert(true);
+		$extension->insert(false);
 	}
 	//message("Finished inserting free extensions is range $from-$to");
 	notice("Finished inserting free extensions is range $from-$to", "no");

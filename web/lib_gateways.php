@@ -38,7 +38,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"formats"=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically"), 
 						"rtp_forward"=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)"),
 						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
-						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
+						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallest priority.")
 						);
 
 	$h323_fields = $iax_fields = array(
@@ -69,7 +69,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 
 	$wp = $zap = array(
 						"gateway"=>array("compulsory"=>true),
-						'chans_group'=>array("advanced"=>true), 
+						'chans_group'=>array("compulsory"=>true), 
 						'formats'=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically") ,
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 					//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
@@ -225,7 +225,9 @@ function edit_gateway_database()
 	}
 
 	$gateway_id = getparam("gateway_id");
-	if(!$gateway_id) {
+	$gateway = new Gateway;
+	$gateway->gateway_id = $gateway_id;
+	if(!$gateway->gateway_id) {
 		$gw_type = getparam("gateway_with_registration");
 		$gw_type = ($gw_type == "Yes") ? "reg" : "noreg";
 		$protocol = getparam($gw_type."protocol");
@@ -238,101 +240,76 @@ function edit_gateway_database()
 	}
 	if(!$protocol)
 	{
-		//errormess("Can't make this operation. Don't have a protocol setted.",$path);
 		notice("Can't make this operation. Don't have a protocol setted.", "gateways", false);
 		return;
 	}
 
-	$gateway = new Gateway;
-	$gateway->gateway_id = $gateway_id;
-	$gateway->gateway = getparam($gw_type."_".$protocol."gateway");
-	if($gateway->objectExists() && $gateway->gateway)
-	{
-		edit_gateway("A gateway named ".$gateway->gateway." is already is use.",$protocol,$gw_type);
-		return;
-	}
-	$gateway->select();
-	$gateway->gateway = getparam($gw_type."_".$protocol."gateway");
-
+	$params["type"] = $gw_type;
 	if($gw_type == "reg")
 	{
-		if($gateway->gateway_id)
-			$compulsory = array("gateway", "username", "server");
-		else
-			$compulsory = array("gateway", "username", "password", "server");
+		$compulsory = array("gateway", "username", "server");
 		for($i=0; $i<count($compulsory); $i++)
-		{
-			if(!($gateway->{$compulsory[$i]} = getparam($gw_type."_".$protocol.$compulsory[$i])))
-			{
-				edit_gateway("Field ".$compulsory[$i]." is compulsory.",$protocol,$gw_type);
-				return;
-			}
-		}
+			$params[$compulsory[$i]] = getparam($gw_type."_".$protocol.$compulsory[$i]);
+
 		$sip = array('authname','outbound', 'domain', 'localaddress', 'description', 'interval', 'number');
-	
 		$h323 = $iax = array('description', 'interval', 'number');
 	
-		for($i=0; $i<count(${$protocol}); $i++) {
-			$gateway->{${$protocol}[$i]} = getparam($gw_type."_".$protocol.${$protocol}[$i]);
-		}
+		for($i=0; $i<count(${$protocol}); $i++)
+			$params[${$protocol}[$i]] = getparam($gw_type."_".$protocol.${$protocol}[$i]);
+
 		if(getparam($gw_type."_".$protocol."password"))
-			$gateway->password = getparam($gw_type."_".$protocol."password");
+			$params["password"] = getparam($gw_type."_".$protocol."password");
 	}else{
+		$params["gateway"] = getparam($gw_type."_".$protocol."gateway");
 		switch($protocol)
 		{
 			case "iax":
-				$gateway->iaxuser = getparam($gw_type."_".$protocol."iaxuser");
-				$gateway->iaxcontext = getparam($gw_type."_".$protocol."iaxcontext");
+				$params["iaxuser"] = getparam($gw_type."_".$protocol."iaxuser");
+				$params["iaxcontext"] = getparam($gw_type."_".$protocol."iaxcontext");
+				break;
 			case "sip":
 			case "h323":
-				$gateway->server = getparam($gw_type."_".$protocol."server");
-				if(!$gateway->server)
-				{
-					edit_gateway("Field server is compulsory for the selected protocol.",$protocol,$gw_type);
-					return;
-				}
-				$gateway->port = getparam($gw_type."_".$protocol."port");
-				if(!$gateway->port)
-				{
-					edit_gateway("Field Port is compulsory for the selected protocol.",$protocol,$gw_type);
-					return;
-				}
-				if(Numerify($gateway->port) == "NULL")
-				{
-					edit_gateway("Field Port must be numeric.",$protocol,$gw_type);
-				}
+				$params["server"] = getparam($gw_type."_".$protocol."server");
+				$params["port"] = getparam($gw_type."_".$protocol."port");
+				break;
 			case "wp":
 			case "zap":
-				$gateway->chans_group = getparam($gw_type."_".$protocol."chans_group");
+				$params["chans_group"] = getparam($gw_type."_".$protocol."chans_group");
 				break;
 		}
 	}
+	$params["protocol"] = $protocol;
+	$params["formats"] = get_formats($gw_type."_".$protocol."formats");
+	$params["enabled"] = (getparam($gw_type."_".$protocol."enabled") == "on") ? "t" : "f";
+	$params["rtp_forward"] = (getparam($gw_type."_".$protocol."rtp_forward") == "on") ? "t" : "f";
+	$params["modified"] = "t";
 
-	$gateway->protocol = $protocol;
-	$gateway->formats = get_formats($gw_type."_".$protocol."formats");
-	$gateway->enabled = (getparam($gw_type."_".$protocol."enabled") == "on") ? "t" : "f";
-	$gateway->rtp_forward = (getparam($gw_type."_".$protocol."rtp_forward") == "on") ? "t" : "f";
-	$gateway->modified = "t";
+	$next = ($_SESSION["wizard"] == "notused") ? "outbound" : "gateways";
 
-//	if(!$gateway->gateway_id)
-//		notify($gateway->insert(true), $path);
-//	else
-//		notify($gateway->update(),$path);
-	$res = (!$gateway->gateway_id) ? $gateway->insert() : $gateway->update();
-
+	$res = ($gateway->gateway_id) ? $gateway->edit($params) : $gateway->add($params);
+	if(!$res[0]) {
+		if(isset($res[2])) 
+			edit_gateway($res[1], $protocol, $gw_type);
+		else
+			notice($res[1], $next, $res[0]);
+		return;
+	}
 	if(!$gateway_id && $gateway->gateway_id) {
 		if (getparam($gw_type."_".$protocol."default_dial_plan") == "on") {
 			$dial_plan = new Dial_Plan;
-			$prio = $dial_plan->fieldSelect("max(priority)") + 10;
-			$dial_plan->gateway_id = $gateway->gateway_id;
-			$dial_plan->priority = $prio;
-			$dial_plan->dial_plan = "default for ".$gateway->gateway;
-			$dial_plan->insert(false);
+			$prio = $dial_plan->fieldSelect("max(priority)");
+			if($prio)
+				$prio += 10;
+			else
+				$prio = 10;
+			$params["gateway_id"] = $gateway->gateway_id;
+			$params["priority"] = $prio;
+			$params["dial_plan"] = "default for ".$gateway->gateway;
+			$res = $dial_plan->add($params);
+			if(!$res[0]) 
+				errormess("Could not add default dial plan: ".$res[1], "no");
 		}
 	}
-	 
-	$next = ($_SESSION["wizard"] == "notused") ? "outbound" : "gateways";
-		
 	notice($res[1], $next, $res[0]);
 }
 
@@ -479,53 +456,26 @@ function edit_dial_plan_database()
 
 	$dial_plan = new Dial_Plan;
 	$dial_plan->dial_plan_id = getparam("dial_plan_id");
-	$dial_plan->dial_plan = getparam("dial_plan");
-	if(!$dial_plan->dial_plan)
-	{
-		edit_dial_plan("Field 'Dial Plan' is required");
+
+	$fields = array("dial_plan", "priority");
+	$params = form_params($fields);
+	$params["gateway_id"] = getparam("gateway");
+	if(!$params["gateway_id"]){
+		edit_dial_plan("You must select a gateway");
 		return;
 	}
-	if($dial_plan->objectExists())
-	{
-		edit_dial_plan("A dial plan with this name already exists");
-		return;
-	}
-	$dial_plan->dial_plan = NULL;
-	$dial_plan->priority = getparam("priority");
-	if(!strlen($dial_plan->priority))
-	{
-		edit_dial_plan("Field 'Priority' is required");
-		return;
-	}
-	if(Numerify($dial_plan->priority) == "NULL")
-	{
-		edit_dial_plan("Field 'Priority' must be numeric");
-		return;
-	}
-	if($dial_plan->objectExists())
-	{
-		edit_dial_plan("This priority was already assigned to another gateway");
-		return;
-	}
-	$dial_plan->dial_plan = getparam("dial_plan");
 	if(getparam("check_to_match_everything") != "on" && !getparam("prefix"))
 	{
 		edit_dial_plan("Please insert the prefix you wish to match or check to match everything");
 		return;
 	}
-	$dial_plan->prefix = (getparam("check_to_match_everything") == "on") ? NULL : getparam("prefix");
-	$dial_plan->gateway_id = getparam("gateway");
-	if($dial_plan->gateway_id == "Not selected" || !$dial_plan->gateway_id)
-	{
-		edit_dial_plan("You must select a gateway");
+	$params["prefix"] = (getparam("check_to_match_everything") == "on") ? NULL : getparam("prefix");
+
+	$res = ($dial_plan->dial_plan_id) ? $dial_plan->edit($params) : $dial_plan->add($params);
+	if(isset($res[2]) && !$res[0]) {
+		edit_dial_plan($res[1]);
 		return;
 	}
-
-//	if($dial_plan->dial_plan_id)
-//		notify($dial_plan->update(),$path);
-//	else
-//		notify($dial_plan->insert(true),$path);
-	$res = ($dial_plan->dial_plan_id) ? $dial_plan->update() : $dial_plan->insert(true);
 	$next = ($_SESSION["wizard"] == "notused") ? "outbound" : "dial_plan";
 	notice($res[1],$next,$res[0]);
 }

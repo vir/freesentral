@@ -535,5 +535,148 @@ class ConfFile
 	}
 }
 
+function address_book()
+{
+	global $method, $action;
+	$method = "address_book";
+	$action = NULL;
+	$short_names = Model::selection("short_name", NULL, "short_name");	
+	tableOfObjects($short_names, array("short_name", "number", "name"), "short_name", array("&method=edit_short_name"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_short_name"=>'<img src="images/delete.gif" title="Edit" alt="Edit"/>'), array("&method=add_short_name"=>"Add shortcut"));
+}
+
+function edit_short_name($error=NULL)
+{
+	if($error)
+		errornote($error);
+
+	$short_name = new Short_Name;
+	$short_name->short_name_id = getparam("short_name_id");
+	$short_name->select();
+
+	$fields = array(
+					"short_name" => array("comment"=>"Name to be dialed", "compulsory"=>true),
+					"number" => array("comment"=>"Number where to place the call", "compulsory"=>true),
+					"name" => ''
+				);
+
+	$title = ($short_name->short_name_id) ? "Edit shortcut" : "Add shortcut ";
+
+	start_form();
+	addHidden("database",array("short_name_id"=>$short_name->short_name_id));
+	editObject($short_name, $fields, $title, "Save");
+	end_form();
+}
+
+function edit_short_name_database()
+{
+	global $module;
+
+	$short_name = new Short_Name;
+	$short_name->short_name_id = getparam("short_name_id");
+	$params = form_params(array("short_name", "number", "name"));;
+	$res = ($short_name->short_name_id) ? $short_name->edit($params) : $short_name->add($params);
+	notice($res[1], "address_book", $res[0]);
+}
+
+function delete_short_name()
+{
+	ack_delete("short_name", getparam("short_name"), NULL, "short_name_id", getparam("short_name_id"));
+}
+
+function delete_short_name_database()
+{
+	global $module;
+
+	$short_name = new Short_Name;
+	$short_name->short_name_id = getparam("short_name_id");
+	$res = $short_name->objDelete();
+	notice($res[1], "address_book", $res[0]);
+}
+
+function admins()
+{
+	global $method;
+	$method = "admins";
+
+	// select all the users in the system order by username
+	$users = Model::selection("user", NULL, 'username');
+
+	tableOfObjects($users,array("username","firstname","lastname","email"),"admin",array("&method=edit_user"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_user"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'),array("&method=add_user"=>"Add admin"));
+}
+
+//generate form to edit or add a user
+function edit_user($error = NULL)
+{
+	if($error)
+		errornote($error);
+
+	$user = new User;
+	$user->user_id = getparam("user_id");
+	$user->select();
+
+	$fields = array(
+						"username"=>array("display"=>"fixed", "compulsory"=>true), 
+						"password"=>array("display"=>"password", "comment"=>"Minimum 5 digits. Insert only if you wish to change."),
+						"email"=>array("compulsory"=>true),
+						"firstname"=>"",
+						"lastname"=>"",
+						"description"=>array("display"=>"textarea")
+				);
+	if(!$user->user_id)
+	{
+		$fields["username"]["display"] = "text";
+		$fields["password"]["compulsory"] = true;
+		$fields["password"]["comment"] = "Minimum 5 digits.";
+		$title = "Add admin";
+
+		$var_names = array("username", "email", "firstname", "lastname", "description");
+		for($i=0; $i<count($var_names); $i++)
+			$user->{$var_names[$i]} = getparam($var_names[$i]);
+	}else
+		$title = "Edit admin ".$user->username;
+
+	start_form();
+	addHidden("database", array("user_id"=>$user->user_id));
+	editObject($user, $fields, $title, "Save", true);
+	end_form();	
+}
+
+//make the database operation associated to adding/editing a user
+function edit_user_database()
+{
+	global $module;
+
+	$user = new User;
+	$user->user_id = getparam("user_id");
+	$params = form_params(array("email", "firstname", "lastname", "description"));
+	if(!getparam("user_id"))
+		$params["username"] = getparam("username");
+	if (($password = getparam("password")))
+		$params["password"] = $password;
+
+	$res = ($user->user_id) ? $user->edit($params) : $user->add($params);
+	notice($res[1], "admins", $res[0]);
+}
+
+// user must acknowledge delete 
+function delete_user()
+{
+	$user = new User;
+	$user->user_id = getparam("user_id");
+	$user->select();
+	ack_delete('admin',$user->username,''/*$user->ackDelete()*/,"user_id",getparam("user_id"));
+}
+
+// perfom the delete option in the database
+function delete_user_database()
+{
+	global $module;
+
+	$user = new User;
+	$user->user_id = getparam("user_id");
+	$res = $user->objDelete();
+	notice($res[1], "admins", $res[0]);
+}
+
 ?>
 </div>

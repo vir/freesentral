@@ -393,6 +393,9 @@ function scheduling_database()
 			$time_frame->insert();
 	}
 
+	if(isset($_SESSION["wiz_config"]))
+		return;
+
 	if($_SESSION["wizard"] != "notused")
 		wizard();
 	else
@@ -429,16 +432,6 @@ function set_period($value, $name)
 		print '>'.$i.'</option>';
 	}
 	print '</select>';
-}
-
-function days_of_week($name, $value=NULL)
-{
-	$days = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
-	for($i=0; $i<count($days); $i++) {
-		print '<input type="checkbox" name="'.$name.strtolower($days[$i]).'">'.$days[$i] . "&nbsp;&nbsp;";
-		if(($i+1)%3 == 0)
-			print '<br/>';
-	}
 }
 
 function prompts($wizard=false)
@@ -486,8 +479,8 @@ function upload_prompts($error=NULL)
 		errornote($error);
 
 	$fields = array(
-					"online" => array("display"=>"file", "comment"=>"Accepted format .wav. Upload prompt for online Auto Attendant."),
-					"offline" => array("display"=>"file", "comment"=>"Accepted formats .wav. Upload prompt for offline Auto Attendant.")
+					"online" => array("display"=>"file", "comment"=>"Accepted format .mp3. Upload prompt for online Auto Attendant."),
+					"offline" => array("display"=>"file", "comment"=>"Accepted formats .mp3. Upload prompt for offline Auto Attendant.")
 				);
 
 	start_form(NULL,"post",true);

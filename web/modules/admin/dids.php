@@ -81,82 +81,14 @@ function edit_did_database()
 	global $module;
 
 	$did = new Did;
-	$did->did_id = getparam("did_id");
-	$did->number = getparam("number");
-	if(!$did->number)
-	{
-		edit_did("Field 'Number' is required.");
-		return;
-	}
-	if(Numerify($did->number) == "NULL")
-	{
-		edit_did("Field 'Number' must be numeric.");
-		return;
-	}
-	if($did->objectExists())
-	{
-		edit_did("A DID for this number already exists.");
-		return;
-	}
-	$did->did = getparam("did");
-	$did->number = NULL;
-	if($did->objectExists())
-	{
-		edit_did("A DID with this name already exists");
-		return;
-	}
-	$did->select();
-	$did->did = getparam("did");
-	$did->number = getparam("number");
-	$did->destination = getparam("destination");
-	if(!$did->destination)
-	{
-		edit_did("Field 'Destination' is required");
-		return;
-	}
-	$did->default_destination = getparam("default_destination");
-	if(substr($did->destination,0,9) == "external/" && !$did->default_destination)
-	{
-		edit_did("Field 'Default destination' is compulsory if 'Destination' is a script");
-		return;
-	}
-	if(substr($did->destination,0,9) != "external/" && $did->default_destination!="Not selected")
-	{
-		print "Field 'Default destination' was ignored. It is taken into account only when destination is a script.";
-		$did->default_destination = NULL;
-		$did->extension_id = NULL;
-		$did->group_id = NULL;
-	}
-	if($did->default_destination=="Not selected")
-		$did->default_destination= NULL;
+	$did->did_id  = getparam("did_id");
+	$params = form_params(array("did", "number", "destination", "default_destination", "extension", "group", "description"));
+	$res = ($did->did_id) ? $did->edit($params) : $did->add($params);
 
-	if($did->default_destination == "extension")
-	{
-		if(!getparam("extension") || getparam("extension") == "Not selected")
-		{
-			edit_did("Please select an extension");
-			return;
-		}
-		$did->extension_id = getparam("extension");
-		$did->group_id = NULL;
-	}
-	if($did->default_destination == "group")
-	{
-		if(!getparam("group") || getparam("group") == "Not selected")
-		{
-			edit_did("Please select a group");
-			return;
-		}
-		$did->group_id = getparam("group");
-		$did->extension_id = NULL;
-	}
-
-//	if($did->did_id)
-//		notify($did->update());
-//	else
-//		notify($did->insert());
-	$res = ($did->did_id) ? $did->update() : $did->insert();
-	notice($res[1], $module, $res[0]);
+	if($res[0])
+		notice($res[1], $module, $res[0]);
+	else
+		edit_did($res[1]);
 }
 
 function delete_did()
@@ -170,7 +102,6 @@ function delete_did_database()
 
 	$did = new Did;
 	$did->did_id  = getparam("did_id");
-	//notify($did->objDelete());
 	$res = $did->objDelete();
 	notice($res[1], $module, $res[0]);
 }

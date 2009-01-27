@@ -20,12 +20,14 @@ function call_logs($error = NULL)
 	if($error)
 		errornote($error);
 
-	$caller = getparam("caller");
-	$called = getparam("called");
+//	$caller = getparam("caller");
+//	$called = getparam("called");
+	$number = getparam("number");
 
 	$fields = array(
-					"caller"=>array("value"=>$caller, "comment"=>"If you insert the caller number the called number will automatically be ".$_SESSION["user"]),
-					"called"=>array("value"=>$called, "comment"=>"If you insert the called number the caller number will automatically be ".$_SESSION["user"]),
+				//	"caller"=>array("value"=>$caller, "comment"=>"If you insert the caller number the called number will automatically be ".$_SESSION["user"]),
+				//	"called"=>array("value"=>$called, "comment"=>"If you insert the called number the caller number will automatically be ".$_SESSION["user"]),
+					"number" => array("value"=>$number, "comment"=>"Number you wish to search calls for."),
 					"from_date"=>array("display"=>"month_day_year_hour"),
 					"to_date"=>array("display"=>"month_day_year_hour_end"),
 					"available_columns"=>array("display"=>"available_call_logs_columns", "comment"=>"Check the columns you wish to be displayed")
@@ -55,45 +57,38 @@ function call_logs_database()
 {
 	global $limit,$page;
 
-	if(getparam("caller") && getparam("called"))
+/*	if(getparam("caller") && getparam("called"))
 	{
 		call_logs("You can't set both the caller and the called in a single search");
 		return;
-	}
+	}*/
+
+	$number = getparam("number");
 
 	$from = get_date(getparam("from_datehour"),'00',"from_date");
 	$to = get_date(getparam("to_datehour"),'59',"to_date");
 	$conditions = array("time"=>array(">$from", "<$to"));
 
-	$direction = getparam("direction");
-	if($direction == "incoming" || $direction == "outgoing")
-		$conditions["direction"] = $direction;
-	elseif($direction == "Not selected" || $direction == "")
-		$conditions["direction"] = "incoming";
+	$where = " WHERE call_logs.\"time\">'$from' AND call_logs.\"time\"<'$to'";
 
 	$caller = getparam("caller");
 	$called = getparam("called");
-	if($caller) {
-		$conditions["caller"] = $caller;
-		$conditions["called"] = $_SESSION["user"];
-		$conditions["direction"] = "outgoing";
-	}elseif($called) {
-		$conditions["called"] = $called;
-		$conditions["caller"] = $_SESSION["user"];
-		$conditions["direction"] = "incoming";
+
+	if($number)
+	{
+		$where .= " AND ((caller='$number' AND called='".$_SESSION["user"]."' AND direction='outgoing') OR (called='$number' AND caller='".$_SESSION["user"]."' AND direction='incoming'))";
 	}else{
-		$conditions[0] = array("caller"=>$_SESSION["user"], "called"=>$_SESSION["user"]);
-		$conditions["direction"] = "outgoing";
+		$where .= " AND (caller='".$_SESSION["user"]."' OR called='".$_SESSION["user"]."') AND direction='incoming'";
 	}
 
 	$total = getparam("total");
 	if(!$total)
 	{
 		$call_log = new Call_Log;
-		$total = $call_log->fieldSelect('count(*)',$conditions);
+		$total = $call_log->fieldSelect('count(*)',NULL, NULL, NULL, NULL, NULL, $where);
 	}
 
-	$call_logs = Model::selection("call_log",$conditions,"time DESC",$limit,$page);
+	$call_logs = Model::selection("call_log",NULL,"time DESC",$limit,$page,$where);
 
 	$columns = array("time"=>true, "address"=>false, "billid"=>false, "caller"=>true, "called"=>true, "duration"=>true, "billtime"=>false, "ringtime"=>false, "status"=>true, "reason"=>false, "ended"=>false);
 

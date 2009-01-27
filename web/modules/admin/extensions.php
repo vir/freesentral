@@ -128,7 +128,7 @@ function edit_extension($error = NULL)
 	/*	$extension->mac_address = getparam("mac_address");
 		$extension->equipment_id = getparam("equipment");*/
 	}
-	$equipments["selected"] = $equipments;
+//	$equipments["selected"] = $equipments;
 	$max_minutes = interval_to_minutes($extension->used_minutes);
 	$max_minutes = (!$max_minutes) ? NULL : $max_minutes;
 	$fields = array(
@@ -200,49 +200,8 @@ function edit_group_database()
 	$path .= "&method=groups";
 	$group = new Group;
 	$group->group_id = getparam("group_id");
-	$group->group = getparam("group");
-	if(!$group)
-	{
-		edit_group("Field 'Group' is required");
-		return;
-	}
-	if($group->objectExists())
-	{
-		edit_group("There is already a group with this name");
-		return;
-	}
-	$group->select();
-	$group->group = getparam("group");
-	$group->extension = getparam("extension");
-	if(!$group->extension)
-	{
-		edit_group("Field 'Extension' is required");
-		return;
-	}
-	if(strlen($group->extension) != 2)
-	{
-		edit_group("Field 'Extension' must be at least 2 digits long");
-		return;
-	}
-	$group2 = new Group;
-	$group2->group_id = $group->group_id;
-	$group2->extension = $group->extension;
-	if($group2->objectExists())
-	{
-		edit_group("A group with this extension already exists.");
-		return;
-	}
-	$group->playlist_id = getparam("playlist");
-	if(!$group->playlist_id || $group->playlist_id == "Not selected")
-	{
-		edit_group("Please select a file for music on hold. If you don't have any file uploaded go to Settings >> Music on Hold in order to upload the songs and create playlists.");
-		return;
-	}
-//	if($group->group_id)
-//		notify($group->update(),$path);
-//	else
-//		notify($group->insert(),$path);
-	$res = ($group->group_id) ? $group->update() : $group->insert();
+	$params = form_params(array("group", "extension", "playlist"));
+	$res = ($group->group_id) ? $group->edit($params) : $group->add($params);
 	notice($res[1],"groups",$res[0]);
 }
 

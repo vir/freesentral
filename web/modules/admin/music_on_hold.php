@@ -138,16 +138,8 @@ function edit_music_on_hold_database()
 
 	$music_on_hold = new Music_on_Hold;
 	$music_on_hold->music_on_hold_id = getparam("music_on_hold_id");
-	if(!$music_on_hold->music_on_hold_id)
-	{
-		//errormess("Don't have the id of this song.",$path);
-		notice("Don't have the id of this song.", "music_on_hold", false);
-		return;
-	}
-	$music_on_hold->select();
-	$music_on_hold->description = getparam("description");
-	//notify($music_on_hold->update(),$path);
-	$res = $music_on_hold->update();
+	$params = form_params(array("description"));
+	$res = $music_on_hold->edit($params);
 	notice($res[1], "music_on_hold", $res[0]);
 }
 
@@ -264,33 +256,9 @@ function edit_playlist_database()
 
 	$playlist = new Playlist;
 	$playlist->playlist_id = getparam("playlist_id");
-	$playlist->playlist = getparam("playlist");
-	if(!$playlist->playlist) {
-		edit_playlist("Field 'Playlist' is required.");
-		return;
-	}
-	if($playlist->objectExists()) {
-		edit_playlist("There is another playlist with this name.");
-		return;
-	}
+	$params = form_params(array("playlist", "in_use"));
 
-	$playlist->select();
-	$playlist->playlist = getparam("playlist");
-	$playlist->in_use = (getparam("in_use") == "on") ? "t" : "f";
-	if($playlist->in_use == "t") {
-		$pl = new Playlist;
-		$pl->in_use = 'f';
-		$conditions = array("in_use"=>true);
-		if($playlist->playlist_id)
-			$conditions["playlist_id"] = "!=".$playlist->playlist_id;
-		$pl->fieldUpdate($conditions, array("in_use"));
-	}
-
-//	if($playlist->playlist_id)
-//		notify($playlist->update(),$path);
-//	else
-//		notify($playlist->insert(),$path);
-	$res = ($playlist->playlist_id) ? $playlist->update() : $playlist->insert();
+	$res = ($playlist->playlist_id) ? $playlist->edit($params) : $playlist->add($params);
 	notice($res[1], "playlists", $res[0]);
 }
 

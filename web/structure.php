@@ -9,8 +9,8 @@ $struct["admin_admins"] = array("manage", "add_admin");
 $struct["admin_extensions"] = array("manage","groups", "add_extension", "add_range","add_group", "search", "import", "export");
 $struct["admin_outbound"] = array("gateways", "dial_plan", "add_gateway", "add_dial_plan");
 $struct["admin_auto_attendant"] = array("prompts", "keys", "scheduling", "wizard");
-$struct["admin_settings"] = array("general"/*, "equipments"*/, "network");
-$struct["admin_HOME"] = array("manage", "logs", "ongoing_calls");
+$struct["admin_settings"] = array("general"/*, "equipments"*/, "network", "address_book", "admins");
+$struct["admin_HOME"] = array("manage", "logs", "ongoing_calls", "call_logs");
 $struct["admin_music_on_hold"] = array("music_on_hold", "playlists", "add_playlist");
 
 ?>
