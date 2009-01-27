@@ -8,8 +8,8 @@ class Pbx_Setting extends Model
 	{
 		return array(
 					"pbx_setting_id" => new Variable("serial"),
-					"extension_id" => new Variable("serial", NULL, "extensions"),
-					"param" => new Variable("text"),
+					"extension_id" => new Variable("serial", "!null", "extensions"),
+					"param" => new Variable("text", "!null"),
 					"value" => new Variable("text")
 				);
 	}

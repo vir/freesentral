@@ -6,10 +6,10 @@ class Short_Name extends Model
 	public function variables()
 	{ 
 		return array(
-				"short_name_id" => new Variable("serial"),
-				"short_name" => new Variable("text"),
+				"short_name_id" => new Variable("serial", "!null"),
+				"short_name" => new Variable("text", "!null"),
 				"name" => new Variable("text"),
-				"number" => new Variable("text")
+				"number" => new Variable("text", "!null")
 			);
 	}
 
@@ -17,5 +17,99 @@ class Short_Name extends Model
 	{
 		parent::__construct();
 	}	
+
+	function setObj($params)
+	{
+		$this->short_name = strtolower(field_value("short_name",$params));
+		if(($msg = $this->objectExists())) 
+			return array(false, (is_numeric($msg)) ? "This 'Short name' is already defined." : $msg);
+		$this->select();
+		$this->setParams($params);
+		$this->short_name = strtolower(field_value("short_name",$params));
+
+		$match_number = self::getMatchingNumber($this->short_name);
+		if(!$match_number) 
+			return array (false,"You used invalid characters. You are only allowed to use the letters that you see on your phone's keypad.");
+
+		$options = self::getPossibleOptions($match_number);
+		$query = "SELECT count(*) FROM short_names WHERE short_name IN ($options)";
+		if($this->short_name_id)
+			$query .= " AND short_name_id!=".$this->short_name_id;
+		$res = Database::query($query);
+		$res = query_to_array($res);
+
+		if($res[0]["count"])
+			return array(false, "This short name could be confused with another name. Please use another combination.");
+		return parent::setObj($params);
+	}
+
+	public static function getMatchingNumber($name)
+	{
+		$alph = array(
+					2 => array("a", "b", "c"),
+					3 => array("d", "e", "f"),
+					4 => array("g", "h", "i"),
+					5 => array("j", "k", "l"),
+					6 => array("m", "n", "o"),
+					7 => array("p", "q", "r", "s"),
+					8 => array("t", "u", "v"),
+					9 => array("w", "x", "y", "z")
+				);
+
+		$number = '';
+		for($l=0; $l<strlen($name); $l++)
+		{
+			$found = false;
+			for($i=2; $i<10; $i++)
+			{
+				if(in_array($name[$l],$alph[$i])) {
+					$found = true;
+					break;
+				}
+			}
+			if(!$found)
+				return false;
+			$number .= $i;
+		}
+		return $number;
+	}
+
+	public static function getPossibleOptions($number)
+	{
+		$posib = array();
+
+		$alph = array(
+					2 => array("a", "b", "c"),
+					3 => array("d", "e", "f"),
+					4 => array("g", "h", "i"),
+					5 => array("j", "k", "l"),
+					6 => array("m", "n", "o"),
+					7 => array("p", "q", "r", "s"),
+					8 => array("t", "u", "v"),
+					9 => array("w", "x", "y", "z")
+				);
+
+		for($i=0; $i<strlen($number); $i++)
+		{
+			$digit = $number[$i];
+			$letters = $alph[$digit];
+			if(!count($posib)) {
+				$posib = $letters;
+				continue;
+			}
+			$s_posib = $posib;
+			for($k=0; $k<count($letters); $k++)
+			{
+				if($k==0)
+					for($j=0; $j<count($posib); $j++)
+						$posib[$j] .= $letters[$k];
+				else
+					for($j=0; $j<count($s_posib); $j++)
+						array_push($posib, $s_posib[$j].$letters[$k]);
+			}
+		}
+		$options = implode("', '",$posib);
+		return "'$options'";
+	}
 }
 ?>

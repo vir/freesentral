@@ -6,10 +6,10 @@ class Key extends Model
 	public static function variables()
 	{
 		return array(
-					"key_id" => new Variable("serial"),
-					"key" => new Variable("text"),
-					"prompt_id" => new Variable("serial",NULL,"prompts"),
-					"destination" => new Variable("text"),
+					"key_id" => new Variable("serial", "!null"),
+					"key" => new Variable("text", "!null"),
+					"prompt_id" => new Variable("serial", "!null","prompts"),
+					"destination" => new Variable("text", "!null"),
 					"description" => new Variable("text")
 				);
 	}
@@ -23,6 +23,16 @@ class Key extends Model
 	public function getTableName()
 	{
 		return "keys";
+	}
+
+	public function setObj($params)
+	{
+		$this->key = field_value("key", $params);
+		if(($msg = $this->objectExists()))
+			return array(false, (is_numeric($msg)) ? "This key ".$this->key." is already defined." : $msg);
+		if(!is_numeric($key)) 
+			return array(false, "Field 'Key' must be numeric.");
+		
 	}
 }
 ?>

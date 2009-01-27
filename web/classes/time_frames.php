@@ -7,11 +7,11 @@ class Time_Frame extends Model
 	{
 		return array(
 					"time_frame_id" => new Variable("serial"),
-					"prompt_id" => new Variable("serial",NULL,"prompts"),
-					"day" => new Variable("text"), //day the week
+					"prompt_id" => new Variable("serial", "!null","prompts"),
+					"day" => new Variable("text", "!null"), //day the week
 					"start_hour" => new Variable("text"), 
 					"end_hour" => new Variable("text"),
-					"numeric_day" => new Variable("int2")
+					"numeric_day" => new Variable("int2", "!null")
 				);
 	}
 

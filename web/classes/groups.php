@@ -7,10 +7,10 @@ class Group extends Model
 	public static function variables()
 	{
 		return array(
-					"group_id" => new Variable("serial"),
-					"group" => new Variable("text"),
+					"group_id" => new Variable("serial","!null"),
+					"group" => new Variable("text","!null"),
 					"description" => new Variable("text"),
-					"extension" => new Variable("text"),
+					"extension" => new Variable("text","!null"),
 					"mintime" => new Variable("int2"),
 					"length" => new Variable("int2"),
 					"maxout" => new Variable("int2"),
@@ -18,13 +18,39 @@ class Group extends Model
 					"maxcall" => new Variable("int2"),
 					"prompt" => new Variable("text"),
 					"details" => new Variable("bool"),
-					"playlist_id" => new Variable("serial",NULL,"playlosts")   //prompts to be played when user is in queue
+					"playlist_id" => new Variable("serial",NULL,"playlists")   //prompts to be played when user is in queue
 				);
 	}
 
 	function __construct()
 	{
 		parent::__construct();
+	}
+
+	public function setObj($params)
+	{
+		$this->group = field_value("group",$params);
+		if(($msg = $this->objectExists()))
+			return array(false,(is_numeric($msg)) ? "There is already a group with this name ".$group->group : $msg);
+
+		$this->select();
+		$this->setParams($params);
+		if(strlen($this->extension) != 2)
+			return array(false,"Field 'Extension' must be at least 2 digits long");
+
+		$this2 = new Group;
+		$this2->group_id = $this->group_id;
+		$this2->extension = $this->extension;
+
+		if($this2->objectExists())
+			return array(false,"A group with this extension already exists: ".$this2->extension);
+		$this->playlist_id = field_value("playlist",$params);
+		if($this->playlist_id == "Not selected")
+			$this->playlist_id = NULL;
+	//	if(!$this->playlist_id || $this->playlist_id == "Not selected")
+	//		return array(false, "Please select a file for music on hold. If you don't have any file uploaded go to Settings >> Music on Hold in order to upload the songs and create playlists.");
+
+		return parent::setObj($params);
 	}
 }
 /*

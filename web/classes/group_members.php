@@ -7,9 +7,9 @@ class Group_Member extends Model
 	public static function variables()
 	{
 		return array(
-					"group_member_id" => new Variable("serial"),
-					"group_id" => new Variable("serial",NULL,"groups",true),
-					"extension_id" => new Variable("serial",NULL,"extensions",true)
+					"group_member_id" => new Variable("serial", "!null"),
+					"group_id" => new Variable("serial","!null","groups",true),
+					"extension_id" => new Variable("serial","!null","extensions",true)
 				);
 	}
 
