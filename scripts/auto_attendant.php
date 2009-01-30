@@ -3,11 +3,8 @@
 require_once("lib_queries.php");
 require_once("libyate.php");
 
+
 $ourcallid = "auto_attendant/" . uniqid(rand(),1);
-/* Install filtered handlers for the wave end and dtmf notify messages */
-Yate::Install("chan.dtmf",100,"targetid",$ourcallid);
-Yate::Install("chan.notify",100,"targetid",$ourcallid);
-Yate::Install("engine.timer",100);
 
 $wait_time = 4; //number of seconds that script has to wait after user input in order to see if another digit will be pressed
 $hold_keys = '';
@@ -25,8 +22,9 @@ function setState($newstate)
 	global $wait_time;
 	global $caller;
 	global $hold_keys;
-	global $destinations;
+	global $destination;
 	global $called;
+	global $ev;
 
     // are we exiting?
     if ($state == "")
@@ -40,7 +38,7 @@ function setState($newstate)
 		case "greeting":
 			// check what prompt to use for this time of day
 			$state = $newstate;
-			$query = "select prompt_id, prompt from time_frames, prompts where numeric_day=extract(dow from now()) and cast(start_hour as integer)<=extract(HOUR FROM now()) AND cast(end_hour as integer)>extract(HOUR FROM now()) and time_frames.prompt_id=prompts.prompt_id UNION select prompt_id, prompt from prompts where status='offline'";
+			$query = "select prompts.prompt_id, prompts.prompt from time_frames, prompts where numeric_day=extract(dow from now()) and cast(start_hour as integer)<=extract(HOUR FROM now()) AND cast(end_hour as integer)>extract(HOUR FROM now()) and time_frames.prompt_id=prompts.prompt_id UNION select prompt_id, prompt from prompts where status='offline'";
 			$res = query_to_array($query);
 			if(!count($res))
 			{
@@ -51,11 +49,11 @@ function setState($newstate)
 			$prompt_id = $res[0]["prompt_id"];
 			$prompt =  $res[0]["prompt"];
 			// here we must have ".au"
-			$prompt = str_replace(".wav", ".u", $prompt);
+			$prompt = str_ireplace(".mp3", ".slin", $prompt);
 			$query = "SELECT key, destination FROM keys WHERE prompt_id=$prompt_id";
 			$keys = query_to_array($query);
 			$m = new Yate("chan.attach" );
-			$m->params["source"] = "wave/play/$uploaded_prompts/$prompt";
+			$m->params["source"] = "wave/play/$uploaded_prompts/auto_attendant/$prompt";
 			$m->params["notify"] = $ourcallid;
 			$m->Dispatch();
 			break;
@@ -84,7 +82,7 @@ function setState($newstate)
 					break;
 				}
 			}
-			if($called = '')
+			if($called == '')
 			{
 				$query = "SELECT (CASE WHERE default_destination='extension' THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number=$called";
 				$res = query_to_array($query);
@@ -102,11 +100,12 @@ function setState($newstate)
 			$m->Dispatch();
 		case "send_call":
 			$m = new Yate("chan.masquerade");
+			$m->params = $ev->params;
 			$m->params["message"] = "call.execute";
 			$m->params["called"] = $hold_keys;
-			$m->params["caller"] = $calller;
+			$m->params["caller"] = $caller;
 			$m->params["id"] = $partycallid;
-			$m->params["location"] = $destination;
+			$m->params["callto"] = $destination;
 			$m->Dispatch();
 	}
 }
@@ -155,6 +154,14 @@ function gotNotify($reason)
 			
 	}	
 }
+
+Yate::Init();
+Yate::Debug(true);
+/* Install filtered handlers for the wave end and dtmf notify messages */
+// chan.dtmf should have a greater priority than that of pbxassist(by default 15)
+Yate::Install("chan.dtmf",10,"targetid",$ourcallid);
+Yate::Install("chan.notify",100,"targetid",$ourcallid);
+Yate::Install("engine.timer",100);
 
 /* The main loop. We pick events and handle them */
 while ($state != "") {
@@ -218,7 +225,7 @@ while ($state != "") {
 		$ev->Acknowledge();
 	    break;
 	case "answer":
-	    // Yate::Debug("PHP Answered: " . $ev->name . " id: " . $ev->id);
+	     Yate::Debug("PHP Answered: " . $ev->name . " id: " . $ev->id);
 	    if ($ev->name == "call.route") {
 			$destination = $ev->retval;
 			setState("send_call");
