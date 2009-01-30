@@ -17,7 +17,7 @@ class Group extends Model
 					"greeting" => new Variable("text"),
 					"maxcall" => new Variable("int2"),
 					"prompt" => new Variable("text"),
-					"details" => new Variable("bool"),
+					"detail" => new Variable("bool"),
 					"playlist_id" => new Variable("serial",NULL,"playlists")   //prompts to be played when user is in queue
 				);
 	}
