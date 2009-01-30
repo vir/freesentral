@@ -23,6 +23,7 @@ $user = "";
 $file = "";
 
 $vm_func_for_dir = "getCustomVoicemailDir";
+Yate::Debug(true);
 
 /* Check if the user exists and prepare a filename if so */
 function checkUser($called,$caller)
