@@ -5,12 +5,16 @@ require_once("lib_queries.php");
 
 $s_fallbacks = array();
 $s_statusaccounts = array();
+$s_moh = array();
 $stoperror = array("busy", "noanswer", "looping");
 $reg_init = false;
 $next_time = 0;
-$time_step = 30;
+$time_step = 90;
 
-$pickup_key = "*"; //key marking that a certain call is a pickup
+$moh_time_step = 60*5; // 5 minutes
+$moh_next_time = 0;
+
+$pickup_key = "000"; //key marking that a certain call is a pickup
 $adb_keys = "**";  //keys marking that the address book should be used to find the real called number
 
 $posib = array("no_groups", "no_pbx");
@@ -27,17 +31,43 @@ for($i=0; $i<count($posib); $i++) {
 }
 
 /**
+ * Set the array of music_on_hold by playlist. This array is updated periodically.
+ * @param $time, Time when function was called. It's called with this param after engine.timer, If empty i want to update the list, probably because i didn't have the moh for a certain playlist
+ */
+function set_moh($time = NULL)
+{
+	global $moh_time_step, $moh_next_time, $s_moh, $last_time, $uploaded_prompts;
+
+	if(!$time)
+		$time = $last_time;
+	$moh_next_time = $time + $moh_time_step;
+	$query = "SELECT playlists.playlist_id, playlists.in_use, music_on_hold.file as music_on_hold FROM playlists, music_on_hold, playlist_items WHERE playlists.playlist_id=playlist_items.playlist_id AND playlist_items.music_on_hold_id=music_on_hold.music_on_hold_id ORDER BY playlists.playlist_id";
+	$playlists = query_to_array($query);
+	$l_moh = array();
+	for($i=0; $i<count($playlists); $i++)
+	{
+		$playlist_id = $playlists[$i]["playlist_id"];
+		if(!isset($l_moh[$playlist_id]))
+			$l_moh[$playlist_id] = '';
+		$moh = "$uploaded_prompts/moh/".$playlists[$i]["music_on_hold"];
+		$l_moh[$playlist_id] .=  ($l_moh[$playlist_id] != '') ? ' '.$moh : $moh;
+	}
+	$s_moh = $l_moh;
+}
+
+/**
  * Build the location to send a call depending on the protocol
  * @param $params array of type "field_name"=>"field_value" 
  * @param $called Number where the call will be sent to
  * @return String representing the resource the call will be made to
  */ 
-function build_location($params, $called)
+function build_location($params, $called, &$copy_ev)
 {
-	if($params["username"] && $params["username"] != '') 
+	if($params["username"] && $params["username"] != '') {
 		// this is a gateway with registration
-		return $params["protocol"]."/".$params["gateway"];
-	else{
+		$copy_ev["line"] = $params["gateway"];
+		return "line/$called";
+	}else{
 		switch($params["protocol"]) {
 			case "sip":
 				return "sip/sip:$called@".$params["server"].":".$params["port"];
@@ -45,7 +75,7 @@ function build_location($params, $called)
 				return "h323/$called@".$params["server"].":".$params["port"];
 			case "wp":
 			case "zap":
-				return $params["protocol"]."/".$params["chan_group"]."/".$called;
+				return $params["protocol"]."/".$params["chans_group"]."/".$called;
 			case "iax":
 				if(!$params["iaxuser"])
 					$params["iaxuser"] = "";
@@ -147,13 +177,20 @@ function rewrite_digits($route, $nr)
  */
 function routeToGroup($called)
 {
+	global $uploaded_prompts, $ev, $s_moh;
+
+	$path = "$uploaded_prompts/moh/";
+
 	if(strlen($called) == 2) {
 		// call to a group
-		$query = "SELECT group_id FROM groups WHERE extension='$called'";
+		$query = "SELECT group_id, (CASE WHEN playlist_id IS NULL THEN (SELECT playlist_id FROM playlists WHERE in_use='t') else playlist_id END) as playlist_id FROM groups WHERE extension='$called'";
 		$res = query_to_array($query);
 		if(!count($res))
 			return false;
-		set_retval("queues/".$res[0]["group_id"]);
+		set_retval("queue/".$res[0]["group_id"]);
+		if(!isset($s_moh[$res[0]["playlist_id"]]))
+			set_moh();
+		$ev->params["mohlist"] = $s_moh[$res[0]["playlist_id"]];
 		return true;
 	}
 	return false;
@@ -169,7 +206,8 @@ function makePickUp($called,$caller)
 {
 	global $pickup_key;
 
-	if(strlen($called) == 3 && substr($called,0,strlen($pickup_key)) == $pickup_key) {
+	$keyforgroup = strlen($pickup_key) + 2;
+	if(strlen($called) == $keyforgroup && substr($called,0,strlen($pickup_key)) == $pickup_key) {
 		// someone is trying yo pickup a call that was made to a group
 		$extension = substr($called,strlen($pickup_key),strlen($called));
 		$query = "SELECT group_id FROM groups WHERE extension='$extension'";
@@ -183,8 +221,8 @@ function makePickUp($called,$caller)
 
 	if(substr($called,0,strlen($pickup_key)) == $pickup_key) {
 		// try to improvize a pick up -> pick up the current call of a extension that is in the same group as the caller
-		$extension = substr($called,1,strlen($called));
-		$query = "SELECT chan FROM call_logs, extensions, group_members WHERE direction='outgoing' AND ended IS FALSE AND extensions.extension=call_logs.called AND extensions.extension='$extension' AND extensions.extension_id=group_members.extension_id AND group_members.group_id IN (SELECT group_id FROM group_members NATURAL JOIN extensions WHERE extensions.extension='$caller')";
+		$extension = substr($called,strlen($pickup_key),strlen($called));
+		$query = "SELECT chan FROM call_logs, extensions, group_members WHERE direction='outgoing' AND ended IS NOT TRUE AND extensions.extension=call_logs.called AND extensions.extension='$extension' AND extensions.extension_id=group_members.extension_id AND group_members.group_id IN (SELECT group_id FROM group_members NATURAL JOIN extensions WHERE extensions.extension='$caller')";
 		$res = query_to_array($query);
 		if(count($res))
 			set_retval("pickup/".$res[0]["chan"]);  //make the pickup
@@ -252,6 +290,9 @@ function routeToExtension($called)
 		}
 	}
 
+	// if no destination found, try sending call to voicemail(it might be set or not)
+	if(!$destination)
+		$destination = $voicemail;
 	set_retval($destination, "offline");
 	return true;
 }
@@ -388,7 +429,7 @@ function return_route($called,$caller,$no_forward=false)
 		$fallback[$j]["called"] = rewrite_digits($res[$i],$called);
 		$fallback[$j]["formats"] = ($res[$i]["formats"]) ? $res[$i]["formats"] : $ev->GetValue("formats");
 		$fallback[$j]["rtp_forward"] = ($rtp_f == "possible" && $res[$i]["rtp_forward"] == 't') ? "yes" : "no";
-		$location = build_location($res[$i],$called);
+		$location = build_location($res[$i],rewrite_digits($res[$i],$called),$fallback[$j]);
 		if (!$location)
 			continue;
 		$fallback[$j]["location"] = $location;
@@ -400,7 +441,7 @@ function return_route($called,$caller,$no_forward=false)
 	}
 	$best_option = count($fallback) - 1;
 	set_retval($fallback[$best_option]["location"]);
-	Yate::Output("Sending $id to ".$fallback[$best_option]["location"]);
+	Yate::Debug("Sending $id to ".$fallback[$best_option]["location"]);
 	unset($fallback[$best_option]["location"]);
 	$ev->params = $fallback[$best_option];
 	unset($fallback[$best_option]);
@@ -434,7 +475,7 @@ function set_retval($callto, $error = NULL)
 
 // Always the first action to do 
 Yate::Init();
-
+Yate::Debug(true);
 if(Yate::Arg()) {
 	Yate::Output("Executing startup time CDR cleanup");
 	$query = "UPDATE call_logs SET ended='t' where ended IS NOT TRUE or ended IS NULL;
@@ -477,6 +518,7 @@ for($i=0; $i<count($res); $i++) {
 	$m->Dispatch();
 }
 
+set_moh();
 
 // The main loop. We pick events and handle them 
 for (;;) {
@@ -492,7 +534,7 @@ for (;;) {
 	case "incoming":
 		switch ($ev->name) {
 			case "engine.command":
-				Yate::Output("Got engine.command : line=".$ev->GetValue("line"));
+				Yate::Debug("Got engine.command : line=".$ev->GetValue("line"));
 				$line = $ev->GetValue("line");
 				if($line == "query on")
 					$query_on = true;
@@ -511,9 +553,12 @@ for (;;) {
 				$ev->handled = false;
 				break;
 			case "engine.timer":
-				if (time() < $next_time)
+				$time = $ev->GetValue("time");
+				if ($moh_next_time < $time)
+					set_moh($time);
+				if ($time < $next_time)
 					break;
-				$next_time = time() + $time_step;
+				$next_time = $time + $time_step;
 				$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, number, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND modified IS TRUE AND username is NOT NULL";
 				$res = query_to_array($query);
 				for($i=0; $i<count($res); $i++) {
@@ -549,6 +594,7 @@ for (;;) {
 			case "user.unregister":
 				$query = "UPDATE extensions SET location=NULL,expires=NULL WHERE expires IS NOT NULL AND extension='".$ev->GetValue("username")."'";
 				$res = query_nores($query);
+				$ev->handled = true;
 				break;
 			case "call.route":
 				$caller = $ev->getValue("caller");
@@ -557,33 +603,29 @@ for (;;) {
 				break;
 			case "call.answered":
 				$id = $ev->GetValue("targetid");
-				if (isset($s_fallbacks[$id]))
+				Yate::Debug("Got call.answered for '$id'. Removing fallback if setted.");
+				if (isset($s_fallbacks[$id])) {
+					Yate::Debug("Removing fallback for '$id'");
 					unset($s_fallbacks[$id]);
-				break;
-			case "chan.hangup":
-				$id = $ev->GetValue("id");
-				if (isset($s_fallbacks[$id]))
-					unset($s_fallbacks[$id]);
+				}
 				break;
 			case "chan.disconnected":
 				$id = $ev->GetValue("id");
 				$reason = $ev->GetValue("reason");
 				if (!isset($s_fallbacks[$id]))
 					break;
-
-				Yate::Output("got chan.disconnected for $id with reason $reason");
+				Yate::Debug("Got chan.disconnected for '$id' with reason '$reason'");
 				if (in_array($reason, $stoperror)) {
-					Yate::Output("dropping all fallback for $id");
+					Yate::Debug("Dropping all fallback for '$id'");
 					unset($s_fallbacks[$id]);
 					break;
 				}
-
 				$msg = new Yate("call.execute");
 				$msg->id = $ev->id;
 				$nr = count($s_fallbacks[$id]) - 1;
 
 				$callto = $s_fallbacks[$id][$nr]["location"];
-				Yate::Output("Doing fallback for $id to $callto");
+				Yate::Debug("Doing fallback for '$id' to '$callto'");
 				unset($s_fallbacks[$id][$nr]["location"]);
 				$msg->params = $s_fallbacks[$id][$nr];
 				$msg->params["callto"] = $callto;
