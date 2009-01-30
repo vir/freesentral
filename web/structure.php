@@ -13,4 +13,7 @@ $struct["admin_settings"] = array("general"/*, "equipments"*/, "network", "addre
 $struct["admin_HOME"] = array("manage", "logs", "ongoing_calls", "call_logs");
 $struct["admin_music_on_hold"] = array("music_on_hold", "playlists", "add_playlist");
 
+// options to be disabled
+$block["admin_settings"] = array("network"); 
+
 ?>

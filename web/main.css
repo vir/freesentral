@@ -326,6 +326,13 @@ a.secondlinkselected
 	text-decoration: underline; 
 }
 
+a.secondlinkinactive
+{
+	color: #cccccc;
+	font-size:13px;
+	text-decoration:underline;
+}
+
 /*
 td.left_column
 {

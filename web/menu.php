@@ -205,7 +205,7 @@ function dont_load($name)
 
 function submenu()
 {
-	global $module,$dir,$struct,$method,$support;
+	global $module,$dir,$struct,$method,$support,$block;
 	if(!isset($struct[$dir.'_'.$module]))
 		return;
 	$i = 0;
@@ -213,7 +213,6 @@ function submenu()
 	print '<table class="secondmenu"> 
 			<tr>';
 	print '<td class="padd">&nbsp;</td>';
-
 	if(!$method) {
 		if(in_array("manage", $struct["$dir"."_".$module]))
 			$method = "manage";
@@ -228,9 +227,15 @@ function submenu()
 			print("<td class=\"fillfree\">&nbsp;</td>");
 			print '</tr><tr>';
 		}
-		if($method == $option)
+		$printed = false;
+		if(isset($block["$dir"."_".$module])) 
+			if(in_array($option, $block["$dir"."_".$module])) {
+				print("<td class=\"option\"><a class=\"secondlinkinactive\">");
+				$printed = true;
+			}
+		if($method == $option && !$printed)
 			print("<td class=\"option\"><a class=\"secondlinkselected\" href=\"main.php?module=$module&method=$option\">");//.strtoupper($option)."</a></td>");
-		else
+		elseif(!$printed)
 			print("<td class=\"option\"><a class=\"secondlink\" href=\"main.php?module=$module&method=$option\"><div>");//.strtoupper($option)."</a></td>");
 		print str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$option)));
 		print("</div></a></td><td class=\"option_separator\"><div></div></td>");
