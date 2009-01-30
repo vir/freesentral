@@ -178,7 +178,7 @@ class Wizard
 					$new_filename = "$upload_path/$file";
 					if(is_file($new_filename)) {
 						$parts = explode(".", $new_filename);
-						$extension = $parts[count($parts) - 1];
+						$extension = strtolower($parts[count($parts) - 1]);
 						unset($parts[count($parts) - 1]);
 						$new_filename = implode(".",$parts);
 						$new_filename .= "_";

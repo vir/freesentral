@@ -521,7 +521,7 @@ function reupload_prompt_database()
 
 //	$au = str_replace(".wav",".au",$file);
 //	passthru("sox $file -r 22000 -c 1 -b 16 -A $au");
-	$slinfile = str_replace(".mp3", ".slin", $file);
+	$slinfile = str_ireplace(".mp3", ".slin", $file);
 	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slinfile\" \"$file\"");
 
 	if($prompt->prompt != $filename) {
@@ -597,8 +597,8 @@ function upload_prompts_database()
 		return;
 	}
 
-	$slin_online = str_replace(".mp3",".slin",$online_file);
-	$slin_offline = str_replace(".mp3",".slin",$offline_file);
+	$slin_online = str_ireplace(".mp3",".slin",$online_file);
+	$slin_offline = str_ireplace(".mp3",".slin",$offline_file);
 
 //	passthru("sox $online_file -r 8000 -c 1 -b -A $auonline");
 

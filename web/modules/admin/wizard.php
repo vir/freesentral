@@ -318,8 +318,8 @@ function auto_attendant($fields)
 	if(!copy($fields['offline_prompt']['path'], $offline_file))
 		return array(false, "Could not upload file for offline mode");
 
-	$slin_online = str_replace(".mp3",".slin",$online_file);
-	$slin_offline = str_replace(".mp3",".slin",$offline_file);
+	$slin_online = str_ireplace(".mp3",".slin",$online_file);
+	$slin_offline = str_ireplace(".mp3",".slin",$offline_file);
 	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slin_online\" \"".$online_file."\"");
 	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slin_offline\" \"".$offline_file."\"");
 
@@ -401,14 +401,15 @@ function define_music_on_hold($fields=NULL)
 		if(!isset($fields["file$i"]["path"]))
 			continue;
 		$music_on_hold = new Music_on_hold;
-		$new_file = "$path/".strtolower($fields["file$i"]["orig_name"]);
+		$gen_name = date('Y-m-d_H:i:s_u_').rand(100,1000). ".mp3";
+		$new_file = "$path/".$gen_name;
 		if(!copy($fields["file$i"]["path"], $new_file))
 			return array(false, "Couldn't move file ".$fields["file$i"]["orig_name"]);
 
-		$au = str_replace(".mp3",".au",$new_file);
-		passthru("sox \"$new_file\"  -r 8000 -c 1 -A \"$au\"");
+	//	$au = str_replace(".mp3",".au",$new_file);
+	//	passthru("sox \"$new_file\"  -r 8000 -c 1 -A \"$au\"");
 
-		$res = $music_on_hold->add(array("music_on_hold"=>$fields["file$i"]["orig_name"]));
+		$res = $music_on_hold->add(array("music_on_hold"=>$fields["file$i"]["orig_name"], "file"=>$gen_name));
 		if(!$res[0])
 			return $res;
 		$playlist_item = new Playlist_Item;

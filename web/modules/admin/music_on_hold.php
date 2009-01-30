@@ -93,17 +93,18 @@ function upload_music_on_hold_database()
 	if(!is_dir($fpath))
 		mkdir($fpath,0777);
 
-	$file = "$fpath/$filename";
+	$gen_name = date('Y-m-d_H:i:s_').rand(100,900). ".mp3";
+	$file = "$fpath/$gen_name";
 	if (!move_uploaded_file($_FILES["upload_file"]['tmp_name'],$file)) {
 		//errormess("Could not upload file.",$path);
 		notice("Could not upload file.", "music_on_hold", false);
 		return;
 	}
 	//should do the converting from .wav to .au around here
-	$au = str_replace(".mp3",".au",$file);
-	passthru("sox $file  -r 8000 -c 1 -b -A $au");
+//	$au = str_replace(".mp3",".au",$file);
+//	passthru("sox $file  -r 8000 -c 1 -b -A $au");
 
-	$params = array("music_on_hold"=>$filename, "description"=>getparam("description"));
+	$params = array("music_on_hold"=>$filename, "description"=>getparam("description"), "file"=>$gen_name);
 	if($music_on_hold->music_on_hold_id)
 		$res = $music_on_hold->edit($params);
 	else

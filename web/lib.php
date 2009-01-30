@@ -190,19 +190,22 @@ function items_on_page($nrs = array(20,50,100))
 
 function pages($total = NULL, $params = array())
 {
-	global $limit, $page, $module, $method;
+	global $limit, $page, $module, $method, $action;
 	if(!$limit)
 		$limit = 20;
 
 	$link = $_SESSION["main"] ? $_SESSION["main"] : "main.php";
 	$link .= "?";
+	$slink = $link;
 	$found_total = false;
 	$page = 0;
 	foreach($_REQUEST as $param=>$value)
 	{
 		if($param == "action")
 			continue;
-		$link .= "&$param=$value";
+		if($link != $slink)
+			$link .= "&";
+		$link .= "$param=$value";
 		if($param == "total")
 		{
 			$total = $value;
@@ -221,7 +224,7 @@ function pages($total = NULL, $params = array())
 
 	if(substr($link, -1) != "?")
 		$link .= "&";
-	$link .= "module=$module&method=$method";
+	$link .= "module=$module&method=$method&action=$action";
 
 	$pages = floor($total/$limit);
 	print '<center>';
