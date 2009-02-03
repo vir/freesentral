@@ -78,7 +78,7 @@ function call_logs_database()
 	{
 		$where .= " AND ((caller='$number' AND called='".$_SESSION["user"]."' AND direction='outgoing') OR (called='$number' AND caller='".$_SESSION["user"]."' AND direction='incoming'))";
 	}else{
-		$where .= " AND (caller='".$_SESSION["user"]."' OR called='".$_SESSION["user"]."') AND direction='incoming'";
+		$where .= " AND (caller='".$_SESSION["user"]."' AND direction='incoming') OR (called='".$_SESSION["user"]."' AND direction='outgoing')";
 	}
 
 	$total = getparam("total");

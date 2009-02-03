@@ -36,10 +36,22 @@ function activity()
 	$call_log = new Call_Log;
 	$conditions = array();
 
-	$conditions[0] = array("caller"=>$_SESSION["user"], "called"=>$_SESSION["user"]);
+	/*$conditions[0] = array("caller"=>$_SESSION["user"], "called"=>$_SESSION["user"]);
 	$conditions["direction"] = "outgoing";
 
-	$call_logs = Model::selection("call_log",$conditions,"time DESC",5);
+	$call_logs = Model::selection("call_log",$conditions,"time DESC",5);*/
+
+	$where = " WHERE (caller='".$_SESSION["user"]."' AND direction='incoming') OR (called='".$_SESSION["user"]."' AND direction='outgoing')";
+
+	$total = getparam("total");
+	if(!$total)
+	{
+		$call_log = new Call_Log;
+		$total = $call_log->fieldSelect('count(*)',NULL, NULL, NULL, NULL, NULL, $where);
+	}
+
+	$call_logs = Model::selection("call_log",NULL,"time DESC",5,NULL,$where);
+
 
 	$columns = array("time"=>true, "address"=>false, "billid"=>false, "caller"=>true, "called"=>true, "duration"=>true, "billtime"=>false, "ringtime"=>false, "status"=>true, "reason"=>false, "ended"=>false);
 

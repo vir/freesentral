@@ -260,6 +260,12 @@ function listen_voicemail()
 				);
 
 	$mp3_file = str_replace(".slin", ".mp3", $filepath);
+
+	if(!is_file($mp3_file))
+	{
+		errormess("Missing file.");
+		return;
+	}
 /*	if(!is_file($mp3_file)) {
 //print "./mp3ize.sh $mp3_file $filepath";
 		//exec("./mp3ize.sh $mp3_file $filepath");
@@ -268,6 +274,7 @@ print "./mp3ize.sh edera.mp3 edera.slin";
 }*/
 	$_SESSION["slinfile"] = $filepath;
 //	$mp3 = str_replace(".slin", ".mp3", $file);
+	$_SESSION["mp3file"] = $mp3_file;
 
 	editObject(NULL,$fields, "Playing voicemail message","no");
 ?>

@@ -906,6 +906,7 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 				print " evenrow";
 			print '">';
 			$use_vars = explode(",", $var_name);
+			array_walk($use_vars, 'trim_value');
 			$exploded_col = explode(":", $column_name);
 			$column_value = '';
 
@@ -996,6 +997,11 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 		print '</tr>';
 	}
 	print "</table>";
+}
+
+function trim_value(&$value) 
+{ 
+	$value = trim($value); 
 }
 
 function table($array, $formats, $element_name, $id_name, $element_actions =array(), $general_actions=array(), $base = NULL, $insert_checkboxes = false, $css = "content", $conditional_css = array())
