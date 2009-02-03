@@ -199,6 +199,20 @@ while ($state != "") {
     }
 }
 
+Yate::Output("Filename should be '$user/$file'.");
+
+if(is_file("$user/$file"))
+{
+	Yate::Debug("Converting received message from .slin to .mp3.");
+	$filename = "$user/$file";
+	$mp3path = str_replace(".slin", ".mp3", $filename);
+	if(is_file("share/scripts/mp3ize.sh")) {
+		passthru("share/scripts/mp3ize.sh $mp3path $filename");
+	}else{
+		passthru("/usr/local/share/yate/scripts/mp3ize.sh $mp3path $filename");	
+	}	
+}
+
 Yate::Output("PHP: bye!");
 
 /* vi: set ts=8 sw=4 sts=4 noet: */

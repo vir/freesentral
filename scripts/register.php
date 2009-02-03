@@ -105,13 +105,29 @@ function get_location($called)
 			return NULL;
 	}
 
-	$query = "SELECT location FROM extensions WHERE extension='$called'";
+	//  divert to a did
+	$query = "SELECT destination FROM dids WHERE number='$called'";
 	$res = query_to_array($query);
 	if(count($res)) {
-		return $res[0]["location"];
+		if(is_numeric($res[0]["destination"]))
+			// just translate the called number
+			$called = $res[0]["destination"];
+		else
+			// route to a script
+			return $res[0]["destination"];
 	}
 
-	$query = "SELECT * FROM dial_plans INNER JOIN gateways ON dial_plans.gateway_id=gateways.gateway_id WHERE prefix IS NULL OR '$called' LIKE prefix||'%' AND (gateways.username IS NULL OR gateways.status='online') ORDER BY length(coalesce(prefix,'')) DESC, priority";
+	// divert to an extension without thinking of it's divert functions
+	$query = "SELECT location FROM extensions WHERE extension='$called'";
+	$res = query_to_array($query);
+	if(count($res)) 
+		return $res[0]["location"];
+
+	// if we got here there divert is to a group or dial plans must be used
+	// it's better to use the lateroute module
+	return "lateroute/$called";
+
+/*	$query = "SELECT * FROM dial_plans INNER JOIN gateways ON dial_plans.gateway_id=gateways.gateway_id WHERE prefix IS NULL OR '$called' LIKE prefix||'%' AND (gateways.username IS NULL OR gateways.status='online') ORDER BY length(coalesce(prefix,'')) DESC, priority";
 	
 	$res = query_to_array($query);
 	if(!count($res)) {
@@ -136,7 +152,7 @@ function get_location($called)
 	if($callto != 'fork ')
 		return $callto;
 	
-	return NULL;
+	return NULL;*/
 }
 
 /**
