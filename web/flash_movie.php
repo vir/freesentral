@@ -7,23 +7,11 @@ require_once("framework.php");
 require_once("lib_custom.php");
 include_classes();
 
-//$mp3 = getparam("mp3");
-/*
-if($_SESSION["level"] != "admin") {
-	$dir = vmInitMessageDir($_SESSION["username"]);
-	$filepath = "$dir/$mp3";
-}else
-	$filepath = $mp3;*/
-
-$mp3 = $_SESSION["mp3file"];
-
-////////////until here
+$mp3 = getparam("mp3");
 //session_start();
 ming_useswfversion(8);
 //creating the new flash movie
 $m = new SWFMovie();
-//$mp3 = $_SESSION["mp3"];
-//$mp3 = $filepath;
 
 $len = $m->streamMp3(fopen($mp3, "r"));
 $m->setFrames($len);

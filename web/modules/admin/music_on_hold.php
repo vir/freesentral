@@ -88,7 +88,7 @@ function upload_music_on_hold_database()
 		return;
 	}
 
-	$fpath = "$target_path/music_on_hold";
+	$fpath = "$target_path/moh";
 
 	if(!is_dir($fpath))
 		mkdir($fpath,0777);
@@ -166,7 +166,7 @@ function delete_music_on_hold_database()
 		notice("Don't have the id to delete the file", NULL, false);
 		return;
 	}
-	$fpath = "$target_path/music_on_hold";
+	$fpath = "$target_path/moh";
 	$music_on_hold->select();
 	$wavfile = $music_on_hold->music_on_hold;
 	$aufile = str_replace(".wav", ".au", $wavfile);
@@ -196,7 +196,7 @@ function listen_music_on_hold()
 		return;
 	}
 
-	$filepath = $setting[0]->value . "/music_on_hold/";
+	$filepath = $setting[0]->value . "/moh/";
 	$music_on_hold_id = getparam("music_on_hold_id");
 	$music_on_hold = new Music_On_Hold;
 	$music_on_hold->music_on_hold_id = getparam("music_on_hold_id");
@@ -207,7 +207,7 @@ function listen_music_on_hold()
 					"description" => array("value"=>$music_on_hold->description, "display"=>"fixed")
 			);
 	editObject($music_on_hold, $array, "Playing music on hold file", 'no');
-	$filepath .= $music_on_hold->music_on_hold;
+	$filepath .= $music_on_hold->file;
 
 	?>
 	<center>

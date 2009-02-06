@@ -457,7 +457,7 @@ function prompts($wizard=false)
 	else
 		$actions = array();
 
-	tableOfObjects($prompts, array("status", "prompt", "function_getfilesize:size"=>"prompt"), "prompt", $actions);
+	tableOfObjects($prompts, array("status", "prompt", "function_getfilesize:size"=>"file"), "prompt", $actions);
 
 	return count($prompts);
 }
@@ -509,30 +509,29 @@ function reupload_prompt_database()
 	if(!is_dir($path))
 		mkdir($path);
 
-	$file = "$path/$filename";
+	$prompt = new Prompt;
+	$prompt->prompt_id = getparam("prompt_id");
+	$prompt->select();
+
+	$time = date("Y-m-d:H:i:s");
+	$file = "$path/".$prompt->status."_".$time.".mp3";
 	if (!move_uploaded_file($_FILES["prompt"]['tmp_name'],$file)) {
 		errormess("Could not upload file.");
 		return;
 	}
-
-	$prompt = new Prompt;
-	$prompt->prompt_id = getparam("prompt_id");
-	$prompt->select();
 
 //	$au = str_replace(".wav",".au",$file);
 //	passthru("sox $file -r 22000 -c 1 -b 16 -A $au");
 	$slinfile = str_ireplace(".mp3", ".slin", $file);
 	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slinfile\" \"$file\"");
 
-	if($prompt->prompt != $filename) {
-		$nr = $prompt->fieldSelect("count(*)",array("prompt"=>$prompt->prompt));
-		if($nr == 1) {
-			unlink("$path/".$prompt->prompt);
-			$slin = str_replace(".mp3",".slin","$path/".$prompt->prompt);
-			unlink($au);
-		}
-	}
+	if(is_file("$path/".$prompt->file))
+		unlink("$path/".$prompt->file);
+	$slin = str_replace(".mp3",".slin","$path/".$prompt->file);
+	if(is_file($slin))
+		unlink($slin);
 
+	$prompt->file = $prompt->status."_".$time.".mp3";
 	$prompt->prompt = $filename;
 	$prompt->description = getparam("description");
 	notify($prompt->update());
@@ -561,8 +560,11 @@ function upload_prompts_database()
 
 	if(!is_dir($path))
 		mkdir($path);
-	$online_file = "$path/$online";
-	$offline_file = "$path/$offline";
+
+	$time = date("Y-m-d_H:i:s");
+
+	$online_file = "$path/online_".$time.".mp3";
+	$offline_file = "$path/offline_".$time.".mp3";
 
 	Database::transaction();
 	$prompt = new Prompt;
@@ -622,6 +624,7 @@ function upload_prompts_database()
 		$prompt = new Prompt;
 		$prompt->prompt = $prompt_name;
 		$prompt->status = $status;
+		$prompt->file = $status."_".$time.".mp3";
 		$res = $prompt->insert();
 		if(!$res[0]) {
 			Database::rollback();
@@ -699,25 +702,13 @@ function edit_prompt_database()
 		errormess("Don't have the status attribute for this prompt.");
 		return;
 	}
-	$path = $target_path."/auto_attendant/";
 	$new_name = getparam("prompt");
 	if(!$new_name) {
 		errormess("Field 'Prompt' is compulsory");
 		return;
 	}
-	if($prompt->prompt != $new_name) {
-		if(strtolower(substr($new_name,-4)) != strtolower(substr($prompt->prompt,-4))) {
-			errormess("You tried to change the extension of the file. Please use the upload option in order to upload a new file.");
-			return;
-		}
-		$oldfile = $path .$prompt->prompt;
-		$newfile = $path .$new_name;
-		if(!rename($oldfile,$newfile)) {
-			errormess("Could not rename file");
-			return;
-		}
-		$prompt->prompt = $new_name;
-	}
+
+	$prompt->prompt = $new_name;
 	$prompt->description = getparam("description");
 	notify($prompt->update());
 }
@@ -732,16 +723,22 @@ function listen_prompt()
 		return;
 	}
 
-	$filepath = $setting[0]->value . "/auto_attendant/";
+	$filepath =  $target_path. "/auto_attendant/";
 
 	$prompt = new Prompt;
 	$prompt->prompt_id = getparam("prompt_id");
 	$prompt->select();
 
-	editObject($prompt, array("prompt"=>array("display"=>"fixed"), "size"=>array("value"=>getfilesize($prompt->prompt), "display"=>"fixed")), "Playing prompt for ".$prompt->status." Auto Attendant","Save");
+	editObject($prompt, array("prompt"=>array("display"=>"fixed"), "size"=>array("value"=>getfilesize($prompt->file), "display"=>"fixed")), "Playing prompt for ".$prompt->status." Auto Attendant","Save");
 	//$filename = str_replace(".wav", ".au", $prompt->prompt);
 
-	$filepath .= $prompt->prompt;
+	$filepath .= $prompt->file;
+
+	if(!is_file($filepath))
+	{
+		errormess("Missing file");
+		return;
+	}
 ?>
 	<center>
 	<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="450" height="40" id="home" align="center">

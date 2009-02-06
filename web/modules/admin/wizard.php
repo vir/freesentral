@@ -308,8 +308,9 @@ function auto_attendant($fields)
 	if(!is_dir($path))
 		mkdir($path);
 
-	$online_file = "$path/$online";
-	$offline_file = "$path/$offline";
+	$time = date("Y-m-d_H:i:s");
+	$online_file = "$path/online_".$time.".mp3";
+	$offline_file = "$path/offline_".$time.".mp3";
 
 	//if (!move_uploaded_file($_FILES["online_prompt"]['tmp_name'],$online_file))
 	if(!copy($fields['online_prompt']['path'], $online_file))
@@ -331,10 +332,17 @@ function auto_attendant($fields)
 		$prompts = Model::selection("prompt", array("status"=>$status));
 		if(!count($prompts))
 			$prompt = new Prompt;
-		else
+		else {
 			$prompt = $prompts[0];
+			if(is_file("$path/".$prompt->file))
+				unlink("$path/".$prompt->file);
+			$slin = str_replace(".mp3",".slin","$path/".$prompt->file);
+			if(is_file($slin))
+				unlink($slin);
+		}
 		$prompt->prompt = $prompt_name;
 		$prompt->status = $status;
+		$prompt->file = $status."_".$time.".mp3";
 		$res = (!$prompt->prompt_id) ? $prompt->insert() : $prompt->update();
 		if(!$res[0]) 
 			return array(false,"Could not upload the prompts for Auto Attendant. Please try again");

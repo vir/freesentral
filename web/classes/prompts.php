@@ -9,7 +9,8 @@ class Prompt extends Model
 					"prompt_id" => new Variable("serial", "!null"),
 					"prompt" => new Variable("text", "!null"),
 					"description" => new Variable("text"),
-					"status" => new Variable("text", "!null") //online offline
+					"status" => new Variable("text", "!null"), //online offline
+					"file" => new Variable("text", "!null") //real name of the file 
 				);
 	}
 
