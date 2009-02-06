@@ -150,6 +150,14 @@ class Wizard
 				$_SESSION["fields"] = array();
 
 			$set = false;
+			$required = false;
+			if(isset($field_def["required"]))
+				if($field_def["required"] === true || $field_def["required"] == "true")
+					$required = true;
+			if(isset($field_def["compulsory"]))
+				if($field_def["compulsory"] === true || $field_def["compulsory"] == "true")
+					$required = true;
+
 			if(isset($field_def["display"]))
 				if($field_def["display"] == "file" && $skip === false) {
 					if(!$upload_path) {
@@ -160,15 +168,7 @@ class Wizard
 					if(!$_FILES[$field_name]["name"] && isset($_SESSION["fields"][$this->step_nr][$field_name]["path"]))
 						continue;
 
-					$is_required = false;
-					if(isset($field_def["required"]))
-						if($field_def["required"] === true || $field_def["required"] === "true")
-							$is_required = true;
-					if(isset($field_def["compulsory"]))
-						if($field_def["compulsory"] === true || $field_def["compulsory"] === "true")
-							$is_required = true;
-
-					if(!$_FILES[$field_name]['tmp_name'] && !$is_required)
+					if(!$_FILES[$field_name]['tmp_name'] && !$required)
 						continue;
 					elseif(!$_FILES[$field_name]['name']){
 						$this->error .= " Couldn't upload $field_name.";
@@ -195,30 +195,21 @@ class Wizard
 				}
 			if(!$set)
 				$_SESSION["fields"][$this->step_nr][$field_name] = getparam($field_name);
+
+			if(isset($field_def["custom_submit"]))
+				$_SESSION["fields"][$this->step_nr][$field_name] = $field_def["custom_submit"]($this->step_nr, $field_name, $required);
+
 			if($skip === false) {
-				if(isset($fields[$field_name]["required"]))
-					if($fields[$field_name]["required"] === true || $fields[$field_name]["required"]=="true") {
-						if(isset($fields[$field_name]["display"]))
-							if($fields[$field_name]["display"] == "file")
-								if(!isset($_FILES[$field_name]["name"])) {
-									$this->error .= " Field '".ucfirst(str_replace("_"," ",$field_name))."' is required. Please upload file.";	
-									continue;
-								}
-						if(!getparam($field_name) && !isset($fields[$field_name]["triggered_by"]))
-							$this->error .= " Field '".ucfirst(str_replace("_"," ",$field_name))."' is required.";
-					}
-					
-				if(isset($fields[$field_name]["compulsory"]))
-					if($fields[$field_name]["compulsory"] === true || $fields[$field_name]["compulsory"]=="true") {
-						if(isset($fields[$field_name]["display"]))
-							if($fields[$field_name]["display"] == "file") {
-								if(!isset($_FILES[$field_name]["name"])) 
-									$this->error .= " Field '".ucfirst(str_replace("_"," ",$field_name))."' is required. Please upload file.";	
+				if($required === true) {
+					if(isset($fields[$field_name]["display"]))
+						if($fields[$field_name]["display"] == "file")
+							if(!isset($_FILES[$field_name]["name"])) {
+								$this->error .= " Field '".ucfirst(str_replace("_"," ",$field_name))."' is required. Please upload file.";	
 								continue;
 							}
-						if(!getparam($field_name) && !isset($fields[$field_name]["triggered_by"]))
-							$this->error .= " Field '".ucfirst(str_replace("_"," ",$field_name))."' is required.";
-					}
+					if(!$_SESSION["fields"][$this->step_nr][$field_name] && !isset($fields[$field_name]["triggered_by"]))
+						$this->error .= " Field '".ucfirst(str_replace("_"," ",$field_name))."' is required.";
+				}
 			}
 		}
 	}

@@ -363,7 +363,17 @@ function scheduling($error = NULL,	$wizard=false)
 	end_form();
 }
 
-function scheduling_database()
+function set_wiz_period($step_nr, $field_name, $required = false)
+{
+	$_SESSION["fields"][$step_nr]["start_".$field_name] = getparam("start_".$field_name);
+	$_SESSION["fields"][$step_nr]["end_".$field_name] = getparam("end_".$field_name);
+
+	return true;
+}
+
+// if function is called from wizard.php then it will be probably called with the $fields params, since info 
+// is held in $_SESSION
+function scheduling_database($fields = NULL)
 {
 	$prompt = Model::selection("prompt", array("status"=>"online"));
 	if(!count($prompt)) {
@@ -372,10 +382,16 @@ function scheduling_database()
 	}
 	$prompt = $prompt[0];
 	$days = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+
 	for($i=0; $i<count($days); $i++)
 	{
-		$start = getparam("start_".$days[$i]);
-		$end = getparam("end_".$days[$i]);
+		if(!$fields) {
+			$start = getparam("start_".$days[$i]);
+			$end = getparam("end_".$days[$i]);
+		}else{
+			$start = $fields["start_".$days[$i]];
+			$end = $fields["end_".$days[$i]];
+		}
 		if($start=="Not selected" || $end=="Not selected") {
 			$start = '';
 			$end = '';

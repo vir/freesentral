@@ -30,9 +30,12 @@ class Key extends Model
 		$this->key = field_value("key", $params);
 		if(($msg = $this->objectExists()))
 			return array(false, (is_numeric($msg)) ? "This key ".$this->key." is already defined." : $msg);
-		if(!is_numeric($key)) 
+		if(!is_numeric($this->key)) 
 			return array(false, "Field 'Key' must be numeric.");
-		
+		if($this->key_id)
+			$this->select();
+		$this->setParams($params);
+		return parent::setObj($params);
 	}
 }
 ?>

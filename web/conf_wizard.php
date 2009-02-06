@@ -38,6 +38,7 @@ In none of the above but field is setted: a function with that name will be call
 	"triggered_by" =>x,  x is a numeric identifier. Will make this field to be shown (in must be used with another field of type message that has a tag(img, a etc.) with an event that will call javascript  show_fields(x)), Another note: field name must end with x, and name of the field where show fields is called must be something like this: "$trigger_name" . (x-1)
 	"javascript" => '' // javascript that is called on a certain event for this field Ex: onClick="show_advanced();"
 	"comment" => '' // comment that will be printed under the field (after pressing on the ? image)
+	 "custom_submit" => '' // name of custom function that should be called to set this field in $_SESSION
 )
 */
 $steps = array(
@@ -298,13 +299,14 @@ $steps = array(
 														"value" => "Schedulling online Auto Attendant. The time frames when the online auto attendant is not schedulled, the offline one is used.",
 														"display" => "message"
 													),
-						"Sunday" => array("display" => "wiz_period"),
-						"Monday" => array("display" => "wiz_period"),
-						"Tuesday" => array("display" => "wiz_period"),
-						"Wednesday" => array("display" => "wiz_period"),
-						"Thursday" => array("display" => "wiz_period"),
-						"Friday" => array("display" => "wiz_period"),
-						"Saturday" => array("display" => "wiz_period"),
+						//Note!! "custom_submit"=>"set_wiz_period", set_wiz_period will be called to set this field in $_SESSION, 
+						"Sunday" => array("display" => "wiz_period", "custom_submit"=>"set_wiz_period"),
+						"Monday" => array("display" => "wiz_period", "custom_submit"=>"set_wiz_period"),
+						"Tuesday" => array("display" => "wiz_period", "custom_submit"=>"set_wiz_period"),
+						"Wednesday" => array("display" => "wiz_period", "custom_submit"=>"set_wiz_period"),
+						"Thursday" => array("display" => "wiz_period", "custom_submit"=>"set_wiz_period"),
+						"Friday" => array("display" => "wiz_period", "custom_submit"=>"set_wiz_period"),
+						"Saturday" => array("display" => "wiz_period", "custom_submit"=>"set_wiz_period"),
 
 						"explain_key" => array(
 												"display"=>"message",

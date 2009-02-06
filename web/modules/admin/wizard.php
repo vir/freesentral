@@ -354,7 +354,7 @@ function auto_attendant($fields)
 
 	//schedule the online auto attendant
 	$_SESSION["wiz_config"] = "on";
-	scheduling_database();
+	scheduling_database($fields);
 	unset($_SESSION["wiz_config"]);
 
 	//define the keys for each of the two states 
@@ -362,23 +362,23 @@ function auto_attendant($fields)
 	for($i=1; $i<=$total; $i++)
 	{
 		$type = $fields["type$i"];
-		$key = $fields["type$i"];
+		$key = $fields["key$i"];
 		$number = $fields["number$i"];
 		$group = $fields["group$i"];
 		if($type == '' || $key == '' || ($number == "" && $group == ""))
 			continue;
-		$fields = array("key"=>$key);
-		$fields["prompt_id"] = ${$type."prompt"}->prompt_id;
+		$params = array("key"=>$key);
+		$params["prompt_id"] = ${$type."prompt"}->prompt_id;
 		if($group != '') {
 			$groups = Model::selection("group", array("group"=>$group));
 			if(!count($group)) 
 				return array(false, "Group ".$group." does not exist.");
-			$fields["destination"] = $groups[0]->extension;
+			$params["destination"] = $groups[0]->extension;
 		}elseif($number != "")
-			$fields["destination"] = $number;
+			$params["destination"] = $number;
 		
 		$aut_key = new Key;
-		$res = $aut_key->add($fields);
+		$res = $aut_key->add($params);
 		if(!$res[0])
 			return $res;
 	}

@@ -12,7 +12,7 @@ class User extends Model
 					"password" => new Variable("text","!null"),
 					"firstname" => new Variable("text"),
 					"lastname" => new Variable("text"),
-					"email" => new Variable("text","!null"),
+					"email" => new Variable("text"),
 					"description" => new Variable("text"),
 					"fax_number" => new Variable("text"),
 					"ident" => new Variable("text")
