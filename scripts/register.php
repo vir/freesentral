@@ -6,7 +6,7 @@ require_once("lib_queries.php");
 $s_fallbacks = array();
 $s_statusaccounts = array();
 $s_moh = array();
-$stoperror = array("busy", "noanswer", "looping");
+$stoperror = array("busy", "noanswer", "looping", "Request Terminated","Routing loop detected");
 $reg_init = false;
 $next_time = 0;
 $time_step = 90;
@@ -463,6 +463,7 @@ function return_route($called,$caller,$no_forward=false)
 	unset($fallback[$best_option]);
 	if(count($fallback))
 		$s_fallbacks[$id] = $fallback;
+	Yate::Debug("There are ".count($s_fallbacks)." in fallback array. : ".serialize($s_fallbacks));
 
 	return;
 }
@@ -491,7 +492,7 @@ function set_retval($callto, $error = NULL)
 
 // Always the first action to do 
 Yate::Init();
-Yate::Debug(true);
+//Yate::Debug(true);
 if(Yate::Arg()) {
 	Yate::Output("Executing startup time CDR cleanup");
 	$query = "UPDATE call_logs SET ended='t' where ended IS NOT TRUE or ended IS NULL;
@@ -516,7 +517,8 @@ Yate::Install("call.route");
 Yate::Install("call.cdr");
 
 Yate::Install("call.answered",50);
-Yate::Install("chan.disconnected");
+Yate::Install("chan.disconnected",50);
+Yate::Install("chan.hangup");
 
 Yate::Install("user.notify");
 Yate::Install("engine.status");
@@ -619,18 +621,28 @@ for (;;) {
 				break;
 			case "call.answered":
 				$id = $ev->GetValue("targetid");
-				Yate::Debug("Got call.answered for '$id'. Removing fallback if setted.");
+				Yate::Debug("Got call.answered for '$id'. Removing fallback if setted:".serialize($s_fallbacks));
 				if (isset($s_fallbacks[$id])) {
 					Yate::Debug("Removing fallback for '$id'");
+					unset($s_fallbacks[$id]);
+				}
+				Yate::Debug("There are ".count($s_fallbacks)." in fallback array.".serialize($s_fallbacks));
+				break;
+			case "chan.hangup":
+				$id = $ev->GetValue("id");
+				$reason = $ev->GetValue("reason");
+				Yate::Debug("Got '".$ev->name."' for '$id' with reason '$reason':".serialize($s_fallbacks));
+				if (isset($s_fallbacks[$id])) {
+					Yate::Debug("Dropping all fallback for '$id'");
 					unset($s_fallbacks[$id]);
 				}
 				break;
 			case "chan.disconnected":
 				$id = $ev->GetValue("id");
 				$reason = $ev->GetValue("reason");
+				Yate::Debug("Got '".$ev->name."' for '$id' with reason '$reason':".serialize($s_fallbacks));
 				if (!isset($s_fallbacks[$id]))
 					break;
-				Yate::Debug("Got chan.disconnected for '$id' with reason '$reason'");
 				if (in_array($reason, $stoperror)) {
 					Yate::Debug("Dropping all fallback for '$id'");
 					unset($s_fallbacks[$id]);
@@ -650,6 +662,7 @@ for (;;) {
 					unset($s_fallbacks[$id][$nr]);
 				else
 					unset($s_fallbacks[$id]);
+				Yate::Debug("There are ".count($s_fallbacks)." in fallback array.".serialize($s_fallbacks));
 				break;
 			case "call.cdr":
 				$operation = $ev->GetValue("operation");
