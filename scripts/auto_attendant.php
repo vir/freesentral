@@ -38,7 +38,7 @@ function setState($newstate)
 		case "greeting":
 			// check what prompt to use for this time of day
 			$state = $newstate;
-			$query = "select prompts.prompt_id, prompts.prompt from time_frames, prompts where numeric_day=extract(dow from now()) and cast(start_hour as integer)<=extract(HOUR FROM now()) AND cast(end_hour as integer)>extract(HOUR FROM now()) and time_frames.prompt_id=prompts.prompt_id UNION select prompt_id, prompt from prompts where status='offline'";
+			$query = "select prompts.prompt_id, prompts.file as prompt from time_frames, prompts where numeric_day=extract(dow from now()) and cast(start_hour as integer)<=extract(HOUR FROM now()) AND cast(end_hour as integer)>extract(HOUR FROM now()) and time_frames.prompt_id=prompts.prompt_id UNION select prompt_id,  file as prompt from prompts where status='offline'";
 			$res = query_to_array($query);
 			if(!count($res))
 			{
@@ -73,7 +73,7 @@ function setState($newstate)
 			$m->Dispatch();
 			break;
 		case "call.route":
-			$called = $hold_keys;
+		//	$called = $hold_keys;
 			for($i=0; $i<count($keys); $i++)
 			{
 				if($keys[$i]["key"] == $hold_keys)
@@ -82,9 +82,9 @@ function setState($newstate)
 					break;
 				}
 			}
-			if($called == '')
+			if($hold_keys == '')
 			{
-				$query = "SELECT (CASE WHERE default_destination='extension' THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number=$called";
+				$query = "SELECT (CASE WHEN default_destination='extension' THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number='$called'";
 				$res = query_to_array($query);
 				if(!count($res)) {
 					// this should never happen
@@ -102,8 +102,6 @@ function setState($newstate)
 			$m = new Yate("chan.masquerade");
 			$m->params = $ev->params;
 			$m->params["message"] = "call.execute";
-			$m->params["called"] = $hold_keys;
-			$m->params["caller"] = $caller;
 			$m->params["id"] = $partycallid;
 			$m->params["callto"] = $destination;
 			$m->Dispatch();
