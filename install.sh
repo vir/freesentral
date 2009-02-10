@@ -102,6 +102,7 @@ cat << EOF
 \$no_groups = false;
 \$no_pbx = false;
 \$uploaded_prompts = "$prompts";
+\$vm_base = "$prompts";
 \$query_on = false;
 \$max_resets_conn = 5;
 ?>
