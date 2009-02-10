@@ -66,14 +66,20 @@ function getCustomVoicemailDir($called)
     $alast = $called[strlen($called)-2];
 
     $dir = "$vm_base/$last";
-    if (!is_dir($dir))
+    if (!is_dir($dir)) {
         mkdir($dir,0750);
+		chown($dir,"apache");
+	}
     $dir = "$vm_base/$last/$alast/";
-    if (!is_dir($dir))
+    if (!is_dir($dir)) {
         mkdir($dir,0750);
+		chown($dir,"apache");
+	}
 	$dir = "$vm_base/$last/$alast/$called";
-	if (!is_dir($dir))
+	if (!is_dir($dir)) {
 		mkdir($dir,0750);
+		chown($dir,"apache");
+	}
     return $dir;
 }
 
