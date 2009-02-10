@@ -22,3 +22,4 @@ fi
 cat "$@" | lame -r -x -s 8000 -m mono --resample 11.025 - "$file"
 
 chown apache "$file"
+chown apache "$@"

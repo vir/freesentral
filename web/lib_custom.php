@@ -69,6 +69,8 @@ function vmGetMessageStats($dir,&$total,&$unread)
 	{
 		while (($f = readdir($d)) !== false) 
 		{
+			if(substr($f,-4) != ".mp3")
+				continue;
 	    	if (substr($f,0,4) == "nvm-")
 				$n++;
 			elseif (substr($f,0,3) == "vm-")
@@ -88,6 +90,8 @@ function vmGetMessageFiles($dir,&$files)
 		$of = array();
 		while (($f = readdir($d)) !== false) 
 		{
+			if(substr($f,-4) != ".mp3")
+				continue;
 			if (substr($f,0,4) == "nvm-")
 				$nf[] = $f;
 			elseif (substr($f,0,3) == "vm-")
@@ -107,7 +111,7 @@ function vmSetMessageRead($dir,&$file)
 		if (substr($file,0,4) != "nvm-")
 			return false;
 		$newname = substr($file,1);
-		if (rename("$dir/$file","$dir/$newname")) 
+		if (rename("$dir/$file","$dir/$newname") && (rename("$dir/".str_replace(".mp3", ".slin", $file), "$dir/".str_replace(".mp3", ".slin", $newname)))) 
 		{
 			$file = $newname;
 			return true;
@@ -227,6 +231,7 @@ function delete_voicemail_message()
 	{
 		if($messages[$i]["id"] == $id){
 			unlink("$dir/".$messages[$i]["file"]);
+			unlink("$dir/".str_replace(".mp3", ".slin", $messages[$i]["file"]));
 			voicemail();
 			return;
 		}
@@ -243,12 +248,9 @@ function listen_voicemail()
 	$extension = $_SESSION["user"];
 	$dir = vmInitMessageDir($extension);
 
-	if(substr($file,0,1) == "n") {
-		rename("$dir/$file", "$dir/".substr($file,1,strlen($file)));
-		$filepath = "$dir/".substr($file,1,strlen($file));
-		$file = substr($file,1,strlen($file));
-	}else
-		$filepath = "$dir/$file";
+	vmSetMessageRead($dir,$file);
+
+	$filepath = "$dir/$file";
 
 	$message = format_files(array($file));
 	$message = $message[0];
@@ -259,7 +261,7 @@ function listen_voicemail()
 					"time"=>array("value"=>$message["time"], "display"=>"fixed")
 				);
 
-	$mp3_file = str_replace(".slin", ".mp3", $filepath);
+	$mp3_file = $filepath; 
 
 	if(!is_file($mp3_file))
 	{
@@ -289,8 +291,10 @@ function voicemail_database()
 	$messages = format_files($files);
 
 	for($i=0; $i<count($messages); $i++)
-		if(getparam("check_".$messages[$i]["id"]) == "on")
+		if(getparam("check_".$messages[$i]["id"]) == "on") {
 			unlink("$dir/".$messages[$i]["file"]);
+			unlink("$dir/".str_replace(".mp3",".slin",$messages[$i]["file"]));
+		}
 
 	voicemail();
 }

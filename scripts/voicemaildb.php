@@ -85,7 +85,10 @@ function setState($newstate)
 	case "listen":
 	    $state = $newstate;
 	    if (vmSetMessageRead($mailbox,$files[$current])) {
-		$m = new Yate("user.aupdate");
+		$mp3file = str_replace(".slin",".mp3",$files[$current]);
+		if(is_file("$dir/n".$mp3file))
+			rename("$dir/n".$mp3file, "$dir/$mp3file"); 
+		$m = new Yate("user.update");
 		$m->id = "";
 		$m->params["user"] = $mailbox;
 		$m->Dispatch();
@@ -163,6 +166,11 @@ function initUser()
     global $files;
     vmInitMessageDir($mailbox);
     vmGetMessageFiles($mailbox,$files);
+	$all_files = $files; // this array contains both .mp3 and .slin files
+	$files = array();
+	for($i=0; $i<count($all_files); $i++)
+	if(substr($all_files[$i],-5) == ".slin")
+		$files[] = $all_files[$i];
     $dir = vmGetVoicemailDir($mailbox);
     Yate::Output("found " . count($files) . " file entries for mailbox $mailbox");
     setState("prompt");

@@ -460,6 +460,7 @@ fi
 if [ -n "$prompts" ]; then
     echo "Installing IVR prompts"
     mkdir -p "$prompts"
+	chown -R apache "$prompts"
     (cd prompts; tar cf - $tarexclude *) | tar xf - -C "$prompts/"
 fi
 
@@ -482,6 +483,3 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
     "$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE $dbname"
     unset PGPASSWORD
 fi
-
-# need to make sure apache is allowed to upload/modify files in the $prompts dir: moh, prompts for auto attendant, voicemail messages
-# chmod -R 777 $prompts
