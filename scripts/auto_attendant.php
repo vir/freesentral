@@ -240,7 +240,7 @@ while ($state != "") {
     }
 }
 
-Yate::Output("Auto Attendant: bye!");
+Yate::Output("PHP Auto Attendant: bye!");
 
 /* vi: set ts=8 sw=4 sts=4 noet: */
 ?>

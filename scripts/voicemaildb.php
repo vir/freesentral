@@ -408,7 +408,7 @@ while ($state != "") {
     }
 }
 
-Yate::Output("PHP: bye!");
+Yate::Output("PHP voicemaildb : bye!");
 
 /* vi: set ts=8 sw=4 sts=4 noet: */
 ?>

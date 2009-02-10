@@ -199,8 +199,6 @@ while ($state != "") {
     }
 }
 
-Yate::Output("Filename should be '$user/$file'.");
-
 if(is_file("$user/$file"))
 {
 	Yate::Debug("Converting received message from .slin to .mp3.");
@@ -213,7 +211,7 @@ if(is_file("$user/$file"))
 	}	
 }
 
-Yate::Output("PHP: bye!");
+Yate::Output("PHP leavemaildb : bye!");
 
 /* vi: set ts=8 sw=4 sts=4 noet: */
 ?>
