@@ -116,7 +116,7 @@ function edit_extension_database()
 
 	$extension = new Extension;
 	$extension->extension_id = getparam("extension_id");
-	$params = form_params(array("extension", "firstname", "lastname", "address", "max_minutes", "password"));
+	$params = form_params(array("extension", "firstname", "lastname", "address", /*"max_minutes",*/ "password"));
 	if(getparam("generate_password") == "on")
 		$params["password"] = rand(100000, 999999);
 	$res = ($extension->extension_id) ? $extension->edit($params) : $extension->add($params);

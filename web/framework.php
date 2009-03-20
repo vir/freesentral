@@ -346,7 +346,7 @@ class Database
 				continue;
 			}
 			$make_vacuum = true;
-			$res = self::queryRaw($query);
+		//	$res = self::queryRaw($query);
 		}
 		if($make_vacuum)
 		{
@@ -418,8 +418,8 @@ class Model
 			self::warning("Could not select $class from database in selection.");
 			return null;
 		}
-		$object = new $class;
-		return $object->buildArrayOfObjects($res);
+	//	$object = new $class;
+		return $obj->buildArrayOfObjects($res);
 	}
 
 	/**
@@ -630,12 +630,12 @@ class Model
 				$obj_vars = $obj->_model;
 
 				$continue = false;
-				foreach($obj_vars as $var_name => $obj_var)
+				foreach($obj_vars as $varname => $obj_var)
 				{
 					if($obj_var->_key != $table)
 						continue;
-					$referenced = ($obj_var->_matchkey) ? $obj_var->_matchkey : $var_name;
-					$from_clause .= "$join_type OUTER JOIN \"$foreign_key_to\" ON \"$table\".\"$referenced\"=\"$foreign_key_to\".\"$var_name\"";
+					$referenced = ($obj_var->_matchkey) ? $obj_var->_matchkey : $varname;
+					$from_clause .= "$join_type OUTER JOIN \"$foreign_key_to\" ON \"$table\".\"$referenced\"=\"$foreign_key_to\".\"$varname\"";
 					//found the condition for join=> break from this for and the continue in the loop to pass to the next var 
 					$continue = true;
 					break;
@@ -717,7 +717,7 @@ class Model
 
 	/**
 	 * Set the variables of object and insert it in the database
-	 * @param Array of param_name=>param_value used for setting the variables of this object
+	 * @param $params Array of param_name=>param_value used for setting the variables of this object
 	 * @param $retrieve_id Bool value, true if you want the id of the inserted object to be retrived or not
 	 * @param $keep_log Bool value, true when you wish to insert a log entry for that action
 	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user
@@ -732,6 +732,12 @@ class Model
 		return $this->insert($retrieve_id, $keep_log);
 	}
 
+	/**
+	 * Set the variables of object and insert it in the database
+	 * @param $params Array of param_name=>param_value used for setting the variables of this object
+	 * @param $conditons Array of conditions after which to do the update. Default is NULL(update after object id)
+	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user
+	 */
 	public function edit($params, $conditions = NULL)
 	{
 		if($params) {
@@ -916,7 +922,7 @@ class Model
 		if (count($conditions)) 
 			$where = $this->makeWhereClause($conditions, true);
 		else{
-			if($this->invalidate())
+			if($this->isInvalid())
 				return array(false, "Update was not made. Object was invalidated previously.",0);
 			if(($id = $this->getIdName())) {
 				$var = $this->variable($id);
@@ -967,7 +973,7 @@ class Model
 				$mess .= 's';
 			$update_log = "update ".$this->getNameInLogs().": $update_log $where";
 			self::writeLog($update_log,$query);
-			return array(true,$mess,pg_affected_rows($res), pg_affected_rows($res));
+			return array(true,$mess,pg_affected_rows($res));
 		}
 	}
 	
@@ -1324,7 +1330,7 @@ class Model
 	 * The most complex usage is: $var_name is 'var1,var2..' and $value is 'function_nameOfFunction:name_to_appear_under', then nameOfFunction(var1,var2,..) will be called and the result will be added in the array to be returned under name_to_appear_under
 	 * $var_name can start with ('1_', '2_' ,'3_' , '4_', '5_', '6_', '7_', '8_', '9_', '0_'), that will be stripped in order to have 
 	 * multiple fields in the array generated from the same $variable 
-	 * @param $block Bool value. If true then only the $
+	 * @param $block Bool value. If true then only the fields specified in $formats will be returned
 	 */
 	public static function objectsToArray($objects, $formats, $block = false)
 	{
@@ -1362,6 +1368,7 @@ class Model
 			if ($formats != 'all')
 				foreach($formats as $key=>$value)
 				{
+					$key = trim($key);
 					if(in_array(substr($key,0,2), $begginings))
 						$key = substr($key,2,strlen($key));
 					$name = ($value == '') ? $key : $value;
@@ -1519,7 +1526,8 @@ class Model
 			return false;
 		}
 		self::$_modified = true;
-		$res = @call_user_func(array($class,"defaultObject"));
+		if(method_exists($object,"defaultObject"))
+			$res = call_user_func(array($class,"defaultObject"));
 		return true;
 	}
 
@@ -1546,7 +1554,7 @@ class Model
 
 			if (!method_exists($object,"index"))
 				continue;
-			if ($index = @call_user_func(array($class,"index")))
+			if ($index = call_user_func(array($class,"index")))
 				Database::createIndex($table,$index);
 		}
 		if(self::$_modified)
@@ -1769,7 +1777,7 @@ class Model
 		$obj_table = $this->getTableName();
 		foreach($conditions as $key=>$value)
 		{
-			if ($value === NULL && (!strlen($value) || !is_array($value)))
+			if ($value === NULL)
 				continue;
 
 			if ($where != " WHERE ")
@@ -1904,7 +1912,7 @@ class Model
 		// Arrays of operators that should be put at the beggining in $value 
 		// If none of this operators is used and $value does not have a special value then 
 		// the default operator is =
-		$two_dig_operators = array("<=",">=","!=","==");
+		$two_dig_operators = array("<=",">=","!=");
 		$one_dig_operators = array(">","<","=");
 
 		$first_two = substr($value,0,2);
@@ -1917,7 +1925,7 @@ class Model
 			$clause .= " $t_k IS TRUE ";
 		elseif($value === "empty")
 			$clause .= " $t_k IS NULL ";
-		elseif($value === "non_empty")
+		elseif($value === "non_empty" || $value === "not_empty")
 			$clause .= " $t_k IS NOT NULL ";
 		elseif(in_array($first_two, $two_dig_operators)){
 			$value = substr($value,2,strlen($value));
@@ -1962,7 +1970,7 @@ class Model
 			else
 				// it should never get here
 				// if verification for NULL is needed set $value = 'empty' 
-				$clause .= " $t_k=NULL";
+				$clause .= " $t_k is NULL";
 		}
 		return $clause;
 	}

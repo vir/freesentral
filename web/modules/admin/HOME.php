@@ -117,7 +117,7 @@ function home()
 	print '</div>';
 	print '</td><td class="topvalign">';
 	print '<div class="copac copachome">';
-	$status = exec("service yate status");
+	$status = exec("/etc/init.d/yate status");
 	print '<div class="titlu">SYSTEM STATUS</div>';
 	print '<div class="systemstatus"> '.
 			

@@ -30,8 +30,8 @@ function account()
 					"firstname" => array("display"=>"fixed"),
 					"lastname" => array("display"=>"fixed"),
 					"address" => array("display"=>"fixed"),
-					"max_minutes" => array("display"=>"fixed"),
-					"used_minutes" => array("display"=>"fixed"),
+				/*	"max_minutes" => array("display"=>"fixed"),
+					"used_minutes" => array("display"=>"fixed"),*/
 				/*	"equipment" => array("display"=>"fixed"),
 					"mac_address" => array("display"=>"fixed")*/
 				);
@@ -117,8 +117,8 @@ function account_modify()
 					"firstname" => array(),
 					"lastname" => array(),
 					"address" => array(),
-					"max_minutes" => array("display"=>"fixed"),
-					"used_minutes" => array("display"=>"fixed"),
+				/*	"max_minutes" => array("display"=>"fixed"),
+					"used_minutes" => array("display"=>"fixed"),*/
 				/*	"equipment" => array($equipments, "display"=>"select", "comment"=>"Supported types of equipment. If your equipment is in this list you can provision it by inserting the mac address below."),
 					"mac_address" => array("comment"=>"Insert the mac address here if your equipmnent is supported and you wish to provision it automatically."),*/
 				);

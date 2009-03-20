@@ -137,9 +137,9 @@ function edit_extension($error = NULL)
 					"generate_password"=>array("display"=>"checkbox", "comment"=>"Check to generate random password"),
 					"firstname"=>"",
 					"lastname"=>"",
-					"address"=>"",
+					"address"=>""/*,
 					"max_minutes"=>array("value"=>$max_minutes,"comment"=>"Leave this field empty for unlimited number of minutes"),
-					"used_minutes"=>array("value"=>interval_to_minutes($extension->used_minutes), "display"=>"fixed", "comment"=>'<a href="main.php?module='.$module.'&extension_id='.$extension->extension_id.'">Reset&nbsp;Used&nbsp;Minutes</a>'),
+					"used_minutes"=>array("value"=>interval_to_minutes($extension->used_minutes), "display"=>"fixed", "comment"=>'<a href="main.php?module='.$module.'&extension_id='.$extension->extension_id.'">Reset&nbsp;Used&nbsp;Minutes</a>')*/,
 			/*		"mac_address"=>array("comment"=>"Insert mac address here if you wish to provision a certain type of equipment."),
 					"equipment"=>array($equipments,"display"=>"select")*/
 				);

@@ -142,7 +142,12 @@ webpage="/var/www/html"
 if [ -d "$webpage" ]; then
     webpage="$webpage/$pkgname"
 else
-    webpage=""
+	webpage="/var/www"
+	if [ -d "$webpage" ]; then
+		webpage="$webpage/$pkgname"
+	else
+		webpage=""
+	fi
 fi
 
 psqlcmd="`which psql`"
