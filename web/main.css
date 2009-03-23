@@ -597,7 +597,7 @@ div.notice
 div.systemstatus
 {
 	padding:10px;
-	background-color:#ffffa5;
+	background-color:/*#dcf0f2;*/#bbf89c;/*#ffffa5;*/
 }
 
 div.message_wizard
