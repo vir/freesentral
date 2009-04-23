@@ -73,9 +73,9 @@ function build_location($params, $called, &$copy_ev)
 				return "sip/sip:$called@".$params["server"].":".$params["port"];
 			case "h323":
 				return "h323/$called@".$params["server"].":".$params["port"];
-			case "wp":
-			case "zap":
-				return $params["protocol"]."/".$params["chans_group"]."/".$called;
+			case "pstn":
+				$params["link"] = $params["gateway"];
+				return "sig/".$called;
 			case "iax":
 				if(!$params["iaxuser"])
 					$params["iaxuser"] = "";

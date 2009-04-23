@@ -34,7 +34,6 @@ class Gateway extends Model
 					"port" => new Variable("text"),
 					"iaxuser" => new Variable("text"),
 					"iaxcontext" => new Variable("text"),
-					"chans_group" => new Variable("text"),
 					"formats" => new Variable("text"),
 
 					"rtp_forward" => new Variable("bool"),
@@ -81,11 +80,6 @@ class Gateway extends Model
 						return array(false,"Field Port is compulsory for the selected protocol.", "another_try");
 					if(Numerify($this->port) == "NULL")
 						return array(false,"Field Port must be numeric.", "another_try");
-					break;
-				case "wp":
-				case "zap":
-					if(!$this->chans_group)
-						return array(false,"Field Chans_group is required.", "another_try");
 					break;
 			}
 		}

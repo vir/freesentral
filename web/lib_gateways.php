@@ -67,10 +67,10 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 							"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 						);
 
-	$wp = $zap = array(
-						"gateway"=>array("compulsory"=>true),
-						'chans_group'=>array("compulsory"=>true), 
-						'formats'=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically") ,
+	$pstn = array(
+						"gateway"=>array("compulsory"=>true, "comment"=>"This must be defined as a link in isigchan.conf"),
+					#	'chans_group'=>array("compulsory"=>true), 
+					#	'formats'=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically") ,
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 					//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 					);
@@ -97,7 +97,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		unset($h323_fields["password"]["comment"]);
 		unset($iax_fields["password"]["comment"]);
 		$protocols = array("sip", "h323", "iax");
-		$allprotocols = array("sip", "h323", "iax", "wp", "zap");
+		$allprotocols = array("sip", "h323", "iax", "pstn");
 
 		if($protocol && $gw_type == "Yes")
 		{
@@ -272,9 +272,7 @@ function edit_gateway_database()
 				$params["server"] = getparam($gw_type."_".$protocol."server");
 				$params["port"] = getparam($gw_type."_".$protocol."port");
 				break;
-			case "wp":
-			case "zap":
-				$params["chans_group"] = getparam($gw_type."_".$protocol."chans_group");
+			case "pstn":
 				break;
 		}
 	}
