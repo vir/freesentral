@@ -603,8 +603,8 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 					if ($var === "selected" || $var === "SELECTED")
 						continue;
 					if(count($opt) == 2) {
-						$optval = $key.'_id';
-						$name = $key;
+						$optval = $field_name.'_id';
+						$name = $field_name;
 						$value = $opt[$optval];
 						$name = $opt[$name];
 					}else{
@@ -920,8 +920,6 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 						if(array_key_exists($use_vars[$var_nr], $vars))
 							array_push($params, $objects[$i]->{$use_vars[$var_nr]});
 					$column_value = call_user_func_array($function_name,$params);
-				}elseif(isset($vars[$use_vars[0]])){
-					$column_value = call_user_func($name,$objects[$i]->{$use_vars[0]});
 				}
 			}elseif(isset($objects[$i]->{$var_name})){
 				$column_value = $objects[$i]->{$var_name};
@@ -1116,8 +1114,7 @@ function table($array, $formats, $element_name, $id_name, $element_actions =arra
 					for($var_nr=0; $var_nr<count($use_vars); $var_nr++)
 						array_push($params, $array[$i][$use_vars[$var_nr]]);
 					$column_value = call_user_func_array($function_name,$params);
-				}else
-					$column_value = call_user_func($name,$array[$i][$use_vars[0]]);
+				}
 			}elseif(isset($array[$i][$names_in_array])){
 				$column_value = $array[$i][$names_in_array];
 			}

@@ -1505,34 +1505,6 @@ class Model
 
 	/**
 	 * Update the database to match all the models
-	 * @param $class Name of class whose variables will be updated
-	 * @return True if the database was synchronized with the model
-	 */
-	static function updateModel($class)
-	{
-		if (!Database::connect())
-			return false;
-		$class = strtolower($class);
-		$vars = self::getVariables($class);
-		if (!$vars)
-			return false;
-
-		$object = new $class;
-		$table = $object->getTableName();
-
-		if (!Database::updateTable($table,$vars))
-		{
-			self::warning("Could not update table of class $class\n");
-			return false;
-		}
-		self::$_modified = true;
-		if(method_exists($object,"defaultObject"))
-			$res = call_user_func(array($class,"defaultObject"));
-		return true;
-	}
-
-	/**
-	 * Update the database to match all the models
 	 * @return True if the database was synchronized with all the models
 	 */
 	static function updateAll()
@@ -1998,7 +1970,7 @@ class Model
 			if ($value == "DESC")
 			{
 				if (substr($key,0,1) == "\"")
-					$clause = " $key $value";
+					$clause .= " $key $value";
 				else
 					$clause .= " \"$key\" $value";
 			}else{
