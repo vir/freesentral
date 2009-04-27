@@ -39,8 +39,6 @@ class Did extends Model
 		$this->setParams($params);
 		$this->extension_id = field_value("extension",$params);
 		$this->group_id = field_value("group",$params);
-		if(substr($this->destination,0,9) == "external/" && !$this->default_destination)
-			return array(false, "Field 'Default destination' is compulsory if 'Destination' is a script");
 		if(substr($this->destination,0,9) != "external/" && $this->default_destination!="Not selected")
 		{
 		//	print "Field 'Default destination' was ignored. It is taken into account only when destination is a script.";

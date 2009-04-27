@@ -61,7 +61,7 @@ function edit_did($error=NULL)
 					"did"=>array("compulsory"=>true, "comment"=>"Name used for identifing this DID"),
 					"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
 					"destination"=>array("compulsory"=>true, "comment"=>"Ex: external/nodata/voicemail.php(or any other script), external/nodata/auto_attendant.php, 090(extension), 01(group)"),
-					"default_destination"=>array($options, "display"=>"select", "comment"=>"Choose between an extension or a group. Use this field when 'Destination' is a script. If caller doesn't insert anything he will be sent to this default destination."),
+					"default_destination"=>array($options, "display"=>"select", "comment"=>"Choose between an extension or a group. Use this field when 'Destination' is a script like Auto Attendant. If caller doesn't insert anything he will be sent to this default destination."),
 					"extension"=>array($extensions, "display"=>"select", "comment"=>"Select only when default destination is an extension"),
 					"group"=>array($groups,"display"=>"select", "comment"=>"Select only when default destination is a group"),
 					"description"=>array("display"=>"textarea")
