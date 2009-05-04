@@ -582,7 +582,7 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 						else
 							print '<option value=\''.$opt[$optval].'\'>' . $opt[$name] . '</option>';
 					}else{
-						if ($opt === $selected)
+						if ($opt == $selected)
 						print '<option SELECTED >' . $opt . '</option>';
 						else
 						print '<option>' . $opt . '</option>';

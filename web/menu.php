@@ -169,20 +169,23 @@ function files($level)
 	{
 		if(dont_load($name) || $name == "verify_settings")
 			continue;
+		if($i)
+			print "<td class=\"separator\">&nbsp;</td>";
 
 		if ($name == $module) {
-			if($i)
-				print "<td class=\"separator\">&nbsp;</td>";
-			print "<td class=\"firstmenu_selected\"><a class=\"linkselected\" href=\"main.php?module=$name\">";
+			print "<td class=\"firstmenu_selected\">";
+			print '<div  class="linkselected" onclick="location.href=\'main.php?module='.$name.'\'">';
+			if($name == "dids")
+				$name = "DIDs";
+			print str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$name))).'</div>';
 		} else {
-			if($i)
-				print "<td class=\"separator\">&nbsp;</td>";
-			print "<td class=\"firstmenu\"><a class=\"link\" href=\"main.php?module=$name\">";
+			print "<td class=\"firstmenu\">";
+			print '<div class="link" onclick="location.href=\'main.php?module='.$name.'\'">';
+			if($name == "dids")
+				$name = "DIDs";
+			print str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$name))).'</div>';
 		}
-		if($name == "dids")
-			$name = "DIDs";
-		print '<div>'.str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$name))).'</div>';
-		print "</a></td>";
+		print "</td>";
 		$i++;
 	}
 	print("<td class=\"fillspace\">&nbsp;</td>");	

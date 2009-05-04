@@ -141,22 +141,24 @@ td.fillspace
     border-bottom: 1px solid #cccccc;/*#376EA4;/*#104a73;*/
 }
 
-a.link
+.link
 {
     color:white;
     text-decoration:none;
     font-size: 15px;
 	font-weight:500;
+	cursor: pointer;
 }
 
 a.link:hover{color:#8ca5bd;}
 
-a.linkselected
+.linkselected
 {
     color: #0189d7;/*#376EA4;/*#104a73;*/
     text-decoration:none;
     font-size: 15px;
 	font-weight:500;
+	cursor:pointer;
 }
 
 div.content, div.homecontent
