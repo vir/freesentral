@@ -32,20 +32,15 @@ function activate($error = NULL)
 	$dids = $did->extendedSelect(array("destination"=>"external/nodata/auto_attendant.php"),"number");
 	if(count($dids))
 	{
-		if($_SESSION["wizard"] != "notused")
-			set_step(4,"Activate did for Auto Attendant","complete");
+		set_step(4,"Activate did for Auto Attendant","complete");
 
 		$formats = array("did", "number", "destination", "function_get_default_destination:default_destination"=>"extension,group");
 
-		if($_SESSION["wizard"] != "notused")
-			$actions =  array("&module=dids&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&module=dids&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
-		else
-			$actions = array();
+		$actions =  array("&module=dids&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&module=dids&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
 
 		tableOfObjects($dids, $formats, "did", $actions);
 	}else{
-		if($_SESSION["wizard"] != "notused")
-			set_step(4,"Activate did for Auto Attendant","incomplete");
+		set_step(4,"Activate did for Auto Attendant","incomplete");
 		if($error)
 			errornote($error);
 
@@ -144,10 +139,7 @@ function activate_database()
 
 	$res = ($did->did_id) ? $did->update() : $did->insert();
 	
-	if($_SESSION["wizard"] == "notused")
-		aut_activate_did();
-	else
-		wizard();
+	wizard();
 }
 
 function keys($wizard = false)
@@ -171,11 +163,8 @@ function keys($wizard = false)
 			set_step(2,"Define keys","incomplete",0);
 	}
 
-	if(count($keys) || $_SESSION["wizard"] != "notused"){
-		if($_SESSION["wizard"] != "notused")
-			$actions = array("&method=edit_key"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_key"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
-		else
-			$actions = array();
+	if(count($keys)){
+		$actions = array("&method=edit_key"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_key"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
 		tableOfObjects($keys, array("status", "key","destination","description"), "key for auto attendant", $actions, array("&method=edit_key"=>"Add key"));
 	}else
 		edit_key();
@@ -300,17 +289,10 @@ function edit_key_database()
 	}
 
 	$key->description = getparam("description");
-	if($_SESSION["wizard"] != "notused") {
-		if($key->key_id)
-			notify($key->update());
-		else
-			notify($key->insert());
-	}else{
-		$res = $key->insert();
-		notice($res[1], 'no', $res[0]);
-		aut_define_keys();
-		return;
-	}
+	if($key->key_id)
+		notify($key->update());
+	else
+		notify($key->insert());
 }
 
 function delete_key()
@@ -412,10 +394,7 @@ function scheduling_database($fields = NULL)
 	if(isset($_SESSION["wiz_config"]))
 		return;
 
-	if($_SESSION["wizard"] != "notused")
-		wizard();
-	else
-		aut_scheduling();
+	wizard();
 }
 
 function set_period($value, $name)
@@ -468,10 +447,7 @@ function prompts($wizard=false)
 		return;
 	}
 
-	if($_SESSION["wizard"] != "notused")
-		$actions = array("&method=edit_prompt"=>'<img src="images/edit.gif" alt="edit" title="Edit"/>', "&method=listen_prompt"=>'<img src="images/listen.gif" alt="play" title="Listen"/>', "&method=reupload_prompt"=>'<img src="images/upload.gif" alt="upload" title="Upload"/>');
-	else
-		$actions = array();
+	$actions = array("&method=edit_prompt"=>'<img src="images/edit.gif" alt="edit" title="Edit"/>', "&method=listen_prompt"=>'<img src="images/listen.gif" alt="play" title="Listen"/>', "&method=reupload_prompt"=>'<img src="images/upload.gif" alt="upload" title="Upload"/>');
 
 	tableOfObjects($prompts, array("status", "prompt", "function_getfilesize:size"=>"file"), "prompt", $actions);
 
@@ -562,11 +538,7 @@ function upload_prompts_database()
 
 	if(strtolower(substr($online,-4)) != ".mp3" || strtolower(substr($offline,-4)) != ".mp3")
 	{
-		if($_SESSION["wizard"] == "notused") {
-			notice("File format must be .mp3", "no", false);
-			aut_set_prompts();
-		}else
-			wizard("File format must be .mp3");
+		wizard("File format must be .mp3");
 		return;
 	}
 
@@ -588,30 +560,18 @@ function upload_prompts_database()
 	if($nr) 
 	{
 		Database::rollback();
-		if($_SESSION["wizard"] == "notused") {
-			notice("There are already $nr prompts uploaded", "no", false);
-			aut_set_prompts();
-		}else
-			errormess("There are already $nr prompts uploaded");
+		errormess("There are already $nr prompts uploaded");
 		return;
 	}
 
 	if (!move_uploaded_file($_FILES["online"]['tmp_name'],$online_file)) {
 		Database::rollback();
-		if($_SESSION["wizard"] == "notused") {
-			notice("Could not upload file for online mode", "no", false);
-			aut_set_prompts();
-		}else
-			errormess("Could not upload file for online mode");
+		errormess("Could not upload file for online mode");
 		return;
 	}
 	if (!move_uploaded_file($_FILES["offline"]['tmp_name'],$offline_file)) {
 		Database::rollback();
-		if($_SESSION["wizard"] == "notused") {
-			notice("Could not upload file for offline mode", "no", false);
-			aut_set_prompts();
-		}else
-			errormess("Could not upload file for offline mode");
+		errormess("Could not upload file for offline mode");
 		return;
 	}
 
@@ -627,11 +587,7 @@ function upload_prompts_database()
 
 	if(!is_file($slin_online) || !is_file($slin_offline)) {
 		Database::rollback();
-		if($_SESSION["wizard"] == "notused") {
-			notice("Could not convert files in .au format.", "no", false);
-			aut_set_prompts();
-		}else
-			errormess("Could not convert files in .au format.");
+		errormess("Could not convert files in .au format.");
 		return;
 	}
 
@@ -644,20 +600,12 @@ function upload_prompts_database()
 		$res = $prompt->insert();
 		if(!$res[0]) {
 			Database::rollback();
-			if($_SESSION["wizard"] == "notused") {
-				notice("Could not upload the prompts. Please try again", "no", false);
-				aut_set_prompts();
-			}else
-				errormess("Could not upload the prompts. Please try again");
+			errormess("Could not upload the prompts. Please try again");
 			return;
 		}
 	}
 	Database::commit();
-
-	if($_SESSION["wizard"] == "notused")
-		aut_set_prompts();
-	else
-		wizard();
+	wizard();
 }
 
 function reupload_prompt($error = NULL)
