@@ -428,7 +428,7 @@ function return_route($called,$caller,$no_forward=false)
 	if(routeToExtension($called))
 		return;
 
-	$query = "SELECT * FROM dial_plans INNER JOIN gateways ON dial_plans.gateway_id=gateways.gateway_id WHERE prefix IS NULL OR '$called' LIKE prefix||'%' AND (gateways.username IS NULL OR gateways.status='online') ORDER BY length(coalesce(prefix,'')) DESC, priority LIMIT $max_routes";
+	$query = "SELECT * FROM dial_plans INNER JOIN gateways ON dial_plans.gateway_id=gateways.gateway_id WHERE (prefix IS NULL OR '$called' LIKE prefix||'%') AND (gateways.username IS NULL OR gateways.status='online') ORDER BY length(coalesce(prefix,'')) DESC, priority LIMIT $max_routes";
 	$res = query_to_array($query);
 
 	if(!count($res)) {
