@@ -436,8 +436,7 @@ function return_route($called,$caller,$no_forward=false)
 		return;
 	}
 	$id = $ev->GetValue("id");
-	$start = (count($res)>$max_routes) ? $max_routes : count($res);
-	$start--;
+	$start = count($res) - 1;
 	$j = 0;
 	$fallback = array();
 	for($i=$start; $i>=0; $i--) {
