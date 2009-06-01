@@ -25,18 +25,17 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 //fields for gateway with registration
 	$sip_fields = array(
 						"gateway"=>array("compulsory"=>true), 
-						"username"=>array("compulsory"=>true), 
+						"username"=>array("compulsory"=>true, "Username is normally used to authenticate to the other server. It is the user part of the SIP address of your server when talking to the gateway you are currently defining."), 
 						"password"=>array("comment"=>"Insert only when you wish to change", "display"=>"password"),
-						"server"=>array("compulsory"=>true),
+						"server"=>array("compulsory"=>true, "comment"=>"Ex:10.5.5.5:5060 It is IP address of the gateway : port number used for sip on that machine."),
 						"description"=>array("display"=>"textarea"), 
-						"authname"=>array("advanced"=>true), 
-						"outbound"=>array("advanced"=>true),
-						"domain"=>array("advanced"=>true),
-						"localaddress"=>array("advanced"=>true),
-						"interval"=>array("advanced"=>true),
- 						"number"=>array("advanced"=>true),
-						"formats"=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically"), 
-						"rtp_forward"=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)"),
+						"authname"=>array("advanced"=>true, "comment"=>"Authentication ID is an ID used strictly for authentication purpose when the phone attempts to contact the SIP server. This may or may not be the same as the above field username. Set only if it's different."), 
+						"outbound"=>array("advanced"=>true, "comment"=>"An Outbound proxy is mostly used in presence of a firewall/NAT to handle the signaling and media traffic across the firewall. Generally, if you have an outbound proxy and you are not using STUN or other firewall/NAT traversal mechanisms, you can use it. However, if you are using STUN or other firewall/NAT traversal tools, do not use an outbound proxy at the same time."),
+						"domain"=>array("advanced"=>true, "comment"=>"Domain in which the server is in."),
+						"localaddress"=>array("advanced"=>true, "comment"=>"Insert when you wish to force a certain address to be considered as the default address."),
+						"interval"=>array("advanced"=>true, "comment"=>"Represents the interval in which the registration will expires. Default value is 600 seconds."),
+						"formats"=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"Codecs to be used. If none of the formats is checked then server will try to negociate formats automatically"), 
+						"rtp_forward"=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)."),
 						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallest priority.")
 						);
@@ -45,11 +44,10 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"gateway"=>array("compulsory"=>true),
 						"username"=>array("compulsory"=>true), 
 						"password"=>array("comment"=>"Insert only when you wish to change", "display"=>"password"),
-						"server"=>array("compulsory"=>true),
+						"server"=>array("compulsory"=>true, "comment"=>"Ex:10.5.5.5:1720 It is IP address of the gateway : port number used for H323 on that machine."),
 						"description"=>array("display"=>"textarea"), 
-						"interval"=>array("advanced"=>true), 
-						"number"=>array("advanced"=>true),
-						"formats"=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically"), 
+						"interval"=>array("advanced"=>true, "comment"=>"Represents the interval in which the registration will expires. Default value is 600 seconds."), 
+						"formats"=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"Codecs to be used. If none of the formats is checked then server will try to negociate formats automatically"), 
 						"rtp_forward"=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)"),
 						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
@@ -251,8 +249,8 @@ function edit_gateway_database()
 		for($i=0; $i<count($compulsory); $i++)
 			$params[$compulsory[$i]] = getparam($gw_type."_".$protocol.$compulsory[$i]);
 
-		$sip = array('authname','outbound', 'domain', 'localaddress', 'description', 'interval', 'number');
-		$h323 = $iax = array('description', 'interval', 'number');
+		$sip = array('authname','outbound', 'domain', 'localaddress', 'description', 'interval');
+		$h323 = $iax = array('description', 'interval');
 	
 		for($i=0; $i<count(${$protocol}); $i++)
 			$params[${$protocol}[$i]] = getparam($gw_type."_".$protocol.${$protocol}[$i]);

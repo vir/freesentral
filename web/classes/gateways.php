@@ -23,7 +23,6 @@ class Gateway extends Model
 					"description" => new Variable("text"),
 					"interval" => new Variable("text"),
 					"authname" => new Variable("text"),
-					"number" => new Variable("text"),
 					"domain" => new Variable("text"),
 					"outbound" => new Variable("text"),
 					"localaddress" => new Variable("text"),
