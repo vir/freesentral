@@ -25,7 +25,12 @@ else
 
 $actions = array("&method=edit_music_on_hold"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_music_on_hold"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>', "&method=upload_music_on_hold"=>'<img src="images/upload.gif" title="ReUpload file" alt="ReUpload file"/>', "&method=listen_music_on_hold"=>'<img src="images/listen.gif" title="Play" alt="Play"/>');
 
+$explanation = array("default"=>"Music on hold - The caller on hold can hear music while waiting to be picked-up. After uploading songs, you can define playlists and set the one can be in use.");
+
+print '<div style="display:inline; float:left; width:21%;margin-right:10px;">';
 draw_tree();
+explanations(null, "", $explanation, "copac_explanations custom_explanation");
+print '</div>';
 if (getparam("playlist"))
 	print "<script language=\"javascript\">copacComuta('".getparam("playlist")."');</script>\n";
 print '<div class="content">';
@@ -39,7 +44,7 @@ function draw_tree()
 	$items = $item->extendedSelect(NULL, "playlist, music_on_hold");
 
 	$items = Model::objectsToArray($items, array("playlist"=>"", "music_on_hold"=>""));
-	tree($items, "playlistClick", "copac", "Playlists");
+	tree($items, "playlistClick", "copac_explanations", "Playlists");
 }
 
 function music_on_hold()

@@ -1,4 +1,3 @@
-<div class="content wide">
 <?
 global $module, $method, $path, $action, $page;
 
@@ -13,7 +12,70 @@ if($action)
 else
 	$call = $method;
 
+$explanation = array("default"=>"DIDs - A call can go directly to a phone from inside the FreeSentral, by definining the destination as a Did. The destination can be an extension, a group of extensions, a voicemail, etc. ", "conferences"=>"Conferences - use the number associated to each room to connect to the active conference rooms.");
+$explanation["edit_conference"] = $explanation["conferences"];
+
+explanations("images/dids.png", "", $explanation);
+
+print '<div class="content">';
 $call();
+print '</div>';
+
+function manage()
+{
+	dids();
+}
+
+function edit_conference()
+{
+	$did = new Did;
+	$did->did_id = getparam("did_id");
+	$did->select();
+
+	$fields = array(
+					"conference" => array("value"=>get_conf_from_did($did->did, $did->destination), "compulsory"=>true, "comment"=>"Name for conference chamber"),
+					"number" => array("value"=>$did->number, "compulsory"=>true, "comment"=>"Number people need to call to enter the conference. This number must be unique in the system: must not match a did, extension or group.")
+				);
+	$title = ($did->did_id) ? "Edit conference" : "Add conference";
+
+	start_form();
+	addHidden("database", array("did_id"=>$did->did_id));
+	editObject(null, $fields, $title, "Save");
+	end_form();
+}
+
+function edit_conference_database()
+{
+	$did = new Did;
+	$did->did_id = getparam("did_id");
+	$params = array("did"=>"conference " . getparam("conference"), "number"=>getparam("number"), "destination"=>"conf/".getparam("conference"));
+	$res = ($did->did_id) ? $did->edit($params) : $did->add($params);
+	notice($res[1], "conferences", $res[0]);
+}
+
+function delete_conference()
+{
+	ack_delete("conference", get_conf_from_did(getparam("did"), getparam("destination")), null, "did_id", getparam("did_id"));
+}
+
+function delete_conference_database()
+{
+	$did = new Did;
+	$did->did_id = getparam("did_id");
+	$res = $did->objDelete();
+
+	if($res[0])
+		notice("Conference was deleted.", "conferences", true);
+	else
+		notice("Could not delete conference.", "conferences", false);
+}
+
+function conferences()
+{
+	$conferences = Model::selection("did", array("destination"=>"LIKEconf/"), "did");
+	$fields = array("function_get_conf_from_did:conference"=>"did", "number", "function_conference_participants:participants"=>"number");
+	tableOfObjects($conferences, $fields, "conference", array("&method=edit_conference"=>'<img src="images/edit.gif" alt="Edit" title="Edit" />', "&method=delete_conference"=>'<img src="images/delete.gif" alt="Delete" title="Delete" />'), array("&method=add_conference"=>"Add conference"));
+}
 
 function dids()
 {
@@ -23,7 +85,7 @@ function dids()
 
 	$did = new Did;
 	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
-	$dids = $did->extendedSelect(NULL,"number");
+	$dids = $did->extendedSelect(array("destination"=>"NOT LIKEconf/"),"number");
 
 	$formats = array("did","number","destination","function_get_default_destination:default_destination"=>"extension,group");
 	tableOfObjects($dids, $formats, "did", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'),array("&method=add_did"=>"Add DID"));
@@ -106,4 +168,3 @@ function delete_did_database()
 	notice($res[1], $module, $res[0]);
 }
 ?>
-</div>

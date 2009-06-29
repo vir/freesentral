@@ -11,9 +11,9 @@ function set_step($nr,$message,$img,$brs=2)
 	print '<div class="notify">';
 	print "Step ".$nr." :: ".$message;
 	if($img == "complete")
-		print '<img src="images/complete.gif" alt="complete" title="Complete"/>';
+		print '<img src="images/complete.gif" alt="complete" title="Complete" width="35px"/>';
 	else
-		print '<img src="images/incomplete.gif" alt="incomplete" title="Incomplete"/>';
+		print '<img src="images/incomplete.gif" alt="incomplete" title="Incomplete" width="20px" />';
 	for($i=0;$i<$brs;$i++)
 		print "<br/>";
 	print "</div>";
@@ -32,7 +32,7 @@ function activate($error = NULL)
 	$dids = $did->extendedSelect(array("destination"=>"external/nodata/auto_attendant.php"),"number");
 	if(count($dids))
 	{
-		set_step(4,"Activate did for Auto Attendant","complete");
+		set_step(4,"Activate DID for Auto Attendant","complete");
 
 		$formats = array("did", "number", "destination", "function_get_default_destination:default_destination"=>"extension,group");
 

@@ -154,7 +154,7 @@ function files($level)
 				continue;
 			if (stripos($file,".php") === false)
 				continue;
-			if($file == "HOME.php")
+			if($file == "HOME.php" || $file == "PBX_features.php")
 				continue;
 			$names[] = ereg_replace('.php','',$file);
 		}
@@ -163,7 +163,8 @@ function files($level)
 	sort($names);
 	if(is_file("modules/$level/HOME.php"))
 		$names = array_merge(array("HOME"), $names);
-
+	if(is_file("modules/$level/PBX_features.php"))
+		$names = array_merge($names, array("PBX_features"));
 	$i = 0;
 	foreach($names as $name)
 	{

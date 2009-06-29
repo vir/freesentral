@@ -1,4 +1,3 @@
-<div class="content wide">
 <?
 require_once("lib_gateways.php");
 
@@ -15,7 +14,19 @@ if($action)
 else
 	$call = $method;
 
+if($method == "dial_plan" || $method == "edit_dial_plan")
+	$image = "images/dial_plan.png";
+else
+	$image = "images/gateways.png";
+
+$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.");
+$explanation["edit_dial_plan"] = $explanation["dial_plan"];
+
+explanations($image, "", $explanation);
+
+print '<div class="content">';
 $call();
+print '</div>';
 
 function outbound()
 {
@@ -794,4 +805,3 @@ function edit_gateway_database()
 }
 */
 ?>
-</div>

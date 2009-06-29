@@ -133,9 +133,9 @@ print '<br/><br/>';
 /*
 function home()
 {
-	print '<div class="title wide">:: Ongoing Calls ::</div>';
+	print '<div class="title wide">:: Active Calls ::</div>';
 	print '<div class="content wide">';
-	ongoing_calls(5);
+	active_calls(5);
 	print '</div>';
 	print '<div class="title wide">:: Logs ::</div>';
 	print '<div class="content wide">';
@@ -162,7 +162,7 @@ function logs($lim = NULL)
 	tableOfObjects($logs,array("function_select_date:date"=>"date", "function_select_time:time"=>"date","performer", "log"),"log");
 }
 
-function ongoing_calls($lim = NULL)
+function active_calls($lim = NULL)
 {
 	global $limit,$page;
 
@@ -195,11 +195,11 @@ function ongoing_calls($lim = NULL)
 		$total = count($call_logs);
 	if($total)
 		if($total != 1)
-			print "There are ".$total." ongoing calls in the system.<br/><br/>";
+			print "There are ".$total." active calls in the system.<br/><br/>";
 		else
-			print "There is 1 ongoing call in the system.<br/><br/>";
+			print "There is 1 active call in the system.<br/><br/>";
 
-	tableOfObjects($call_logs,$formats, "ongoing call");
+	tableOfObjects($call_logs,$formats, "active call");
 }
 
 function call_logs($error = NULL)

@@ -21,6 +21,7 @@ body.mainbody
 	margin-top:20px;
 	background-color:white;
 	font-family:Verdana;
+	/*font-size:11px;*/
 }
 
 table.container
@@ -165,7 +166,7 @@ div.content, div.homecontent
 {
 	float:left;
 	/*width:73%;/*650px;*/
-	width:60%;
+	width:70%;
 	padding:20px;
 	/*margin-left:1%;*/
 	/*margin-right:10px;*/
@@ -173,6 +174,7 @@ div.content, div.homecontent
 	border:1px solid #cccccc;/*#104a73;*/
 	margin-top:0px;
 	background-color:#eee;
+	font-size:13px;
 }
 
 div.homecontent
@@ -212,15 +214,14 @@ div.wide
 	width:95%;
 }
 
-div.copac
+div.copac,div.explanation, div.copac_explanations
 {
 	margin-right:10px;
-	background-color:#eee;
 	border: 2px solid #0189d7;
 	background-color:white;
 }
 
-div.copac,div.formular,div.formular_dashboard
+div.copac,div.formular,div.formular_dashboard,div.explanation, div.copac_explanations
 {
 	margin-top:0px;
 	margin-left:10px;
@@ -228,6 +229,29 @@ div.copac,div.formular,div.formular_dashboard
 	display:inline;
 	float:left;
 	font-size:13px;
+}
+
+div.copac_explanations
+{
+	display:block;
+	float:none;
+	width:95%;
+	margin-bottom:10px;
+/*	padding: 5px;
+	font-size:12px;*/
+}
+
+div.explanation
+{
+	border: 2px solid #0189d7;/*#eee;*/
+	padding: 5px;
+	font-size:12px;
+}
+
+div.custom_explanation
+{
+	/*padding: 5px;*/
+	font-size:12px;
 }
 
 div.copachome
@@ -521,6 +545,7 @@ img.advanced
 div.notify
 {
 	color: #444;
+	font-size:12px;
 }
 
 td.unread
@@ -529,7 +554,7 @@ td.unread
 	font-size:14px;
 }
 
-font.notice
+font.notice, font.voicemail_notice
 {
 	font-size:13px;
 	color:#404040;
@@ -665,4 +690,49 @@ table.col3
 	text-align:center; 
 	margin-left:auto; 
 	margin-right:auto;
+}
+
+li.features
+{
+	padding-bottom:4px;
+	padding-top:6px;
+	/*font-size:14px;*/
+}
+
+ul.features
+{
+	padding-top:0px;
+	padding-left:30px;
+}
+
+a.features
+{
+	font-size:14px;
+	color:#0189D7;
+	font-weight:bold;
+}
+
+div.features_notice
+{
+	font-size:13px;
+	color:#404040;
+	padding-top:15px;
+	padding-bottom:15px;
+}
+
+li.list_features
+{
+	list-style-type:square;
+}
+
+a.list_features
+{
+	font-size:13px;
+	color: #404040;
+	text-decoration:none;
+}
+
+a.list_features:hover
+{
+	text-decoration:underline;
 }

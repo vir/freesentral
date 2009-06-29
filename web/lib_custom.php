@@ -334,4 +334,20 @@ function days_of_week($name, $value=NULL)
 			print '<br/>';
 	}
 }
+
+function get_conf_from_did($did, $destination)
+{
+	if(!$did)
+		return NULL;
+	if(!substr($destination,0,5) == "conf/")
+		return $did;
+	return substr($did,10,strlen($did));
+}
+
+function conference_participants($number)
+{
+	$call_log = new Call_log;
+	$nr_participants = $call_log->fieldSelect("count(*)", array("ended"=>false, "called"=>$number));
+	return $nr_participants;
+}
 ?>

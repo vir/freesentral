@@ -1690,5 +1690,37 @@ function field_value($field, $array)
 	return NULL;
 }
 
+function explanations($logo, $title, $explanations, $style="explanation")
+{
+	global $method;
+
+	if(is_array($explanations))
+		if(isset($explanations[$method]))
+			$text = $explanations[$method];
+		else
+			$text = $explanations["default"];
+	else
+		$text = $explanations;
+
+	print '<div class="'.$style.'">';
+	print '<table class="fillall" cellspacing="0" cellpadding="0" >';
+	print '<tr>';
+	print '<td class="logo_wizard" style="padding:5px;">';
+	if ($logo && $logo != "")
+		print '<img src="'.$logo.'">';
+	print '</td>';
+	print '<td class="title_wizard" style="padding:5px;" >';
+	print '<div class="title_wizard">'.$title.'</div>';
+	print '</td>';	
+	print '</tr>';
+	print '<tr>';
+	print '<td class="step_description" style="font-size:13px;padding:5px;" colspan="2">';
+	print $text;
+	print '</td>';
+	print '</tr>';
+	print '</table>';
+	print '</div>';
+}
+
 /* vi: set ts=8 sw=4 sts=4 noet: */
 ?>

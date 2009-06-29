@@ -28,7 +28,14 @@ if($action)
 else
 	$call = $method;
 
+$explanation = array("default" => "Extensions - Internal phones attached to the IP PBX", "groups"=>"Groups - organize extensions in groups, in order to use the call hunting and queues functionality");
+
+$explanation["edit_group"] = $explanation["groups"];
+
+print '<div style="display:inline; float:left; width:21%;margin-right:10px;">';
 draw_tree();
+explanations("images/extension.png", "", $explanation, "copac_explanations custom_explanation");
+print '</div>';
 if (getparam("group"))
 	print "<script language=\"javascript\">copacComuta('".getparam("group")."');</script>\n";
 print '<div class="content">';
@@ -44,7 +51,7 @@ function draw_tree()
 	//get an array with only the group and extension columns 
 	$members = Model::objectsToArray($members, array("group"=>"","extension"=>""),true);
 	$members = array_merge(array(array("group"=>"All extensions", "extension"=>"")), $members);
-	tree($members,"groupsClick");
+	tree($members,"groupsClick","copac_explanations");
 }
 
 function extensions()

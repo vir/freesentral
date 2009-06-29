@@ -1,4 +1,3 @@
-<div class="content wide">
 <?
 
 global $module, $method, $path, $action, $page, $target_path;
@@ -14,7 +13,16 @@ if($action)
 else
 	$call = $method;
 
+$explanation = array("default"=>"General settings for the system, set admins and define system's address book.", "admins"=>"The admin is the role in charge with the maintenance of the system. It has unlimited access to configurations, setup and any kind of changes inside FreeSentral. The administrator role is available via 'admin' account.", "address_book"=>"Address book entries - numbers associated with a person's name. This allows you to call a certain extension by typing the person's name(the digits corresponding that person's name).");
+$explanation["edit_admin"] = $explanation["admins"];
+$explanation["edit_short_name"] = $explanation["address_book"];
+
+$image = "images/address_book.png";
+explanations($image, "", $explanation);
+
+print '<div class="content">';
 $call();
+print '</div>';
 /*
 function equipments()
 {
@@ -678,4 +686,3 @@ function delete_user_database()
 }
 
 ?>
-</div>

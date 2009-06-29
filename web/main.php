@@ -83,7 +83,6 @@ if(!isset($_SESSION["verified_settings"]))
 if($level == "admin" && $_SESSION["wizard"] == "notused")
 	$module = "verify_settings";
 */
-
 ?>
 
 <html>

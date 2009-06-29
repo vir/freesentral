@@ -9,8 +9,8 @@ include_classes();
 
 require_once("set_debug.php");
 
-$_SESSION["warning_on"] = true;
-$_SESSION["notice_on"] = true;
+//$_SESSION["warning_on"] = true;
+//$_SESSION["notice_on"] = true;
  
 //session_start();
 
