@@ -1092,8 +1092,10 @@ class Model
 				$id_value = $var->escape($this->{$id_name});
 				if(!$id_value || $id_value == "NULL")
 					$where = '';
-				else
+				else {
 					$where = " where \"$id_name\"=$id_value";
+					$conditions[$id_name] = $id_value;
+ 				}
 			}else
 				$where = '';
 		}else
