@@ -191,17 +191,11 @@ function delete_music_on_hold_database()
 
 function listen_music_on_hold()
 {
-	global $path;
+	global $path, $target_path;
 	$path .= "&method=music_on_hold";
 	//message("Not yet implemented",$path);
 
-	$setting = Model::selection("setting", array("param"=>"path"));
-	if(!count($setting)) {
-		errormess("Path to music on hold is not specified. It must be defined in the Settings section.",$path);
-		return;
-	}
-
-	$filepath = $setting[0]->value . "/moh/";
+	$filepath = $target_path . "/moh/";
 	$music_on_hold_id = getparam("music_on_hold_id");
 	$music_on_hold = new Music_On_Hold;
 	$music_on_hold->music_on_hold_id = getparam("music_on_hold_id");

@@ -681,12 +681,6 @@ function listen_prompt()
 {
 	global $target_path;
 
-	$setting = Model::selection("setting", array("param"=>"path"));
-	if(!count($setting)) {
-		errormess("Path to music on hold is not specified. It must be defined in the Settings section.",$path);
-		return;
-	}
-
 	$filepath =  $target_path. "/auto_attendant/";
 
 	$prompt = new Prompt;
