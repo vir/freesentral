@@ -736,3 +736,29 @@ a.list_features:hover
 {
 	text-decoration:underline;
 }
+
+table.features_table
+{
+	font-size:13px;
+}
+
+th.features_th
+{
+	color: #0044AA;
+	background-color: #D0D3FF;
+	padding-bottom:4px;
+	padding-top:4px;
+	vertical-align:middle;
+	text-align:left;
+	padding-left:10px;
+}
+
+td.features_td
+{
+	background-color:#F0F0F3;
+	border-bottom:2px solid white;
+	border-right:2px solid white;
+	border-left:2px solid white;
+	padding:2px;
+	padding-left:6px;
+}

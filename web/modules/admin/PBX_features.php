@@ -19,6 +19,90 @@ function PBX_features()
 
 function digits()
 {
+	$arr = array(
+"Call hold" => array( 
+	array(
+		"digits"=>"*0",
+		"text"=>"then the number you want to transfer to, and then * - Unassisted transfer"
+	),
+	array(
+		"digits"=>"*7",
+		"text"=>"return party put on hold"
+	),
+),
+"Call transfer" => array(
+	array(
+		"digits"=>"*1, then the number, and then *",
+		"text"=>"Unassisted transfer"
+	),
+	array(
+		"digits"=>"*2, then phone number, then *",
+		"text"=>"(First operation for assited transfer) put your party and hold and you will be connected to the inserted number"
+	),
+	array(
+		"digits"=>"*4, then phone number, then *",
+		"text"=>"(Second operation for assisted transfer) connect the party you put on hold to your current party"
+	)
+),
+"Conference"=>array(
+	array(
+		"digits"=>"*3",
+		"text"=>"pressed during a call, transfers you and your pear in to a conference"
+	),
+	array(
+		"digits"=>"*9",
+		"text"=>"return your dial tone"
+	),
+	array(
+		"digits"=>"*6",
+		"text"=>"ransfer yourself and your new pear to an existing conference."
+	)
+),
+"Call pick up"=>array(
+	array(
+		"digits"=>"**, then extenion receiving the call",
+		"text"=>"pick up that call(works only if your and that extension are in the same group) "
+	)
+),
+"Flush digits"=>array(
+	array(
+		"digits"=>"#, after a certain number of digits",
+		"text"=>"delete the entered digits"
+	)
+),
+"Enable/Disable PBX features"=>array(
+	array(
+		"digits"=>"***",
+		"text"=>"disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company your called to"
+	),
+	array(
+		"digits"=>"###",
+		"text"=>"enable pbx features after they were previously disabled"
+	)
+)
+	);
+?>
+<table class="features_table" cellspacing="0" cellpadding="0">
+<?foreach($arr as $name=>$combinations) {?>
+<tr>
+	<th class="features_th" colspan="2">
+		<?print $name;?>
+	</th>
+</tr>
+<?for($i=0; $i<count($combinations); $i++) { ?>
+<tr>
+	<td class="features_td digit">
+		<?print $combinations[$i]["digits"];?>
+	</td>
+	<td class="features_td digit_description">
+		<?print $combinations[$i]["text"];?>
+	</td>
+</tr>
+<? } ?>
+<? } ?>
+</table>
+<?
+/*
 ?>
 *0 - put your party on hold
 <br/><br/>
@@ -44,6 +128,7 @@ function digits()
 <br/><br/>
 ### - enable pbx features
 <?
+*/
 }
 
 function all()
