@@ -516,7 +516,7 @@ class Model
 				$condition = $id;
 			}
 			$var = $this->variable($condition);
-			$value_condition = $var->escape($this->{$condition});
+			$value_condition = ($this->condition) ? $var->escape($this->{$condition}) : NULL;
 			if (!isset($this->{$condition}) || !$value_condition)
 			{
 				$this->invalidate();
