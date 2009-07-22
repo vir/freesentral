@@ -516,7 +516,7 @@ class Model
 				$condition = $id;
 			}
 			$var = $this->variable($condition);
-			$value_condition = ($this->condition) ? $var->escape($this->{$condition}) : NULL;
+			$value_condition = ($this->{$condition}) ? $var->escape($this->{$condition}) : NULL;
 			if (!isset($this->{$condition}) || !$value_condition)
 			{
 				$this->invalidate();
@@ -783,14 +783,16 @@ class Model
 				switch ($var->_type)
 				{
 					case "serial":
-						if ($var->_key == "")
+						if ($var->_key == "") {
 							$serials[$var_name] = true;
-						$var = null;
+							$var = null;
+						}
 						break;
 					case "bigserial":
-						if ($var->_key == "")
+						if ($var->_key == "") {
 							$serials[$var_name] = true;
-						$var = null;
+							$var = null;
+						}
 						break;
 				}
 			}
@@ -1095,7 +1097,7 @@ class Model
 				else {
 					$where = " where \"$id_name\"=$id_value";
 					$conditions[$id_name] = $id_value;
- 				}
+				}
 			}else
 				$where = '';
 		}else
@@ -1756,12 +1758,26 @@ class Model
 
 			if ($where != " WHERE ")
 				$where .= " AND ";
+/*
+			// old implementation. I will keep for some time
 			if(is_array($value) && is_numeric($key))
 				$clause = $this->buildOR($value, $obj_table, $only_one_table, $without_table);
 			elseif(is_array($value)) {
 				$clause = $this->buildAND($key, $value, $obj_table, $only_one_table, $without_table);
 			} else
 				$clause = $this->makeCondition($key, $value, $obj_table, $only_one_table, $without_table);
+*/
+
+			if(is_array($value)) {
+				// this is an OR or an AND
+				$sql_rel = (isset($value["sql_relation"])) ? $value["sql_relation"] : "AND";
+				if($sql_rel == "AND")
+					$clause = $this->buildAND($key, $value, $obj_table, $only_one_table, $without_table);
+				else
+					$clause = $this->buildOR($key, $value, $obj_table, $only_one_table, $without_table);
+			}else
+				$clause = $this->makeCondition($key, $value, $obj_table, $only_one_table, $without_table);
+
 
 			$where .= $clause;
 		}
@@ -1784,11 +1800,22 @@ class Model
 		$t_k = $this->getColumnName($key, $obj_table, $only_one_table, $without_table);
 
 		$clause = "";
-		for($i=0; $i<count($allowed_values); $i++)
+//		for($i=0; $i<count($allowed_values); $i++)
+//		{
+//			if($clause != "")
+//				$clause .= " AND "; 
+//			$clause .= $this->makeCondition($t_k, $allowed_values[$i], $obj_table, $only_one_table, true);
+//		}
+		foreach($allowed_values as $var_name=>$var_value)
 		{
+			if(is_numeric($var_name))
+				$t_k = $this->getColumnName($key, $obj_table, $only_one_table, $without_table);
+			else
+				$t_k = $this->getColumnName($var_name, $obj_table, $only_one_table, $without_table);
+
 			if($clause != "")
 				$clause .= " AND "; 
-			$clause .= $this->makeCondition($t_k, $allowed_values[$i], $obj_table, $only_one_table, true);
+			$clause .= $this->makeCondition($t_k, $var_value, $obj_table, $only_one_table, true);
 		}
 		return $clause;
 	}
@@ -1801,14 +1828,19 @@ class Model
 	 * Value is true when method is called from within a method that never returns extended objects.
 	 * @param $without_table The name of the tables won't be specified in the query: Ex: we won't have table_name.column, just column
 	 */
-	protected function buildOR($conditions, $obj_table, $only_one_table = false, $without_table = false)
+	protected function buildOR($key, $conditions, $obj_table, $only_one_table = false, $without_table = false)
 	{
 		$clause = "";
 		foreach($conditions as $column_name=>$value)
 		{
+			if($column_name === "sql_relation")
+				continue;
 			if($clause != "")
 				$clause .= " OR "; 
-			$t_k = $this->getColumnName($column_name, $obj_table, $only_one_table, $without_table);
+			if(is_numeric($column_name))
+				$t_k = $this->getColumnName($key, $obj_table, $only_one_table, $without_table);
+			else
+				$t_k = $this->getColumnName($column_name, $obj_table, $only_one_table, $without_table);
 			$clause .= $this->makeCondition($t_k, $value, $obj_table, $only_one_table, true);
 		}
 		return " (" . $clause. ") ";
@@ -1926,15 +1958,15 @@ class Model
 		}elseif (substr($value,0,4) == "LIKE") {
 			$value = addslashes(substr($value,4,strlen($value)));
 			if (substr($value,0,1) != '%' && substr($value,-1) != '%')
-				$clause .= " $t_k LIKE '$value%' ";
+				$clause .= " $t_k ILIKE '$value%' ";
 			else
-				$clause .= " $t_k LIKE '$value' ";
+				$clause .= " $t_k ILIKE '$value' ";
 		}elseif (substr($value,0,8) == "NOT LIKE") {
 			$value = addslashes(substr($value,8,strlen($value)));
 			if (substr($value,0,1) != '%' && substr($value,-1) != '%')
-				$clause .= " $t_k NOT LIKE '$value%' ";
+				$clause .= " $t_k NOT ILIKE '$value%' ";
 			else
-				$clause .= " $t_k NOT LIKE '$value' ";
+				$clause .= " $t_k NOT ILIKE '$value' ";
 		}elseif(substr($value,0,4) == "sql_") {
 			$value = substr($value,4,strlen($value));
 			$clause .= " $t_k=$value";
