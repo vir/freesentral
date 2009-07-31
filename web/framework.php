@@ -1164,10 +1164,10 @@ class Model
 			if ($cnt) 
 			{
 				self::writeLog("deleted ".$this->getNameInLogs()." $where","$query");
-				print "<br/>\nSuccesfully deleted ".pg_affected_rows($res)." object";
+			/*	print "<br/>\nSuccesfully deleted ".pg_affected_rows($res)." object";
 				if(pg_affected_rows($res) != 1)
 					print "s";
-				print " of type ".get_class($this).'<br/>'."\n";
+				print " of type ".get_class($this).'<br/>'."\n";*/
 			}
 			else
 				return array(true, "Succesfully deleted ".pg_affected_rows($res)." object(s) of type ".get_class($this));
@@ -2043,38 +2043,42 @@ class Model
 		if ($error != '')
 			exit($error);
 
-		if (!isset($inner_query["other_table"]) && !isset($inner_query["inner_table"]))
-			exit("You must either insert 'other_table' or 'inner_table'");
-
 		if ($where == '')
 			$where = ' WHERE ';
 		else
 			$where .= ' AND ';
 
+
 		if (isset($inner_query['table']))
 			$table = $inner_query['table'];
-
-		$inner_table = (isset($inner_query["inner_table"])) ? $inner_query["inner_table"] : $inner_query["other_table"];
-		$inner_column = (isset($inner_query["inner_column"])) ? $inner_query["inner_column"] : $inner_query["column"];
 		$column = $inner_query["column"];
 		$relation = $inner_query["relation"];
 
-		$where .= " \"$table\".\"$column\" $relation (SELECT \"$inner_column\" from \"$inner_table\" ";
-		$inner_where = '';
+		if (!isset($inner_query["options"])) {
 
-		if(!($obj = self::getObject($inner_table)))
-			exit("Quit when wanting to create object from table $inner_table");
+			if (!isset($inner_query["other_table"]) && !isset($inner_query["inner_table"]))
+				exit("You must either insert 'other_table' or 'inner_table'");
 
-		if(isset($inner_query["conditions"]))
-			$inner_where .= $obj->makeWhereClause($inner_query["conditions"],true);
+			$inner_table = (isset($inner_query["inner_table"])) ? $inner_query["inner_table"] : $inner_query["other_table"];
+			$inner_column = (isset($inner_query["inner_column"])) ? $inner_query["inner_column"] : $inner_query["column"];
 
-		if(isset($inner_query["inner_query"]))
-			$inner_where .=$obj->makeInnerQuery($inner_query["inner_query"]);
+			$where .= " \"$table\".\"$column\" $relation (SELECT \"$inner_column\" from \"$inner_table\" ";
+			$inner_where = '';
 
-		$group_by = (isset($inner_query['group_by'])) ? 'group by '.$inner_query['group_by'] : '';
-		$having = (isset($inner_query['having'])) ? 'having '.$inner_query['having'] : '';
+			if(!($obj = self::getObject($inner_table)))
+				exit("Quit when wanting to create object from table $inner_table");
 
-		$where .= $inner_where ." $group_by $having )";
+			if(isset($inner_query["conditions"]))
+				$inner_where .= $obj->makeWhereClause($inner_query["conditions"],true);
+
+			if(isset($inner_query["inner_query"]))
+				$inner_where .=$obj->makeInnerQuery($inner_query["inner_query"]);
+
+			$group_by = (isset($inner_query['group_by'])) ? 'group by '.$inner_query['group_by'] : '';
+			$having = (isset($inner_query['having'])) ? 'having '.$inner_query['having'] : '';
+			$where .= $inner_where ." $group_by $having )";
+		}else
+			$where .= " \"$table\".\"$column\" $relation (".$inner_query["options"].")";
 		
 		return $where;
 	}
