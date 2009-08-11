@@ -1,10 +1,10 @@
 #!/bin/sh
 
-# This file is part of the FreeSentral Project http://freesentral.null.ro
-# A free web interface to set up a PBX based on the Yate telephony engine.
-# Copyright (C) 2008 Null Team
+# install.sh
+# This file is part of the FreeSentral Project http://freesentral.com
 #
-# Yet Another Telephony Engine - a fully featured software PBX and IVR
+# FreeSentral - is a Web Graphical User Interface for easy configuration of the Yate PBX software
+# Copyright (C) 2008-2009 Null Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ fi
 
 pkgname="freesentral"
 pkglong="FreeSentral"
-shortver="1"
+shortver="1.0"
 version="$pkglong v$shortver"
 interactive="yes"
 tarexclude="--exclude CVS --exclude .cvsignore --exclude .svn --exclude .xvpics --exclude tarballs --exclude config.php"
@@ -151,6 +151,10 @@ else
 fi
 
 psqlcmd="`which psql`"
+
+echo "--------------------------------------------------------"
+echo "Note!!! FreeSentral requires at least PostgreSQL 8.2.0"
+echo "--------------------------------------------------------"
 
 if [ "$#" = "1" ]; then
     case "x$1" in

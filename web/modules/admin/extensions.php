@@ -1,3 +1,26 @@
+<?
+/**
+ * extensions.php
+ * This file is part of the FreeSentral Project http://freesentral.com
+ *
+ * FreeSentral - is a Web Graphical User Interface for easy configuration of the Yate PBX software
+ * Copyright (C) 2008-2009 Null Team
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+?>
 <script language="javascript">
 function groupsClick(lin,col,role)
 {
@@ -12,7 +35,7 @@ function groupsClick(lin,col,role)
 <?
 global $module, $method, $path, $action, $page, $limit, $fields_for_extensions, $operations_for_extensions, $upload_path;
 
-require_once("lib_extensions.php");
+require_once("lib/lib_extensions.php");
 
 $fields_for_extensions = array("function_detect_busy:currently"=>"inuse_count,location", "extension", "firstname", "lastname");
 $operations_for_extensions = array("&method=edit_extension"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_extension"=>'<img src="images/delete.gif" title="Delete" alt="delete">', "&method=join_group"=>'<img src="images/join_group.gif" title="Join Group" alt="join group"/>', "&method=impersonate"=>'<img src="images/impersonate.gif" alt="impersonate" title="Impersonate"/>');
