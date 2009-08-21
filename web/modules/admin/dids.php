@@ -95,7 +95,7 @@ function delete_conference_database()
 
 function conferences()
 {
-	$conferences = Model::selection("did", array("destination"=>"LIKEconf/"), "did");
+	$conferences = Model::selection("did", array("destination"=>"__LIKEconf/"), "did");
 	$fields = array("function_get_conf_from_did:conference"=>"did", "number", "function_conference_participants:participants"=>"number");
 	tableOfObjects($conferences, $fields, "conference", array("&method=edit_conference"=>'<img src="images/edit.gif" alt="Edit" title="Edit" />', "&method=delete_conference"=>'<img src="images/delete.gif" alt="Delete" title="Delete" />'), array("&method=add_conference"=>"Add conference"));
 }
@@ -108,7 +108,7 @@ function dids()
 
 	$did = new Did;
 	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
-	$dids = $did->extendedSelect(array("destination"=>"NOT LIKEconf/"),"number");
+	$dids = $did->extendedSelect(array("destination"=>"__NOT LIKEconf/"),"number");
 
 	$formats = array("did","number","destination","function_get_default_destination:default_destination"=>"extension,group");
 	tableOfObjects($dids, $formats, "did", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'),array("&method=add_did"=>"Add DID"));

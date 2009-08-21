@@ -48,7 +48,7 @@ $call();
 
 function conferences()
 {
-	$conferences = Model::selection("did", array("destination"=>"LIKEconf/"), "did");
+	$conferences = Model::selection("did", array("destination"=>"__LIKEconf/"), "did");
 	$fields = array("function_get_conf_from_did:conference"=>"did", "number", "function_conference_participants:participants"=>"number");
 	tableOfObjects($conferences, $fields, "conference",array());
 }

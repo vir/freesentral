@@ -416,11 +416,11 @@ function search_database()
 		return;
 	}
 	if($all == "on")
-		$conditions = array("extension"=>"LIKE%$digits%");
+		$conditions = array("extension"=>"__LIKE%$digits%");
 	elseif($start == "on")
-		$conditions = array("extension"=>"LIKE$digits%");
+		$conditions = array("extension"=>"__LIKE$digits%");
 	elseif($end == "on")
-		$conditions = array("extension"=>"LIKE%$digits");
+		$conditions = array("extension"=>"__LIKE%$digits");
 	else{
 		search("Please check one of the options for matching");
 		return;

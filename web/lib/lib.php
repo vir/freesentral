@@ -140,6 +140,16 @@ function getparam($param,$escape = true)
 		return NULL;
 	if ($escape)
 		$ret = addslashes($ret);
+	if (substr($ret,0,6) == "__sql_")
+		$ret = NULL; 
+	if ($ret == "__empty")
+		$ret = NULL;
+	if ($ret == "__non_empty" || $ret == "__not_empty")
+		$ret = NULL;
+	if (substr($ret,0,6) == "__LIKE")
+		$ret = NULL;
+	if (substr($ret,0,10) == "__NOT LIKE")
+		$ret = NULL;
 	return $ret;
 }
 

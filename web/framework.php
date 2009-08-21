@@ -172,6 +172,18 @@ class Database
 		if(isset($_SESSION["debug_all"]))
 			print "<br/>\n<br/>\nquery :'.$query.'<br/>\n<br/>\n";
 
+		// don't allow query to be formed from more than one query. Verify that  they aren't separated by ;
+		$in_value = false;
+		for($i=0; $i<strlen($query); $i++)
+		{
+			if($query[$i] == ";" && !$in_value)
+				return false;
+			elseif($query[$i] == "'" && !$in_value)
+				$in_value = true;
+			elseif($query[$i] == "'" && $in_value)
+				$in_value = false;
+		}
+
 		if (function_exists("pg_result_error_field"))
 		{
 			// happy, happy, joy, joy!
@@ -224,6 +236,17 @@ class Database
 			return false;
 		if(isset($_SESSION["debug_all"]))
 			print "queryRaw: $query\n<br/>\n<br/>\n";
+		// don't allow query to be formed from more than one query. Verify that  they aren't separated by ;
+		$in_value = false;
+		for($i=0; $i<strlen($query); $i++)
+		{
+			if($query[$i] == ";" && !$in_value)
+				return false;
+			elseif($query[$i] == "'" && !$in_value)
+				$in_value = true;
+			elseif($query[$i] == "'" && $in_value)
+				$in_value = false;
+		}
 		return pg_query(self::$_connection,$query);
 	}
 
@@ -405,8 +428,11 @@ class Model
 		$this->_model = self::getVariables(get_class($this));
 		$this->_setted = false;
 		$this->_retrieved = false;
-		foreach ($this->_model as $name => $var)
+		foreach ($this->_model as $name => $var) {
+			if($name == "__sql_relation")
+				exit("Invalid column name: __sql_relation.");
 			$this->$name = $var->_value;
+		}
 	}
 
 	/**
@@ -508,7 +534,7 @@ class Model
 		{
 			$array[$i] = array();
 			for($j=0; $j<pg_num_fields($res); $j++)
-				$array[$i][pg_field_name($res,$j)] = stripslashes(pg_fetch_result($res,$i,$j));
+				$array[$i][pg_field_name($res,$j)] = htmlentities(stripslashes(pg_fetch_result($res,$i,$j)));
 		}
 		return $array; 
 	}
@@ -759,16 +785,17 @@ class Model
 	 * Set the variables of object and insert it in the database
 	 * @param $params Array of param_name=>param_value used for setting the variables of this object
 	 * @param $conditons Array of conditions after which to do the update. Default is NULL(update after object id)
+	 * @param $verifications Array with conditions trying to specify if this object can be modified or not
 	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user
 	 */
-	public function edit($params, $conditions = NULL)
+	public function edit($params, $conditions = NULL, $verifications = array())
 	{
 		if($params) {
 			$res = $this->setObj($params);
 			if(!$res[0])
 				return $res;
 		}
-		return $this->update($conditions);
+		return $this->update($conditions, $verifications);
 	}
 
 	/**
@@ -834,7 +861,7 @@ class Model
 			}
 			$columns .= "\"$var_name\"";
 			$values .= $var->escape($value);
-			$insert_log .= "$var_name='$value'";
+			$insert_log .= "$var_name='".$var->escape($value)."'";
 		}
 		if ($columns == "")
 			return;
@@ -871,28 +898,27 @@ class Model
 	 * Update object (!! Use this after you selected the object or else the majority of the fields will be set to null)
 	 * @param $conditions Array of conditions for making an update
 	 * if no parameter is sent when method is called it will try to update based on the numeric id od the object, unless is was invalidated
+	 * @param $verifications Array with conditions trying to specify if this object can be modified or not
 	 * @return Array(BOOL value, String, Int), boolean markes whether the update succeeded or not, String is a default message that might be printed, Int shows the number of affected rows
 	 */
-	public function update($conditions = array())
+	public function update($conditions = array(), $verifications = array())
 	{
 		$where = "";
 		$variables = "";
 		$update_log = "";
 		$error = "";
-
-		if (count($conditions)) 
-			$where = $this->makeWhereClause($conditions, true);
-		else{
+		if (!count($conditions))  {
 			if($this->isInvalid())
 				return array(false, "Update was not made. Object was invalidated previously.",0);
-
-			if($id = $this->getIdName()) {
-				$var = $this->variable($id);
-				$value_id = $var->escape($this->{$id});
-				if ($value_id)
-					$where = "where $id=".$value_id;
-			}
-		} 
+			$id = $this->getIdName();
+			if(!$this->{$id})
+				return array(false, "Don't have conditions to perform update.");
+			$conditions = array($id=>$this->{$id});
+		}
+		// add the received verifications to the conditions
+		if($verifications)
+			$conditions = array_merge($conditions, $verifications);
+		$where = $this->makeWhereClause($conditions, true);
 		$vars = self::getVariables(get_class($this));
 		if (!$vars)
 			return null;
@@ -909,8 +935,9 @@ class Model
 				continue;
 			}
 
-			$variables .= "\"$var_name\""."=".$var->escape($this->{$var_name})."";
-			$update_log .= "$var_name='".$this->{$var_name}."'"; 
+			$value = $var->escape($this->{$var_name});
+			$variables .= "\"$var_name\""."=".$value."";
+			$update_log .= "$var_name='".$value."'"; 
 		}
 		$obj_name = strtolower(str_replace("_"," ",get_class($this)));
 		if($error != "")
@@ -935,28 +962,28 @@ class Model
 	 * Update only the specified fields for this object
 	 * @param $conditions NULL for using the id / Array on pairs $key=>$value
 	 * @param $fields Array($field1, $field2 ..)
+	 * @param $verifications Array with conditions trying to specify if this object can be modified or not
 	 * @return Array(Bool,String,Int) Bool whether the update succeeded or not, String is a default message to print, 
 	 * Int is the number of affected rows 
 	 */
-	public function fieldUpdate($conditions = array(),$fields = array())
+	public function fieldUpdate($conditions = array(), $fields = array(), $verifications = array())
 	{
 		$where = "";
 		$variables = "";
 		$update_log = "";
 
-		if (count($conditions)) 
-			$where = $this->makeWhereClause($conditions, true);
-		else{
+		if(!count($conditions)) {
 			if($this->isInvalid())
 				return array(false, "Update was not made. Object was invalidated previously.",0);
-			if(($id = $this->getIdName())) {
-				$var = $this->variable($id);
-				$value_id = $var->escape($this->{$id});
-				if ($value_id)
-					$where = "where $id=".$value_id;
-			}
+			$id = $this->getIdName();
+			if(!$this->{$id})
+				return array(false, "Don't have conditions to perform update.");
+			$conditions = array($id=>$this->{$id});
 		}
- 
+		if($verifications)
+			$conditions = array_merge($conditions, $verifications);
+print_r($conditions);
+		$where = $this->makeWhereClause($conditions, true);
 		$vars = self::getVariables(get_class($this));
 		if (!count($fields))
 			return array(false,"Update was not made. No fields were specified.",0);
@@ -964,27 +991,27 @@ class Model
 		{
 			if(!in_array($var_name,$fields))
 				continue;
-			if (!isset($vars[$var_name]))
+			if(!isset($vars[$var_name]))
 				continue;
 
-			if ($variables != '')
+			if($variables != '')
 			{
 				$variables .= ", ";
 				$update_log .= ", ";
 			}
 
 			$value = $this->{$var_name};
-			if(substr($value,0,3) == "sql_")
+			if(substr($value,0,6) == "__sql_")
 			{
 				//Value is an sql function or other column from the same table
 				//When using this and referring to a column named the same as a reserved word 
 				//in PostgreSQL "" must be used inside the $value field
-				$value = substr($value,3,strlen($value));
+				$value = substr($value,6,strlen($value));
 				$variables .= "\"$var_name\""."="."$value";
 			}else{
 				$variables .= "\"$var_name\""."=".$var->escape($value)."";
 			}
-			$update_log .= "$var_name='$value'";
+			$update_log .= "$var_name='".$var->escape($value)."'";
 		}
 
 		$query = "UPDATE ".$this->getTableName()." SET $variables $where";
@@ -1491,7 +1518,7 @@ class Model
 		$classes = get_declared_classes();
 		foreach ($classes as $class)
 		{
-			if (get_parent_class($class) == "Model")
+			if (get_parent_class($class) == "Model" || get_parent_class(get_parent_class($class)) == "Model")
 				$models[] = $class;
 		}
 		return $models;
@@ -1512,7 +1539,7 @@ class Model
 		foreach ($classes as $class)
 		{
 			// calling static class methods is done using an array("class","method")		
-			if (get_parent_class($class) == "Model")
+			if (get_parent_class($class) == "Model" || get_parent_class(get_parent_class($class)) == "Model")
 			{
 				$vars = null;
 				$vars = @call_user_func(array($class,"variables"));
@@ -1793,7 +1820,7 @@ class Model
 
 			if(is_array($value)) {
 				// this is an OR or an AND
-				$sql_rel = (isset($value["sql_relation"])) ? $value["sql_relation"] : "AND";
+				$sql_rel = (isset($value["__sql_relation"])) ? $value["__sql_relation"] : "AND";
 				if($sql_rel == "AND")
 					$clause = $this->buildAND($key, $value, $obj_table, $only_one_table, $without_table);
 				else
@@ -1831,6 +1858,8 @@ class Model
 //		}
 		foreach($allowed_values as $var_name=>$var_value)
 		{
+			if($var_name === "__sql_relation")
+				continue;
 			if(is_numeric($var_name))
 				$t_k = $this->getColumnName($key, $obj_table, $only_one_table, $without_table);
 			else
@@ -1856,7 +1885,7 @@ class Model
 		$clause = "";
 		foreach($conditions as $column_name=>$value)
 		{
-			if($column_name === "sql_relation")
+			if($column_name === "__sql_relation")
 				continue;
 			if($clause != "")
 				$clause .= " OR "; 
@@ -1952,17 +1981,17 @@ class Model
 			$clause .= " $t_k IS NOT TRUE ";
 		elseif($value === true)
 			$clause .= " $t_k IS TRUE ";
-		elseif($value === "empty")
+		elseif($value === "__empty")
 			$clause .= " $t_k IS NULL ";
-		elseif($value === "non_empty" || $value === "not_empty")
+		elseif($value === "__non_empty" || $value === "__not_empty")
 			$clause .= " $t_k IS NOT NULL ";
 		elseif(in_array($first_two, $two_dig_operators)){
 			$value = substr($value,2,strlen($value));
-			if (substr($value,0,4) == "sql_")
+			if (substr($value,0,6) == "__sql_")
 			{
 				// If $value starts with "sql_" then $value is not actually a value but 
 				// refers to a column from a table
-				$value = substr($value, 4, strlen($value));
+				$value = substr($value, 6, strlen($value));
 				$clause .= " $t_k" . $first_two . "$value ";
 			}else{
 				$value = addslashes($value);
@@ -1970,35 +1999,35 @@ class Model
 			}
 		}elseif (in_array($first_one, $one_dig_operators)) {
 			$value = substr($value,1,strlen($value));
-			if (substr($value,0,4) == "sql_")
+			if (substr($value,0,6) == "__sql_")
 			{
-				$value = substr($value, 4, strlen($value));
+				$value = substr($value, 6, strlen($value));
 				$clause .= " $t_k" . $first_one . "$value ";
 			}else{
 				$value = addslashes($value);
 				$clause .= " $t_k" . $first_one . "'$value' ";
 			}
-		}elseif (substr($value,0,4) == "LIKE") {
-			$value = addslashes(substr($value,4,strlen($value)));
+		}elseif (substr($value,0,6) == "__LIKE") {
+			$value = addslashes(substr($value,6,strlen($value)));
 			if (substr($value,0,1) != '%' && substr($value,-1) != '%')
 				$clause .= " $t_k ILIKE '$value%' ";
 			else
 				$clause .= " $t_k ILIKE '$value' ";
-		}elseif (substr($value,0,8) == "NOT LIKE") {
-			$value = addslashes(substr($value,8,strlen($value)));
+		}elseif (substr($value,0,10) == "__NOT LIKE") {
+			$value = addslashes(substr($value,10,strlen($value)));
 			if (substr($value,0,1) != '%' && substr($value,-1) != '%')
 				$clause .= " $t_k NOT ILIKE '$value%' ";
 			else
 				$clause .= " $t_k NOT ILIKE '$value' ";
-		}elseif(substr($value,0,4) == "sql_") {
-			$value = substr($value,4,strlen($value));
+		}elseif(substr($value,0,6) == "__sql_") {
+			$value = substr($value,6,strlen($value));
 			$clause .= " $t_k=$value";
 		}else{
 			if ($value != '' && $value)
 				$clause .= " $t_k='".addslashes($value)."'";
 			else
 				// it should never get here
-				// if verification for NULL is needed set $value = 'empty' 
+				// if verification for NULL is needed set $value = '__empty' 
 				$clause .= " $t_k is NULL";
 		}
 		return $clause;
@@ -2119,8 +2148,12 @@ class Model
 			return;
 		}
 		$this->_retrieved = true;
-		foreach(pg_fetch_array($result,0) as $var_name=>$value) 
+		$allow_html  = $this->allowHTML();
+		foreach(pg_fetch_array($result,0) as $var_name=>$value) {
 			$this->{$var_name} = stripslashes($value);
+			if(!in_array($var_name, $allow_html))
+				$this->{$var_name} = htmlentities($this->{$var_name});
+		}
 	}
 
 	/**
@@ -2134,6 +2167,7 @@ class Model
 			return array();
 
 		$objects = array();
+		$allow_html  = $this->allowHTML();
 		//get the name of the class of $this object
 		$class_name = get_class($this);
 		for($i=0; $i<pg_num_rows($result); $i++) {
@@ -2141,12 +2175,25 @@ class Model
 			// (in case $this object was extended previously)
 			$clone = new $class_name;
 			$clone->_model = $this->_model;
-			foreach(pg_fetch_array($result,$i) as $var_name=>$value) 
+			foreach(pg_fetch_array($result,$i) as $var_name=>$value) {
 				$clone->{$var_name} = stripslashes($value);
+				if(!in_array($var_name, $allow_html))
+					$clone->{$var_name} = htmlentities($clone->{$var_name});
+			}
 			$objects[$i] = $clone;
 			$objects[$i]->_retrieved = true;
 		} 
 		return $objects;
+	}
+
+	/**
+	 * Specify the name of the columns that allow html to be stored (HTML can be stored, but it be passed thought htmlentities when setting the values of the columns)
+	 * This function must be reimplemented in each object that allows this type of columns
+	 * @return Array contining the name of the columns or empty array
+	 */
+	protected function allowHTML()
+	{
+		return array();
 	}
 
 	/**
