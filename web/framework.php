@@ -982,7 +982,7 @@ class Model
 		}
 		if($verifications)
 			$conditions = array_merge($conditions, $verifications);
-print_r($conditions);
+
 		$where = $this->makeWhereClause($conditions, true);
 		$vars = self::getVariables(get_class($this));
 		if (!count($fields))
@@ -2023,7 +2023,7 @@ print_r($conditions);
 			$value = substr($value,6,strlen($value));
 			$clause .= " $t_k=$value";
 		}else{
-			if ($value != '' && $value)
+			if ($value != '' && strlen($value))
 				$clause .= " $t_k='".addslashes($value)."'";
 			else
 				// it should never get here
