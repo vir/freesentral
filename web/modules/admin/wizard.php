@@ -234,6 +234,7 @@ function define_gateway($fields)
 			break;
 	}
 	$fields["gateway"] = $gateway->gateway;
+	$fields["enabled"] = "t";
 	$res = $gateway->add($fields);
 
 	if($res[0] === true && $gateway->gateway_id) {

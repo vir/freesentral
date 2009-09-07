@@ -63,9 +63,19 @@ function gateways()
 	$action = NULL;
 
 	$gateways = Model::selection("gateway", NULL, "gateway");
-	$formats = array("function_gateway_status:&nbsp;"=>"enabled,status,username", "gateway", "function_gateway_type:requires_registration"=>"username","server", "protocol", "function_registration_status:status"=>"status,username", "enabled");
+	$formats = array("function_gateway_status:&nbsp;"=>"enabled,status,username", "gateway", "function_gateway_type:requires_registration"=>"username","server", "protocol", "function_registration_status:status"=>"status,username", "function_check_enabled:register"=>"enabled,username");
 
 	tableOfObjects($gateways, $formats, "gateway", array("&method=edit_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_gateway"=>"Add gateway"));
+}
+
+function check_enabled($enabled, $username)
+{
+	if(!$username || $username == "")
+		return "-";
+	elseif($enabled == "t")
+		return "yes";
+	else
+		return "no";
 }
 /*
 function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
