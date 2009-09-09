@@ -727,10 +727,11 @@ class Model
 		if($id)
 		{
 			$var = $this->variable($id);
-			$value_id = $var->escape($this->{$id});
+			$value_id = $this->{$id};
 			//if this object has a numeric id defined, no conditions were given then i want that object to be returned
 			if (!count($conditions) && !$given_where && !$order && !$limit && !$offset && $value_id)
 			{
+				$value_id = $var->escape($value_id);
 				// one expectes a single row to be returned from the resulted query
 				$where = "WHERE \"$table\".\"$id\"=".$value_id;
 				$single_object =true;
@@ -2194,6 +2195,39 @@ class Model
 	protected function allowHTML()
 	{
 		return array();
+	}
+
+	/**
+	 *	Build a string from all the variables of the objects: "var1=value1 var2=value2 ..."
+	 * @param $prefix String representing a prefix that will be added in front of every var: "$prefix"."var1=value1 "."$prefix"."var2=value2 ..."
+	 * @param $skip Array with name of variables to be skipped when building the string
+	 * @return String of type:  "var1=value1 var2=value2 ..."
+	 */
+	public function toString($prefix = '', $skip=array())
+	{
+		$model = $this->_model;
+		$str = "";
+		foreach($model as $var_name=>$var)
+		{
+			if(in_array($var_name, $skip))
+				continue;
+			if($str != "")
+				$str .= " ";
+			$name = ($prefix != '') ? $prefix.".".$var_name : $var_name;
+			$str .= "$name=".Model::escapeSpace($this->{$var_name});
+		}
+		return $str;
+	}
+
+	/**
+	 * Escape spaces from given parameter $val and remove new lines
+	 * @param $val Value to escape
+	 * @return String representing the escaped value
+	 */
+	public static function escapeSpace($val)
+	{
+		$val = str_replace("\n", "", $val); //make sure new lines are not accepted
+		return str_replace(" ", "\ ", $val);
 	}
 
 	/**

@@ -1463,12 +1463,14 @@ function trunc_date($timestamp)
 	return $timestamp[0];
 }
 
-function insert_letters($link = "main.php")
+function insert_letters($link = "main.php", $force_method = NULL)
 {
 	global $module,$method;
 
 	if (is_array($module))
 		$module = $module[0];
+	if ($force_method)
+		$method = $force_method;
 
 	$letter = getparam("letter");
 	
@@ -1481,8 +1483,14 @@ function insert_letters($link = "main.php")
 		print '&nbsp;';
 		if ($letter == $letters[$i])
 			print $letter;
-		else
-			print '<a class="llink" href="'.$link.'?module='.$module.'&method='.$method.'&letter='.$letters[$i].'">'.$letters[$i].'</a>';
+		else{
+			print '<a class="llink" href="'.$link;
+			if(!strpbrk($link,"?"))
+				print '?';
+			else
+				print "&";
+			print 'module='.$module.'&method='.$method.'&letter='.$letters[$i].'">'.$letters[$i].'</a>';
+		}
 	}
 	print '<br/><hr>';
 	return $letter;
