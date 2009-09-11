@@ -318,7 +318,6 @@ class Database
 		//	print "Table '$table' does not exist so we'll create it\n";
 			return self::createTable($table,$vars);
 		}
-
 		foreach ($vars as $name => $var)
 		{
 			$type = $var->_type;
@@ -358,7 +357,7 @@ class Database
 				$dbtype = pg_field_type($res,$field);
 				if ($dbtype == $type)
 					continue;
-				self::warning("Field '$name' in table '$table' is of type '$dbtype' but should be '$type'\n");
+				Model::warning("Field '$name' in table '$table' is of type '$dbtype' but should be '$type'\n");
 				return false;
 			}
 		}
@@ -912,7 +911,7 @@ class Model
 			if($this->isInvalid())
 				return array(false, "Update was not made. Object was invalidated previously.",0);
 			$id = $this->getIdName();
-			if(!$this->{$id})
+			if(!$id || !$this->{$id})
 				return array(false, "Don't have conditions to perform update.");
 			$conditions = array($id=>$this->{$id});
 		}
@@ -977,7 +976,7 @@ class Model
 			if($this->isInvalid())
 				return array(false, "Update was not made. Object was invalidated previously.",0);
 			$id = $this->getIdName();
-			if(!$this->{$id})
+			if(!$id || !$this->{$id})
 				return array(false, "Don't have conditions to perform update.");
 			$conditions = array($id=>$this->{$id});
 		}
@@ -1072,7 +1071,7 @@ class Model
 			$id_name = $this->getIdName();
 
 		$class = get_class($this);
-		if(!$this->variable($id_name))
+		if(!$id_name || !$this->variable($id_name))
 		{
 			self::warning("$id_name is not a defined variable inside the $class object.");
 			exit();
@@ -2265,11 +2264,13 @@ class Model
 			if($performer != '')
 				$performer .= ',';
 			$performer .= $perf;
+			$real_performer_id = (isset($_SESSION[$performing_columns["real_performer_id"]])) ? $_SESSION[$performing_columns["real_performer_id"]] : "";
 		}
 		$actionlog->date = "now()";
 		$actionlog->log = $log;
 		$actionlog->performer_id = $performer_id;
 		$actionlog->performer = $performer;
+		$actionlog->real_performer_id = $real_performer_id;
 		$actionlog->object = $object;
 		$actionlog->query = $query;
 		// insert  the log entry whitout trying to retrive the id and without going into a loop of inserting log for log
@@ -2298,31 +2299,4 @@ class Model
 	}
 }
 
-// Default class used for logging 
-class ActionLog extends Model
-{
-	public static function variables()
-	{
-		return array(
-					"date" => new Variable("timestamp"),
-					"log" => new Variable("text"), // log in human readable form meant to be displayed
-					"performer_id" => new Variable("text"), // id of the one performing the action (taken from $_SESSION)
-					"performer" => new Variable("text"), // name of the one performing the action (taken from $_SESSION)
-					"object" => new Variable("text"),  // name of class that was marked as performer for actions
-					"query" => new Variable("text") //query that was performed
-				);
-	}
-
-	function __construct()
-	{
-		parent::__construct();
-	}
-
-	public static function index()
-	{
-		return array(
-					"date"
-				);
-	}
-}
 ?>
