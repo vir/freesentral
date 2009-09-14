@@ -66,7 +66,7 @@ function gateways()
 	$gateways = Model::selection("gateway", NULL, "gateway");
 	$formats = array("function_gateway_status:&nbsp;"=>"enabled,status,username", "gateway","server", "protocol", "function_registration_status:status"=>"status,username", "function_check_enabled:register"=>"enabled,username");
 
-	tableOfObjects($gateways, $formats, "gateway", array("&method=edit_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>', "&method=incoming_gateways"=>'<img src="images/incoming_gateways.gif" title="Incoming gateways" alt="Incoming gateways" />'), array("&method=add_gateway"=>"Add gateway"));
+	tableOfObjects($gateways, $formats, "gateway", array("&method=edit_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>', "&method=incoming_gateways"=>'<img src="images/incoming.png" title="Incoming gateways" alt="Incoming gateways" />'), array("&method=add_gateway"=>"Add gateway"));
 }
 
 function incoming_gateways()
