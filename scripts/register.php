@@ -1,28 +1,5 @@
 #!/usr/bin/php -q
 <?
-/**
- * register.php
- * This file is part of the FreeSentral Project http://freesentral.com
- *
- * FreeSentral - is a Web Graphical User Interface for easy configuration of the Yate PBX software
- * Copyright (C) 2008-2009 Null Team
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
- */
-?>
-<?
 require_once("libyate.php");
 require_once("lib_queries.php");
 
@@ -438,6 +415,35 @@ function return_route($called,$caller,$no_forward=false)
 
 	routeToAddressBook($called);
 
+	$username = $ev->GetValue("username");
+	$address = $ev->GetValue("address");
+	$address = explode(":", $address);
+	$address = $address[0];
+
+	$reason = $ev->GetValue("reason");
+
+	if($ev->GetValue("already-auth") != "yes" && $reason!="divert_busy" && $reason != "divert_noanswer") {
+		// check to see if user is allowed to make this call
+		$query = "SELECT value FROM settings WHERE param='annonymous_calls'";
+		$res = query_to_array($query);
+		$anonim = $res[0]["value"];
+		if(strtolower($anonim) != "yes")
+			// if annonymous calls are not allowed the call has to be from a known extension or from a known ip
+			$query = "SELECT extension_id FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id FROM incoming_gateways WHERE ip='$address' UNION SELECT gateway_id FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+		else {
+			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
+			$query = "SELECT extension_id FROM extensions WHERE extension='$called' UNION SELECT group_id FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id FROM incoming_gateways WHERE ip='$address' UNION SELECT gateway_id FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+		}
+		$res = query_to_array($query);
+		if (!count($res)) {
+			set_retval(NULL, "noauth");
+			return;
+		}
+	}
+
+	// mark call as already autentified
+	$ev->params["already-auth"] = "yes";
+
 	if(routeToDid($called))
 		return;
 
@@ -507,7 +513,7 @@ function set_retval($callto, $error = NULL)
 	}
 	if($error) {
 		$ev->params["error"] = $error;
-		$ev->handled = true;
+	//	$ev->handled = true;
 	}
 	return false;
 }

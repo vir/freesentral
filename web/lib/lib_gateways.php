@@ -303,7 +303,7 @@ function edit_gateway_database()
 	$params["rtp_forward"] = (getparam($gw_type."_".$protocol."rtp_forward") == "on") ? "t" : "f";
 	$params["modified"] = "t";
 
-	$next = ($_SESSION["wizard"] == "notused") ? "outbound" : "gateways";
+	$next = "outbound";
 
 	$res = ($gateway->gateway_id) ? $gateway->edit($params) : $gateway->add($params);
 	if(!$res[0]) {

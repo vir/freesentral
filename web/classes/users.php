@@ -82,7 +82,7 @@ class User extends Model
 	// show that this is the object that will be the peformer for logs
 	public function isPerformer()
 	{
-		return array("performer_id"=>"user_id", "performer"=>"username");
+		return array("performer_id"=>"user_id", "performer"=>"username", "real_performer_id"=>"");
 	}
 
 	public function setObj($params)

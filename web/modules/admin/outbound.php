@@ -42,7 +42,8 @@ if($method == "dial_plan" || $method == "edit_dial_plan")
 else
 	$image = "images/gateways.png";
 
-$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.");
+$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define ips that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.");
+$explanation["edit_incoming_gateway"] = $explanation["incoming_gateways"];
 $explanation["edit_dial_plan"] = $explanation["dial_plan"];
 
 explanations($image, "", $explanation);
@@ -65,7 +66,68 @@ function gateways()
 	$gateways = Model::selection("gateway", NULL, "gateway");
 	$formats = array("function_gateway_status:&nbsp;"=>"enabled,status,username", "gateway","server", "protocol", "function_registration_status:status"=>"status,username", "function_check_enabled:register"=>"enabled,username");
 
-	tableOfObjects($gateways, $formats, "gateway", array("&method=edit_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_gateway"=>"Add gateway"));
+	tableOfObjects($gateways, $formats, "gateway", array("&method=edit_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>', "&method=incoming_gateways"=>'<img src="images/incoming_gateways.gif" title="Incoming gateways" alt="Incoming gateways" />'), array("&method=add_gateway"=>"Add gateway"));
+}
+
+function incoming_gateways()
+{
+	global $module;
+
+	$gateway_id = getparam("gateway_id");
+	$gateway = new Gateway;
+	$gateway->gateway_id = getparam("gateway_id");
+	$gateway->select();
+
+	print '<font class="subheader">Incoming ips for gateway '.$gateway->gateway.'</font><br/><br/>';
+
+	$incoming_gateways = Model::selection("incoming_gateway", array("gateway_id"=>$gateway_id), "incoming_gateway");
+
+	$formats = array("incoming_gateway", "ip");
+	tableOfObjects($incoming_gateways, $formats, "incoming gateway", array("&method=edit_incoming_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_incoming_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_incoming_gateway"=>"Add incoming gateway"), "main.php?module=$module&gateway_id=$gateway_id");
+}
+
+function edit_incoming_gateway()
+{
+	$gateway_id = getparam("gateway_id");
+
+	$incoming_gateway = new Incoming_gateway;
+	$incoming_gateway->incoming_gateway_id = getparam("incoming_gateway_id");
+	$incoming_gateway->select();
+
+	$fields = array(
+					"incoming_gateway" => array("compulsory"=>true),
+					"ip" => array("compulsory"=>true)
+				);
+	$title = ($incoming_gateway->incoming_gateway_id) ? "Edit incoming gateway" : "Add incoming gateway";
+
+	start_form();
+	addHidden("database", array("incoming_gateway_id"=>$incoming_gateway->incoming_gateway_id, "gateway_id"=>$gateway_id));
+	editObject($incoming_gateway, $fields, $title, "Save", true);
+	end_form();
+}
+
+function edit_incoming_gateway_database()
+{
+	$incoming_gateway = new Incoming_gateway;
+	$incoming_gateway->incoming_gateway_id = getparam("incoming_gateway_id");
+	$params = array("incoming_gateway"=>getparam("incoming_gateway"), "ip"=>getparam("ip"), "gateway_id"=>getparam("gateway_id"));
+	$res = ($incoming_gateway->incoming_gateway_id) ? $incoming_gateway->edit($params) : $incoming_gateway->add($params);
+
+	notice($res[1], "incoming_gateways", $res[0]);
+}
+
+function delete_incoming_gateway()
+{
+	ack_delete("incoming gateway", getparam("incoming_gateway"), null, "incoming_gateway_id", getparam("incoming_gateway_id"), "&gateway_id=".getparam("gateway_id"));
+}
+
+function delete_incoming_gateway_database()
+{
+	$incoming_gateway = new Incoming_gateway;
+	$incoming_gateway->incoming_gateway_id = getparam("incoming_gateway_id");
+	$res = $incoming_gateway->objDelete();
+
+	notice($res[1],"incoming_gateways",$res[0]);
 }
 
 function check_enabled($enabled, $username)

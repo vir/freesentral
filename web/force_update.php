@@ -24,9 +24,9 @@
 ?>
 <?
 
-require_once ('lib.php');
+require_once ('lib/lib.php');
 require_once ('framework.php');
-require_once ('lib_custom.php');
+require_once ('lib/lib_freesentral.php');
 
 include_classes();
 require_once ('set_debug.php');

@@ -784,3 +784,10 @@ td.features_td
 	padding:2px;
 	padding-left:6px;
 }
+
+font.subheader
+{
+	font-size:13px;
+	color:#555;
+	font-weight:bold;
+}
