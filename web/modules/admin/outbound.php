@@ -42,7 +42,7 @@ if($method == "dial_plan" || $method == "edit_dial_plan")
 else
 	$image = "images/gateways.png";
 
-$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define ips that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.");
+$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define ips that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.", "System_CallerID"=>"The System's CallerID is the number that will be used as caller number when sending a call outside your system.<br/><br/>It is recommended that you set this number otherwise the number of your extensions will be used.");
 $explanation["edit_incoming_gateway"] = $explanation["incoming_gateways"];
 $explanation["edit_dial_plan"] = $explanation["dial_plan"];
 
@@ -511,6 +511,36 @@ function delete_dial_plan_database()
 	//notify($dial_plan->objDelete(),$path);
 	$res = $dial_plan->objDelete();
 	notice($res[1], "dial_plan", $res[0]);
+}
+
+function System_CallerID()
+{
+	$setting = Model::selection("setting", array("param"=>"callerid"));
+	if(count($setting)) {
+		$callerid = $setting[0]->value;
+	}else
+		$callerid = "";
+
+	start_form();
+	addHidden("database");
+	editObject(null, array("system_CallerID"=>array("value"=>$callerid, "comment"=>"This will be the number used when a call will be made outside your system.")), "Setting the system's CallerID");
+	end_form();
+}
+
+function System_CallerID_database()
+{
+	$setting = Model::selection("setting", array("param"=>"callerid"));
+	if(!count($setting)) {
+		$setting = new Setting;
+		$setting->param = "callerid";
+	}else
+		$setting = $setting[0];
+
+	$setting->value = getparam("system_CallerID");
+	$res = ($setting->setting_id) ? $setting->update() : $setting->insert();
+	if(!$res[0])
+		errormess($res[1], "no");
+	System_CallerID();
 }
 
 /*function edit_dial_plan($error = NULL, $sel_protocol = NULL)

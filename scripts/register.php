@@ -30,6 +30,18 @@ for($i=0; $i<count($posib); $i++) {
 		${$posib[$i]} = false;
 }
 
+function set_caller_id()
+{
+	global $caller_id, $timer_caller_id;
+
+	$query = "SELECT value FROM settings WHERE param='callerid'";
+	$res = query_to_array($query);
+	if(count($res))
+		$caller_id = $res[0]["value"];
+	Yate::Output("Reseted CalledID. New value '$caller_id'");
+	$timer_caller_id = 0;
+}
+
 /**
  * Set the array of music_on_hold by playlist. This array is updated periodically.
  * @param $time, Time when function was called. It's called with this param after engine.timer, If empty i want to update the list, probably because i didn't have the moh for a certain playlist
@@ -409,7 +421,7 @@ function routeToAddressBook(&$called)
  */
 function return_route($called,$caller,$no_forward=false)
 {
-	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx;
+	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id;
 
 	$rtp_f = $ev->GetValue("rtp_forward");
 
@@ -432,7 +444,7 @@ function return_route($called,$caller,$no_forward=false)
 			$query = "SELECT extension_id FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id FROM incoming_gateways WHERE ip='$address' UNION SELECT gateway_id FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		else {
 			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
-			$query = "SELECT extension_id FROM extensions WHERE extension='$called' UNION SELECT group_id FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id FROM incoming_gateways WHERE ip='$address' UNION SELECT gateway_id FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id FROM extensions WHERE extension='$called' OR extension='$username' UNION SELECT group_id FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id FROM incoming_gateways WHERE ip='$address' UNION SELECT gateway_id FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {
@@ -470,6 +482,7 @@ function return_route($called,$caller,$no_forward=false)
 	$fallback = array();
 	for($i=$start; $i>=0; $i--) {
 		$fallback[$j] = $ev->params;
+		$fallback[$j]["caller"] = $caller_id;
 		$fallback[$j]["called"] = rewrite_digits($res[$i],$called);
 		$fallback[$j]["formats"] = ($res[$i]["formats"]) ? $res[$i]["formats"] : $ev->GetValue("formats");
 		$fallback[$j]["rtp_forward"] = ($rtp_f == "possible" && $res[$i]["rtp_forward"] == 't') ? "yes" : "no";
@@ -564,6 +577,8 @@ for($i=0; $i<count($res); $i++) {
 	$m->Dispatch();
 }
 
+set_caller_id();
+
 set_moh();
 
 // The main loop. We pick events and handle them 
@@ -600,6 +615,10 @@ for (;;) {
 				break;
 			case "engine.timer":
 				$time = $ev->GetValue("time");
+				$timer_caller_id++;
+				if($timer_caller_id > 600)
+					// update caller_id every 10 minutes
+					set_caller_id();
 				if ($moh_next_time < $time)
 					set_moh($time);
 				if ($time < $next_time)

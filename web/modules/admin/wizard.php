@@ -251,6 +251,18 @@ function define_gateway($fields)
 		if(!$res2[0]) 
 			return array(true, "Could not add default dial plan: ".$res2[1]);
 	}
+
+	$setting = Model::selection("setting", array("param"=>"callerid"));
+	if(!count($setting)) {
+		$setting = new Setting;
+		$setting->param = "callerid";
+	}else
+		$setting = $setting[0];
+	$setting->value = $fields["System_CallerID"];
+	$res2 = ($setting->setting_id) ? $setting->update() : $setting->insert();
+	if(!$res2[0])
+		return array(false, "Could not set System's CallerID.");
+
 	if($res[0])
 		return array(true, "");
 	return array(false, $res[1]);

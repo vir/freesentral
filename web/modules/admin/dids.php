@@ -96,7 +96,7 @@ function delete_conference_database()
 function conferences()
 {
 	$conferences = Model::selection("did", array("destination"=>"__LIKEconf/"), "did");
-	$fields = array("function_get_conf_from_did:conference"=>"did", "number", "function_conference_participants:participants"=>"number");
+	$fields = array("function_get_conf_from_did:conference"=>"did,destination", "number", "function_conference_participants:participants"=>"number");
 	tableOfObjects($conferences, $fields, "conference", array("&method=edit_conference"=>'<img src="images/edit.gif" alt="Edit" title="Edit" />', "&method=delete_conference"=>'<img src="images/delete.gif" alt="Delete" title="Delete" />'), array("&method=add_conference"=>"Add conference"));
 }
 
@@ -190,4 +190,5 @@ function delete_did_database()
 	$res = $did->objDelete();
 	notice($res[1], $module, $res[0]);
 }
+
 ?>

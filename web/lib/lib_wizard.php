@@ -155,7 +155,7 @@ class Wizard
 	 * the page and sets the fields into the session. Checks for required fields and sets 
 	 * $this->error in case some required fields are missing
 	 * @param $skip Bool value, true when  you wish to skip the verifications with required fields
-	 * Note! If files were uploaded they will be moved to $upload_path and in $_SESSION["fields"][$step_nr][$field_name] will be an array with [orig_name] => name the file [path] => path were it was uploaded
+	 * Note! If files were uploaded they will be moved to $upload_path and in $_SESSION["fields"][$step_nr][$field_name] will be an array with [orig_name] => name the file [path] => path where it was uploaded
 	 */
 	function setStep($skip = false)
 	{
