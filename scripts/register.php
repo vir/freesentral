@@ -568,7 +568,7 @@ Yate::Install("engine.command");
 // Ask to be restarted if dying unexpectedly 
 Yate::SetLocal("restart","true");
 
-$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, number, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND gateway IS NOT NULL AND username IS NOT NULL ORDER BY gateway";
+$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND gateway IS NOT NULL AND username IS NOT NULL ORDER BY gateway";
 $res = query_to_array($query);
 
 for($i=0; $i<count($res); $i++) {
@@ -624,7 +624,7 @@ for (;;) {
 				if ($time < $next_time)
 					break;
 				$next_time = $time + $time_step;
-				$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, number, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND modified IS TRUE AND username is NOT NULL";
+				$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND modified IS TRUE AND username is NOT NULL";
 				$res = query_to_array($query);
 				for($i=0; $i<count($res); $i++) {
 					$m = new Yate("user.login");
