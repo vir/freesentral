@@ -59,7 +59,9 @@ class Gateway extends Model
 
 					"rtp_forward" => new Variable("bool"),
 					"status" => new Variable("text"), // yate will set this field after trying to autenticate
-					"modified" => new Variable("bool") //field necesary for yate, autenticate again if modified is true
+					"modified" => new Variable("bool"),//field necesary for yate, autenticate again if modified is true
+					"callerid" => new Variable("text"),
+					"callername" => new Variable("text")
 				);
 	}
 

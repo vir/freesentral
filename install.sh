@@ -128,6 +128,8 @@ enable_logging="on"
 configs="`yate-config --config 2>/dev/null`"
 scripts="`yate-config --scripts 2>/dev/null`"
 prompts="/var/spool/voicemail"
+webuser="apache"
+
 case "x`yate-config --version 2>/dev/null`" in
     x2.*|x3.*|x4.*|x5.*|x6.*|x7.*|x8.*|x9.*)
 	;;
@@ -268,6 +270,7 @@ if [ "x$interactive" != "xno" ]; then
     scripts=`readopt "Install Yate scripts in" "$scripts"`
     prompts=`readopt "Install IVR prompts in" "$prompts"`
     webpage=`readopt "Install Web pages in" "$webpage"`
+	webuser=`readopt "Web user " "$webuser"`
     dbhost=`readopt "Database host" "$dbhost"`
     if [ -n "$dbhost" ]; then
 	dbname=`readopt "Database name" "$dbname"`
@@ -302,6 +305,7 @@ cat <<EOF
     Scripts dir in '$scripts'
     IVR prompts in '$prompts'
     Web pages in   '$webpage'
+	Web user       '$webuser'
     Database:
         Host     '$dbhost'
         Name     '$dbname'
@@ -640,7 +644,7 @@ fi
 if [ -n "$prompts" ]; then
     echo "Installing IVR prompts"
     mkdir -p "$prompts"
-	chown -R apache "$prompts"
+	chown -R $webuser "$prompts"
     (cd prompts; tar cf - $tarexclude *) | tar xf - -C "$prompts/"
 fi
 
@@ -663,3 +667,8 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
     "$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE $dbname"
     unset PGPASSWORD
 fi
+
+echo "Trying to update database"
+cd "$webpage"
+chmod +x force_update.php
+./force_update.php
