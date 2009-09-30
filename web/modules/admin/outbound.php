@@ -42,7 +42,7 @@ if($method == "dial_plan" || $method == "edit_dial_plan")
 else
 	$image = "images/gateways.png";
 
-$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define ips that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.", "System_CallerID"=>"The System's CallerID is the number that will be used as caller number when sending a call outside your system.<br/><br/>It is recommended that you set this number otherwise the number of your extensions will be used.");
+$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define ips that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.", "System_CallerID"=>"The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then this will be used.");
 $explanation["edit_incoming_gateway"] = $explanation["incoming_gateways"];
 $explanation["edit_dial_plan"] = $explanation["dial_plan"];
 
@@ -515,31 +515,32 @@ function delete_dial_plan_database()
 
 function System_CallerID()
 {
-	$setting = Model::selection("setting", array("param"=>"callerid"));
-	if(count($setting)) {
-		$callerid = $setting[0]->value;
-	}else
-		$callerid = "";
+	$setting = new Setting;
+	$res = $setting->fieldSelect("MAX(CASE WHEN param='callerid' THEN value ELSE NULL END) as callerid, MAX(CASE WHEN param='callername' THEN value ELSE NULL END) as callername");
 
 	start_form();
 	addHidden("database");
-	editObject(null, array("system_CallerID"=>array("value"=>$callerid, "comment"=>"This will be the number used when a call will be made outside your system.")), "Setting the system's CallerID");
+	editObject(null, array("system_CallerID"=>array("value"=>$res[0]["callerid"], "comment"=>"This will be the number used when a call will be made outside your system."), "system_Callername"=>array("value"=>$res[0]["callername"], "comment"=>"This will be the callername used when a call is made outside the system")), "System call parameters");
 	end_form();
 }
 
 function System_CallerID_database()
 {
-	$setting = Model::selection("setting", array("param"=>"callerid"));
-	if(!count($setting)) {
-		$setting = new Setting;
-		$setting->param = "callerid";
-	}else
-		$setting = $setting[0];
+	$params = array("callerid"=>"system_CallerID", "callername"=>"system_Callername");
 
-	$setting->value = getparam("system_CallerID");
-	$res = ($setting->setting_id) ? $setting->update() : $setting->insert();
-	if(!$res[0])
-		errormess($res[1], "no");
+	foreach($params as $dbname=>$webname) {
+		$setting = Model::selection("setting", array("param"=>$dbname));
+		if(!count($setting)) {
+			$setting = new Setting;
+			$setting->param = $dbname;
+		}else
+			$setting = $setting[0];
+
+		$setting->value = getparam($webname);
+		$res = ($setting->setting_id) ? $setting->update() : $setting->insert();
+		if(!$res[0])
+			errormess($res[1], "no");
+	}
 	System_CallerID();
 }
 

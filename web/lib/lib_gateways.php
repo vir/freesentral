@@ -60,6 +60,8 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"formats"=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"Codecs to be used. If none of the formats is checked then server will try to negociate formats automatically"), 
 						"rtp_forward"=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)."),
 						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
+						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
+						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallest priority.")
 						);
 
@@ -73,6 +75,9 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"formats"=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"Codecs to be used. If none of the formats is checked then server will try to negociate formats automatically"), 
 						"rtp_forward"=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)"),
 						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
+						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
+						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
+						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 					);
 	unset($iax_fields["rtp_forward"]);
@@ -85,6 +90,9 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 							'formats'=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically"), 
 						//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 							'rtp_forward'=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)"),
+						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
+						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
+						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 							"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 						);
 
@@ -92,6 +100,9 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"gateway"=>array("compulsory"=>true, "comment"=>"This must be defined as a link in isigchan.conf"),
 					#	'chans_group'=>array("compulsory"=>true), 
 					#	'formats'=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically") ,
+						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
+						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
+						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 					//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 					);
@@ -103,6 +114,9 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 					'iaxuser'=>array("advanced"=>true), 
 					'iaxcontext'=>array("advanced"=>true), 
 					'formats'=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically") ,
+						"enabled"=>array("comment"=>"Check this field to mark that you wish to register to this server"),
+						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
+						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 					"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 				//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 				);
@@ -302,6 +316,8 @@ function edit_gateway_database()
 	$params["enabled"] = (getparam($gw_type."_".$protocol."enabled") == "on") ? "t" : "f";
 	$params["rtp_forward"] = (getparam($gw_type."_".$protocol."rtp_forward") == "on") ? "t" : "f";
 	$params["modified"] = "t";
+	$params["callerid"] = getparam($gw_type."_".$protocol."callerid");
+	$params["callername"] = getparam($gw_type."_".$protocol."callername");
 
 	$next = "outbound";
 

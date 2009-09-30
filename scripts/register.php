@@ -32,13 +32,15 @@ for($i=0; $i<count($posib); $i++) {
 
 function set_caller_id()
 {
-	global $caller_id, $timer_caller_id;
+	global $caller_id, $timer_caller_id, $caller_name;
 
-	$query = "SELECT value FROM settings WHERE param='callerid'";
+	$query = "SELECT MAX(CASE WHEN param='callerid' THEN value ELSE NULL END) as callerid, MAX(CASE WHEN param='callername' THEN value ELSE NULL END) as callername FROM settings";
 	$res = query_to_array($query);
-	if(count($res))
-		$caller_id = $res[0]["value"];
-	Yate::Output("Reseted CalledID. New value '$caller_id'");
+	if(count($res)) {
+		$caller_id = $res[0]["callerid"];
+		$caller_name = $res[0]["callername"];
+	}
+	Yate::Output("Reseted CalledID to '$caller_id', Callername to '$caller_name'");
 	$timer_caller_id = 0;
 }
 
@@ -421,7 +423,7 @@ function routeToAddressBook(&$called)
  */
 function return_route($called,$caller,$no_forward=false)
 {
-	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id;
+	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id, $caller_name;
 
 	$rtp_f = $ev->GetValue("rtp_forward");
 
@@ -482,7 +484,8 @@ function return_route($called,$caller,$no_forward=false)
 	$fallback = array();
 	for($i=$start; $i>=0; $i--) {
 		$fallback[$j] = $ev->params;
-		$fallback[$j]["caller"] = $caller_id;
+		$fallback[$j]["caller"] = ($res[$i]["callerid"]) ? $res[$i]["callerid"] : $caller_id;
+		$fallback[$j]["callername"] = ($res[$i]["callername"]) ? $res[$i]["callername"] : $caller_name;
 		$fallback[$j]["called"] = rewrite_digits($res[$i],$called);
 		$fallback[$j]["formats"] = ($res[$i]["formats"]) ? $res[$i]["formats"] : $ev->GetValue("formats");
 		$fallback[$j]["rtp_forward"] = ($rtp_f == "possible" && $res[$i]["rtp_forward"] == 't') ? "yes" : "no";

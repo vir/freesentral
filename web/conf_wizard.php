@@ -232,7 +232,7 @@ $steps = array(
 						"step_name" => "Outbound: Gateway and default Dial Plan",
 						"step_description" => "Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. <br/><br/>
 						Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway. <br/><br/>
-						The System's CallerID is the number that will be used as caller number when sending a call outside your system.<br/><br/>It is recommended that you set this number otherwise the number of your extensions will be used.",
+						The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then this will be used.",
 						"on_submit" => "verify_gateway",
 						"gateway" => array(
 											"value"=>"default gateway", 
@@ -258,10 +258,13 @@ $steps = array(
 													"display"=>"checkbox", 
 													"comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallest priority."
 												),
-						"System_CallerID"=>array(
+						"system_CallerID"=>array(
 												"comment"=>"This will be the number used when a call will be made outside your system.",
 												"compulsory"=>true
-											)
+											),
+						"system_Callername"=>array(
+												"comment"=>"This will be the name used when a call will be made outside your system.",
+											),
 					),
 				array(
 						"step_image" => "images/dids.png",
