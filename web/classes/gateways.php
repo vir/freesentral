@@ -107,6 +107,7 @@ class Gateway extends Model
 			}
 		}
 		$res = parent::setObj($params);
+		$this->modified = "t";
 		$res = array_merge($res, array(2=>"another_try"));
 		return $res;
 	}

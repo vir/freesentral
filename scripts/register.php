@@ -426,7 +426,10 @@ function return_route($called,$caller,$no_forward=false)
 	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id, $caller_name;
 
 	$rtp_f = $ev->GetValue("rtp_forward");
-
+	$call_type = "";
+	// keep the initial called number
+	$initial_called_number = $called;
+	
 	routeToAddressBook($called);
 
 	$username = $ev->GetValue("username");
@@ -453,6 +456,7 @@ function return_route($called,$caller,$no_forward=false)
 			set_retval(NULL, "noauth");
 			return;
 		}
+		$call_type = ($username) ? "from inside" : "from outside";  // from inside/outside of freesentral
 	}
 
 	// mark call as already autentified
@@ -470,6 +474,12 @@ function return_route($called,$caller,$no_forward=false)
 
 	if(routeToExtension($called))
 		return;
+
+	if($call_type == "from outside" && $initial_called_number == $called) {
+		// if this is a call from outside our system and would be routed outside(from first step) and the number that was initially called was not modified with passing thought any of the above steps  => don't send it
+		set_retval(null, "forbidden");
+		return;
+	}
 
 	$query = "SELECT * FROM dial_plans INNER JOIN gateways ON dial_plans.gateway_id=gateways.gateway_id WHERE (prefix IS NULL OR '$called' LIKE prefix||'%') AND (gateways.username IS NULL OR gateways.status='online') ORDER BY length(coalesce(prefix,'')) DESC, priority LIMIT $max_routes";
 	$res = query_to_array($query);
