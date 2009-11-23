@@ -224,6 +224,14 @@ function define_gateway($fields)
 	if($fields["protocol"] == "")
 		return array(true, "");
 	$fields["type"] = ($fields["username"] != "") ? "reg" : "noreg";
+	if($fields["type"] == "noreg") {
+		if($fields["protocol"] == "sip")
+			$fields["port"] = "5060";
+		elseif($fields["protocol"] == "h323")
+			$fields["port"] = "1720";
+		elseif($fields["protocol"] == "iax")
+			$fields["port"] = "4569";
+	}
 	$gateway = new Gateway;
 	$gateway->gateway = "default_gateway";
 	while(true)
