@@ -27,6 +27,7 @@
 */
 
 require_once("config.php");
+require_once("debug.php");
 
 // class for defining a variable that will be mapped to a column in a sql table
 // name of variable must not be a numer or a numeric string
@@ -157,7 +158,6 @@ class Database
 		return Database::query("COMMIT");
 	}
 
-
 	/**
 	 * Perform query.If query fails, unless query is a ROLLBACK, it is supposed that the database structure changed. Try to 
 	 * modify database structure, then perform query again using the  queryRaw() method
@@ -170,7 +170,8 @@ class Database
 			return false;
 
 		if(isset($_SESSION["debug_all"]))
-			print "<br/>\n<br/>\nquery :'.$query.'<br/>\n<br/>\n";
+//			print "<br/>\n<br/>\nquery :'.$query.'<br/>\n<br/>\n";
+			Debug::output("query: $query");
 
 		// don't allow query to be formed from more than one query. Verify that  they aren't separated by ;
 		$in_value = false;
@@ -235,7 +236,8 @@ class Database
 		if (!self::connect())
 			return false;
 		if(isset($_SESSION["debug_all"]))
-			print "queryRaw: $query\n<br/>\n<br/>\n";
+//			print "queryRaw: $query\n<br/>\n<br/>\n";
+			Debug::output("queryRaw: $query");
 		// don't allow query to be formed from more than one query. Verify that  they aren't separated by ;
 		$in_value = false;
 		for($i=0; $i<strlen($query); $i++)
@@ -451,7 +453,8 @@ class Model
 		$vars = self::getVariables($class);
 		if (!$vars) 
 		{
-			print '<font style="weight:bold;">You haven\'t included file for class '.$class.' try looking in ' . $class . 's.php</font>';
+//			print '<font style="weight:bold;">You haven\'t included file for class '.$class.' try looking in ' . $class . 's.php</font>';
+			Debug::output('<font style="weight:bold;">You haven\'t included file for class '.$class.' try looking in ' . $class . 's.php</font>');
 			return null;
 		}
 		$table = self::getClassTableName($class);
@@ -848,7 +851,7 @@ class Model
 			}
 			if (!$var)
 				continue;
-			if (!$value && $var->isRequired()) {
+			if (!strlen($value) && $var->isRequired()) {
 				$error .= " Required field '".$var_name."' not set.";
 				// gather other errors as well
 				continue;
@@ -930,7 +933,7 @@ class Model
 				$update_log .= ", ";
 			}
 
-			if(!$this->{$var_name} && $var->isRequired()) {
+			if(!strlen($this->{$var_name}) && $var->isRequired()) {
 				$error .= " Required field '".$var_name."' not set.";
 				continue;
 			}
@@ -1099,7 +1102,7 @@ class Model
 			//print ("Don't have setted variables for this object. This verification must be made after you set the value that you need to be unique.");
 
 			// the above message would be more appropriate. This message will appear when verifing that an unset required field is unique => i will use the below one since it's directed to the user and not the developer.
-			return "Please set all required fields before submitting the page.";
+			return "Please set all required fields before submitting the page. Missing: ".$fields;
 		}
 
 		$var = $this->variable($id_name);
@@ -1109,7 +1112,8 @@ class Model
 		$res = Database::query($query);
 
 		if(!$res) {
-			print ("Operation was blocked because query failed: '$query'.");
+//			print ("Operation was blocked because query failed: '$query'.");
+			Debug::output("Operation was blocked because query failed: '$query'.");
 			return true;
 		}
 
@@ -1132,6 +1136,7 @@ class Model
 		if(!$vars)
 			return null;
 
+		$orig_cond = $conditions;
 		$table = $this->getTableName();
 		if(!count($conditions)) 
 		{
@@ -1156,8 +1161,8 @@ class Model
 		if($where == '') 
 			return array(false, "Don't have any condition for deleting.");
 
-		//check if this object was already retrieved from the database
-		if(!$this->_retrieved)
+		//check if this object was already retrieved from the database (only when no condition was passed when calling this function)
+		if(!$this->_retrieved && !count($orig_cond))
 			$this->select($conditions);
 
 		// array of pairs object_name=>array(var_name=>var_value) in which we have to check for deleting on cascade
@@ -1223,7 +1228,8 @@ class Model
 				return array(true, "Succesfully deleted ".pg_affected_rows($res)." object(s) of type ".get_class($this));
 		else
 			if ($cnt)
-				print "<br/>\nCould not delete object of class ".get_class($this).'<br/>'."\n";
+//				print "<br/>\nCould not delete object of class ".get_class($this).'<br/>'."\n";
+				Debug::output("Could not delete object of class ".get_class($this));
 			else
 				return array(false, "Could not delete object of class ".get_class($this));
 		return;
@@ -1291,7 +1297,7 @@ class Model
 				}
 			}
 		}
-		$message .= $this->getTableName().', ';
+		$message .= $this->getTableName().' ';
 		foreach($to_delete as $object_name=>$condition)
 		{
 			$obj = new $object_name;
@@ -1299,8 +1305,8 @@ class Model
 		}
 		if($original_message == "")
 		{
-			$message = substr($message,0,strlen($message)-2);
-			$message .= ".";
+			$message = substr($message,0,strlen($message)-1);
+			$message .= " ";
 		}
 		return $message;
 	}
@@ -1401,7 +1407,8 @@ class Model
 				$i++;
 				if ($i>200) 
 				{
-					print "<br/>\n<br/>\nInfinit loop<br/>\n<br/>\n";
+//					print "<br/>\n<br/>\nInfinit loop<br/>\n<br/>\n";
+					Debug::output("Infinit loop");
 					return;
 				}
 			}	
@@ -1693,7 +1700,8 @@ class Model
 	public static function warning($warn)
 	{
 		if(isset($_SESSION["warning_on"]))
-			print "<br/>\nWarning : $warn<br/>\n";
+//			print "<br/>\nWarning : $warn<br/>\n";
+			Debug::output("Warning : $warn");
 	}
 
 	/**
@@ -1703,7 +1711,8 @@ class Model
 	public static function notice($note)
 	{
 		if(isset($_SESSION["notice_on"]))
-			print "<br/>\nNotice : $note<br/>\n";
+//			print "<br/>\nNotice : $note<br/>\n";
+			Debug::output("Notice : $note");
 	}
 
 	/**
@@ -1909,12 +1918,12 @@ class Model
 	{
 		if(!$without_table) 
 		{
-			// If $key starts with "unblock_" then use of function inside the clause is allowed.
+			// If $key starts with "__sql_" then use of function inside the clause is allowed.
 			// Example: $key can be date(tablename.timestamp_field) or length(tablename.text_field)
 			// Developer has the responsibility to add the name of the table if necessary and to add "" 
 			// in case reserved words in PostgreSQL were used as column names or table names
-			if (substr($key,0,8) == "unblock_")
-				$t_k = substr($key,8,strlen($key));
+			if (substr($key,0,6) == "__sql_")
+				$t_k = substr($key,6,strlen($key));
 			else
 			{ 
 				$look_for_other_table = true;
@@ -1950,8 +1959,12 @@ class Model
 				}
 				$t_k = "\"$table\".\"$key\"";
 			}
-		}else
-			$t_k = "$key";
+		}else{
+			if (substr($key,0,6) == "__sql_")
+				$t_k = substr($key,6,strlen($key));
+			else
+				$t_k = "$key";
+		}
 
 		return $t_k;
 	}
@@ -2105,7 +2118,7 @@ class Model
 			$table = $inner_query['table'];
 		$column = $inner_query["column"];
 		$relation = $inner_query["relation"];
-
+		$outer_column = $this->getColumnName($column,$table,false,false);
 		if (!isset($inner_query["options"])) {
 
 			if (!isset($inner_query["other_table"]) && !isset($inner_query["inner_table"]))
@@ -2113,8 +2126,8 @@ class Model
 
 			$inner_table = (isset($inner_query["inner_table"])) ? $inner_query["inner_table"] : $inner_query["other_table"];
 			$inner_column = (isset($inner_query["inner_column"])) ? $inner_query["inner_column"] : $inner_query["column"];
-
-			$where .= " \"$table\".\"$column\" $relation (SELECT \"$inner_column\" from \"$inner_table\" ";
+			$inner_column = $this->getColumnName($inner_column, $inner_table, false, true);
+			$where .= " $outer_column $relation (SELECT $inner_column from \"$inner_table\" ";
 			$inner_where = '';
 
 			if(!($obj = self::getObject($inner_table)))
@@ -2130,7 +2143,7 @@ class Model
 			$having = (isset($inner_query['having'])) ? 'having '.$inner_query['having'] : '';
 			$where .= $inner_where ." $group_by $having )";
 		}else
-			$where .= " \"$table\".\"$column\" $relation (".$inner_query["options"].")";
+			$where .= " $outer_column $relation (".$inner_query["options"].")";
 		
 		return $where;
 	}

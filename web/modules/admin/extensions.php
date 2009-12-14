@@ -37,7 +37,7 @@ global $module, $method, $path, $action, $page, $limit, $fields_for_extensions, 
 
 require_once("lib/lib_extensions.php");
 
-$fields_for_extensions = array("function_detect_busy:currently"=>"inuse_count,location", "extension", "firstname", "lastname");
+$fields_for_extensions = array("function_detect_busy:currently"=>"inuse_count,location", "extension", "firstname", "lastname", "function_groups_extension:groups"=>"extension_id");
 $operations_for_extensions = array("&method=edit_extension"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_extension"=>'<img src="images/delete.gif" title="Delete" alt="delete">', "&method=join_group"=>'<img src="images/join_group.gif" title="Join Group" alt="join group"/>', "&method=impersonate"=>'<img src="images/impersonate.gif" alt="impersonate" title="Impersonate"/>');
 
 if(!$method || $method == "manage")
@@ -96,6 +96,21 @@ function extensions()
 	items_on_page();
 	pages($total);
 	tableOfObjects($extensions, $fields_for_extensions, "extension",  $operations_for_extensions, array("&method=add_extension"=>"Add extension"));
+}
+
+function groups_extension($extension_id)
+{
+	$member = new Group_Member;
+	$member->extend(array("group"=>"groups"));
+	$groups = $member->extendedSelect(array("extension_id"=>$extension_id));
+
+	$text = "";
+	for($i=0; $i<count($groups); $i++) {
+		if($text != "")
+			$text .= ",";
+		$text .= $groups[$i]->group;
+	}
+	return $text;
 }
 
 function group_members()

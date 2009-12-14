@@ -54,7 +54,7 @@ function wizard_database()
 	global $steps;
 	$fields = $_SESSION["fields"];
 
-	$functions = array(1=>"change_password", 2=>"define_extensions", 3=>"define_groups", 4=>"define_gateway", 5=>"set_voicemail", 6=>"auto_attendant", 7=>"define_music_on_hold");
+	$functions = array(1=>"change_password", 2=>"define_extensions", 3=>"define_groups", 4=>"define_gateway", 5=>"set_voicemail", 6=>"auto_attendant" /*, 7=>"define_music_on_hold"*/);
 
 	$message = '';
 	$errormess = '';
@@ -356,8 +356,11 @@ function auto_attendant($fields)
 		mkdir($path);
 
 	$time = date("Y-m-d_H:i:s");
-	$online_file = "$path/online_".$time.".mp3";
-	$offline_file = "$path/offline_".$time.".mp3";
+	$online_file = "$path/online_".$time."-ns.mp3";
+	$offline_file = "$path/offline_".$time."-ns.mp3";
+
+	$rs_online_file = "$path/online_".$time.".mp3";
+	$rs_offline_file = "$path/offline_".$time.".mp3";
 
 	//if (!move_uploaded_file($_FILES["online_prompt"]['tmp_name'],$online_file))
 	if(!copy($fields['online_prompt']['path'], $online_file))
@@ -366,13 +369,16 @@ function auto_attendant($fields)
 	if(!copy($fields['offline_prompt']['path'], $offline_file))
 		return array(false, "Could not upload file for offline mode");
 
-	$slin_online = str_ireplace(".mp3",".slin",$online_file);
-	$slin_offline = str_ireplace(".mp3",".slin",$offline_file);
+	$slin_online = str_ireplace(".mp3",".slin",$rs_online_file);
+	$slin_offline = str_ireplace(".mp3",".slin",$rs_offline_file);
 	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slin_online\" \"".$online_file."\"");
 	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slin_offline\" \"".$offline_file."\"");
 
 	if(!is_file($slin_online) || !is_file($slin_offline))
-		return array(false, "Could not convert prompts for auto attendant in .au format.");
+		return array(false, "Could not convert prompts for auto attendant in .slin format.");
+
+	passthru("$target_path/mp3resample.sh \"$rs_online_file\" \"$online_file\"");
+	passthru("$target_path/mp3resample.sh \"$rs_offline_file\" \"$offline_file\"");
 
 	foreach($prompts as $status=>$prompt_name)
 	{
@@ -456,15 +462,19 @@ function define_music_on_hold($fields=NULL)
 		if(!isset($fields["file$i"]["path"]))
 			continue;
 		$music_on_hold = new Music_on_hold;
-		$gen_name = date('Y-m-d_H:i:s_u_').rand(100,1000). ".mp3";
-		$new_file = "$path/".$gen_name;
+		$gen_name = date('Y-m-d_H:i:s_u_').rand(100,1000). "-ns.mp3";
+		$fin_name = str_replace("-ns.mp3",".mp3",$gen_name);
+		$new_file = "$path/$gen_name";
+		$fin_file = "$path/$fin_name";
 		if(!copy($fields["file$i"]["path"], $new_file))
 			return array(false, "Couldn't move file ".$fields["file$i"]["orig_name"]);
+
+		passthru("$target_path/mp3resample.sh \"$fin_file\" \"$new_file\"");
 
 	//	$au = str_replace(".mp3",".au",$new_file);
 	//	passthru("sox \"$new_file\"  -r 8000 -c 1 -A \"$au\"");
 
-		$res = $music_on_hold->add(array("music_on_hold"=>$fields["file$i"]["orig_name"], "file"=>$gen_name));
+		$res = $music_on_hold->add(array("music_on_hold"=>$fields["file$i"]["orig_name"], "file"=>$fin_name));
 		if(!$res[0])
 			return $res;
 		$playlist_item = new Playlist_Item;

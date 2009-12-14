@@ -109,7 +109,7 @@ function import_database()
 			if(!$groups[$j] || $groups[$j] == '')
 				continue;
 			$gr = new Group;
-			$gr_index = $gr->fieldSelect("group_id", array('unblock_lower(groups."group")'=>strtolower($groups[$j])));
+			$gr_index = $gr->fieldSelect("group_id", array('__sql_lower(groups."group")'=>strtolower($groups[$j])));
 			if(!$gr_index) {
 				errormess('Unknown group '.$groups[$j].'<br/>', 'no');
 				continue;

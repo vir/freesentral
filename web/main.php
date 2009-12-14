@@ -45,8 +45,13 @@ if(getparam("method") == "impersonate") {
 		forbidden();
 	Model::writeLog("impersonate ".getparam("extension"));
 	$_SESSION["real_user"] = $_SESSION["user"];
+	$_SESSION["real_user_id"] = $_SESSION["user_id"];
 	$_SESSION["user"] = getparam("extension");
 	$_SESSION["username"] = $_SESSION["user"];
+	$ext = Model::selection("extension", array("extension"=>getparam("extension")));
+	if(!count($ext))
+		forbidden();
+	$_SESSION["user_id"] = $ext[0]->extension_id;
 	$_SESSION["level"] = "extension";
 	$module = "HOME";
 	$method = "HOME";
@@ -60,6 +65,7 @@ if(getparam("method") == "impersonate") {
 	$impersonated = $_SESSION["user"];
 	$_SESSION["user"] = $_SESSION["real_user"];
 	$_SESSION["username"] = $_SESSION["real_user"];
+	$_SESSION["user_id"] = $_SESSION["real_user_id"];
 	Model::writeLog("stop impersonate ".$impersonated);
 	$_SESSION["level"] = "admin";
 	if(isset($_POST["method"]))
@@ -99,13 +105,7 @@ if($method == "manage")
 
 $_SESSION["main"] = "main.php";
 $iframe = getparam("iframe");
-/*
-// old wizard
-if(!isset($_SESSION["verified_settings"]))
-	$module = "verify_settings";
-if($level == "admin" && $_SESSION["wizard"] == "notused")
-	$module = "verify_settings";
-*/
+
 ?>
 
 <html>

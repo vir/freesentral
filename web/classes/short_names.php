@@ -32,7 +32,8 @@ class Short_Name extends Model
 				"short_name_id" => new Variable("serial", "!null"),
 				"short_name" => new Variable("text", "!null"),
 				"name" => new Variable("text"),
-				"number" => new Variable("text", "!null")
+				"number" => new Variable("text", "!null"),
+				"extension_id" => new Variable("serial", null, "extensions")
 			);
 	}
 
@@ -44,9 +45,22 @@ class Short_Name extends Model
 	function setObj($params)
 	{
 		$this->short_name = strtolower(field_value("short_name",$params));
-		if(($msg = $this->objectExists())) 
-			return array(false, (is_numeric($msg)) ? "This 'Short name' is already defined." : $msg);
+
+		$conditions = array("short_name"=>strtolower(field_value("short_name",$params)));
+		if(field_value("extension_id", $params))
+			$conditions["extension_id"] = strtolower(field_value("extension_id", $params));
+		else
+			$conditions["extension_id"] = "__empty";
+		if($this->short_name_id)
+			$conditions["short_name_id"] = "!=".$this->short_name_id;
+		$nr = $this->fieldSelect("count(*)",$conditions);
+		if($nr) 
+			return array(false, "This 'Short name' is already defined.");
 		$this->select();
+		if($this->short_name_id && isset($params["extension_id"])) {
+			if($this->extension_id != $params["extension_id"])
+				return array(false, "You are not allowed to modify this short name.");
+		}
 		$this->setParams($params);
 		$this->short_name = strtolower(field_value("short_name",$params));
 
@@ -55,7 +69,8 @@ class Short_Name extends Model
 			return array (false,"You used invalid characters. You are only allowed to use the letters that you see on your phone's keypad.");
 
 		$options = self::getPossibleOptions($match_number);
-		$query = "SELECT count(*) FROM short_names WHERE short_name IN ($options)";
+		$additional = ($this->extension_id) ? "extension_id='".$this->extension_id."' AND" : "extension_id IS NULL AND";
+		$query = "SELECT count(*) FROM short_names WHERE $additional short_name IN ($options)";
 		if($this->short_name_id)
 			$query .= " AND short_name_id!=".$this->short_name_id;
 		$res = Database::query($query);

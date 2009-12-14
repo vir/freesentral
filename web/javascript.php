@@ -158,7 +158,7 @@ function form_for_gateway(gwtype)
 {
 	//var sprotocol = document.outbound.protocol.value;
 	var sprotocol = document['forms']['outbound'][gwtype+'protocol'].value;
-	var protocols = new Array("sip", "h323", "iax", "zap", "wp");
+	var protocols = new Array("sip", "h323", "iax", "pstn", "BRI", "PRI");
 	var i;
 	var currentdiv;
 	var othergw;
@@ -674,9 +674,134 @@ function verify_moh()
 	}
 
 	return true;
-		
+}
+
+var e1_sig_chan = "16";
+var e1_voice_chan = "1.15-17-31";
+
+var t1_sig_chan = "24";
+var t1_voice_chan = "1-23";
+
+function set_timeslots()
+{
+	var select_type = document.getElementById("connection_type");
+	var interface_type = select_type.options[select_type.selectedIndex].value;
+
+	var sig_channels = document.getElementById("sig_channels");
+	var voice_channels = document.getElementById("voice_channels");
+
+	var front_end_line_coding = document.getElementById("front_end_line_coding");
+	var front_end_framing = document.getElementById("front_end_framing");
+
+	// configuring the channels differently depending whether the connection type is E1 or T1
+	if (interface_type != "T1") {
+		sig_channels.value = e1_sig_chan;
+		voice_channels.value = e1_voice_chan;
+		front_end_framing.options.length = 0;
+		front_end_framing.options[0] = new Option("CRC4","CRC4",true,false);
+		front_end_framing.options[1] = new Option("NCRC4","NCRC4",false,false);
+
+		front_end_line_coding.options.length = 0;
+		front_end_line_coding.options[0] = new Option("B8ZS","B8ZS",true,false);
+		front_end_line_coding.options[1] = new Option("AMI","AMI",true,false);
+	}else{
+		sig_channels.value = t1_sig_chan;
+		voice_channels.value = t1_voice_chan;
+		front_end_framing.options.length = 0;
+		front_end_framing.options[0] = new Option("ESF","ESF",true,false);
+		front_end_framing.options[1] = new Option("D4","D4",false,false);
+
+		front_end_line_coding.options.length = 0;
+		front_end_line_coding.options[0] = new Option("HDB3","HDB3",true,false);
+		front_end_line_coding.options[1] = new Option("AMI","AMI",true,false);
+	}
+}
+
+function set_format()
+{
+	var sel_port = document.getElementById("noreg_PRIport");
+	var name_port = sel_port.options[sel_port.selectedIndex].value;
+	var connection_type;
+	if(name_port.indexOf("(PRI-T1)") != -1)
+		connection_type = "T1";
+	else
+		connection_type = "E1";
+	var format = (connection_type == "T1") ? "mulaw" : "alaw";
+	var opts = document.getElementById("noreg_PRIformat");
+
+	var opts = document.outbound.noreg_PRIformat;
+	
+	for(i=0; i<opts.length; i++) {
+		if(opts[i].value == format && opts.checked != true)
+			opts[i].checked = true;
+	}
+
+//alert(opts.length);
+//	opts.value = "alaw";
+}
+
+function set_voice_channels()
+{
+	var select_type = document.getElementById("connection_type");
+	var interface_type = select_type.options[select_type.selectedIndex].value;
+	var num;
+
+	var sig_chan = document.getElementById("sig_channels");
+	var voice_chan = document.getElementById("voice_channels");
+	var bt, tp;
+
+	if (interface_type != "T1") {
+		e1_sig_chan = sig_chan.value;
+		if(e1_sig_chan == null || e1_sig_chan == "") {
+			sig_chan.value = "16";
+			e1_sig_chan = "16";
+		}
+		if (e1_sig_chan == "16")
+			return true;
+		num = parseInt(e1_sig_chan);
+		if (num == 1) {
+			voice_chan.value = "2-31";
+			e1_voice_chan = "2-31";
+			return true;
+		}
+		bt = num - 1;
+		tp = num + 1;
+		if(bt > 1)
+			e1_voice_chan = "1."+bt;
+		else
+			e1_voice_chan = "1";
+		if(tp < 31)
+			e1_voice_chan = e1_voice_chan + "-" + tp + ".31";
+		else
+			e1_voice_chan = e1_voice_chan + "-" + "31";
+		voice_chan.value = e1_voice_chan;
+	}else{
+		t1_sig_chan = sig_chan.value;
+		if (t1_sig_chan == null || t1_sig_chan == "") {
+			sig_chan.value = "24";
+			t1_sig_chan = "24";
+		}
+		if (t1_sig_chan == "24")
+			return true;
+		num = parseInt(t1_sig_chan);
+		if (num == 1) {
+			voice_chan.value = "2-24";
+			t1_voice_cham = "2-34";
+			return true;
+		}
+		bt = num -1;
+		tp = num +1;
+		if(bt>1)
+			t1_voice_chan = "1."+bt;
+		else
+			t1_voice_chan = "1";
+		if(tp<24)
+			t1_voice_chan = t1_voice_chan + "-" + tp + ".24";
+		else
+			t1_voice_chan = t1_voice_chan + "-" + "24";
+		voice_chan.value = t1_voice_chan;
+	}
+	return true;
 }
 
 </script>
-
-<script type="text/javascript" language="JavaScript1.2" src="jscript/togglebars.js"></script>

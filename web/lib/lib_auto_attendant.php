@@ -529,16 +529,12 @@ function reupload_prompt_database()
 	$prompt->select();
 
 	$time = date("Y-m-d:H:i:s");
-	$file = "$path/".$prompt->status."_".$time.".mp3";
-	if (!move_uploaded_file($_FILES["prompt"]['tmp_name'],$file)) {
-		errormess("Could not upload file.");
-		return;
-	}
+	$file = "$path/".$prompt->status."_".$time."-ns.mp3";
+	$resampled = "$path/".$prompt->status."_".$time.".mp3";
 
-//	$au = str_replace(".wav",".au",$file);
-//	passthru("sox $file -r 22000 -c 1 -b 16 -A $au");
-	$slinfile = str_ireplace(".mp3", ".slin", $file);
-	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slinfile\" \"$file\"");
+	$prompt->file = $prompt->status."_".$time.".mp3";
+	$prompt->prompt = $filename;
+	$prompt->description = getparam("description");
 
 	if(is_file("$path/".$prompt->file))
 		unlink("$path/".$prompt->file);
@@ -546,9 +542,17 @@ function reupload_prompt_database()
 	if(is_file($slin))
 		unlink($slin);
 
-	$prompt->file = $prompt->status."_".$time.".mp3";
-	$prompt->prompt = $filename;
-	$prompt->description = getparam("description");
+	if (!move_uploaded_file($_FILES["prompt"]['tmp_name'],$file)) {
+		errormess("Could not upload file.");
+		return;
+	}
+
+//	$au = str_replace(".wav",".au",$file);
+//	passthru("sox $file -r 22000 -c 1 -b 16 -A $au");
+	$slinfile = str_ireplace(".mp3", ".slin", $resampled);
+	passthru("madplay -q --no-tty-control -m -R 8000 -o raw:\"$slinfile\" \"$file\"");
+	passthru("$target_path/mp3resample.sh \"$resampled\" \"$file\"");
+
 	notify($prompt->update());
 }
 

@@ -48,6 +48,24 @@ class Playlist extends Model
 			$playlist->playlist = "Default playlist";
 			$playlist->in_use = "t";
 			$playlist->insert();
+
+			if(!$playlist->playlist_id)
+				return false;
+
+			$files = array("alexander_boyes-calm.mp3"=>"Alexander Boyes - Calm.mp3", "lou_gaioto-chopin_machine.mp3"=>"Lou Gaioto - Chopin machine.mp3", "lou_gaioto-greens_au_carnevale.mp3"=>"Lou Gaioto - Greens au carnevale.mp3", "bert_jerred-in_the_middle_of_the_night.mp3"=>"Bert Jerred - In the middle of the night.mp3", "rogg_maddeford-peace_of_mind.mp3"=>"Rogg Maddeford - Peace of mind.mp3", "rogg_maddeford-poissondavril.mp3"=>"Rogg Maddeford - Poisson d'Avril.mp3", "rogg_maddeford-song_for_madeleine.mp3"=>"Rogg Maddeford - Song for madeleine.mp3");
+
+			foreach($files as $file=>$name) {
+				$moh = new Music_On_Hold;
+				$moh->music_on_hold = $name;
+				$moh->{"file"} = $file;
+				$moh->insert();
+				if($moh->music_on_hold_id) {
+					$item = new PlayList_Item;
+					$item->playlist_id = $playlist->playlist_id;
+					$item->music_on_hold_id = $moh->music_on_hold_id;
+					$item->insert();
+				}
+			}
 			return true;
 		}
 		return false;

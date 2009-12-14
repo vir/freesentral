@@ -474,10 +474,41 @@ function delete_gateway_database()
 	global $path;
 	$path .= "&method=gateways";
 
+	Database::transaction();
+
 	$gateway = new Gateway;
 	$gateway->gateway_id = getparam("gateway_id");
+	$gateway->select();
+
+	if($gateway->protocol == "BRI" || $gateway->protocol == "PRI") {
+		$sig_trunk = new Sig_trunk;
+		$sig_trunk->sig_trunk_id = $gateway->sig_trunk_id;
+		$sig_trunk->sig_trunk = $gateway->gateway;
+
+		$sig_trunk->select();
+
+		$card_conf = new Card_conf;
+		$res = $card_conf->objDelete(array("section_name"=>$sig_trunk->sig));
+		if(!$res[0]) {
+			Database::rollback();
+			notice("Could not delete gateway: ".$res[1], "gateways", $res[0]);
+			return;
+		}
+
+		$res = $sig_trunk->objDelete();
+		if(!$res[0]) {
+			Database::rollback();
+			notice("Could not delete gateway: ".$res[1], "gateways", $res[0]);
+			return;
+		}
+		$sig_trunk->sendCommand("remove");
+	}
 	//notify($gateway->objDelete(),$path);
 	$res = $gateway->objDelete();
+	if(!$res[0])
+		Database::rollback();
+	else
+		Database::commit();
 	notice($res[1], "gateways", $res[0]);
 }
 

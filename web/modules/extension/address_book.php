@@ -25,6 +25,8 @@
 <?
 global $module, $method, $path, $action, $page, $limit, $fields_for_extensions, $operations_for_extensions, $upload_path;
 
+require_once("socketconn.php");
+
 if(!$method || $method == "manage")
 	$method = $module;
 
@@ -40,9 +42,91 @@ $call();
 
 function address_book()
 {
-	$short_names = Model::selection("short_name", NULL, "short_name");	
+	print "<div class=\"notify\">System address book</div><br/>";
+	$short_names = Model::selection("short_name", array("extension_id"=>"__empty"), "short_name");	
+	tableOfObjects($short_names, array("short_name", "number", "name"), "system short name", array("&method=make_call"=>'<img src="images/call.gif" title="Call" alt="Call"/>'));
 
-	tableOfObjects($short_names, array("short_name", "number", "name"), "short_name");
+	print "<br/><br/><div class=\"notify\">Personal address book</div><br/>";
+	$short_names = Model::selection("short_name", array("extension_id"=>$_SESSION["user_id"]), "short_name");
+	tableOfObjects($short_names, array("short_name", "number","name"), "short name defined by you", array("&method=edit_short_name"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_short_name"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>', "&method=make_call"=>'<img src="images/call.gif" title="Call" alt="Call"/>'), array("&method=edit_short_name"=>"Add shortcut"));
+}
+
+function make_call()
+{
+	$called = getparam("number");
+	$caller = $_SESSION["username"];
+
+	$command = "click_to_call $caller $called";
+
+	$socket = new SocketConn;
+	if($socket->error == "") {
+		$socket->command($command);
+	}else{
+		errormess("Can't make call. Please contact your system administrator.", "no");
+		print "<br/>";
+	}
+
+	address_book();
+}
+
+function edit_short_name($error=NULL)
+{
+	if($error)
+		errornote($error);
+
+	$short_name = new Short_Name;
+	$short_name->short_name_id = getparam("short_name_id");
+	$short_name->select();
+
+	if($short_name->short_name_id && $short_name->extension_id != $_SESSION["user_id"]) {
+		address_book();
+		return;
+	}
+
+	$fields = array(
+					"short_name" => array("comment"=>"Name to be dialed", "compulsory"=>true),
+					"number" => array("comment"=>"Number where to place the call", "compulsory"=>true),
+					"name" => ''
+				);
+
+	$title = ($short_name->short_name_id) ? "Edit shortcut" : "Add shortcut ";
+
+	start_form();
+	addHidden("database",array("short_name_id"=>$short_name->short_name_id));
+	editObject($short_name, $fields, $title, "Save");
+	end_form();
+}
+
+function edit_short_name_database()
+{
+	global $module;
+
+	$short_name = new Short_Name;
+	$short_name->short_name_id = getparam("short_name_id");
+	$params = form_params(array("short_name", "number", "name"));
+	$params["extension_id"] = $_SESSION["user_id"];
+	$res = ($short_name->short_name_id) ? $short_name->edit($params) : $short_name->add($params);
+	notice($res[1], "address_book", $res[0]);
+}
+
+function delete_short_name()
+{
+	ack_delete("short_name", getparam("short_name"), NULL, "short_name_id", getparam("short_name_id"));
+}
+
+function delete_short_name_database()
+{
+	global $module;
+
+	$short_name = new Short_Name;
+	$short_name->short_name_id = getparam("short_name_id");
+	$short_name->select();
+	if($short_name->extension_id != $_SESSION["user_id"]) {
+		address_book();
+		return;
+	}
+	$res = $short_name->objDelete();
+	notice($res[1], "address_book", $res[0]);
 }
 
 ?>

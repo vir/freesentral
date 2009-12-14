@@ -406,8 +406,9 @@ function addHidden($action=NULL, $additional = array())
  * @param $css Name of the css to be used when generating the elements. Default value is 'edit'
  * @param $form_identifier Text. Used to make the current fields unique(Used when this function is called more than once inside the same form with fields that can have the same name when being displayed)
  * @param $td_width Array or by default NULL. If Array("left"=>$value_left, "right"=>$value_right), force the widths to the ones provided. $value_left could be 20px or 20%.
+ * @param $hide_advanced Bool default false. When true advanced fields will be always hidden when displaying form
  */
-function editObject($object, $fields, $title, $submit="Submit", $compulsory_notice=NULL, $no_reset=false, $css=NULL, $form_identifier='', $td_width=NULL)
+function editObject($object, $fields, $title, $submit="Submit", $compulsory_notice=NULL, $no_reset=false, $css=NULL, $form_identifier='', $td_width=NULL, $hide_advanced=false)
 {
 	if(!$css)
 		$css = "edit";
@@ -435,14 +436,14 @@ function editObject($object, $fields, $title, $submit="Submit", $compulsory_noti
 			$value = $field_format["value"];
 
 		$variable = $object->variable($field_name);
-		if((!$variable && $value))
+		if((!$variable && $value && !$hide_advanced))
 		{
 			$show_advanced = true;
 			break;
 		}
 		if(!$variable)
 			continue;
-		if (($value && $variable->_type != "bool") || ($variable->_type == "bool" && $value == "t"))
+		if (($value && $variable->_type != "bool" && !$hide_advanced) || ($variable->_type == "bool" && $value == "t" && !$hide_advanced))
 		{
 			$show_advanced = true;
 			break;
@@ -662,11 +663,14 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 			case "password":
 			case "file":
 			case "hidden":
+			case "text-nonedit":
 				print '<input class="'.$css.'" type="'.$display.'" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'"';
 				if($display != "file")
 					print ' value="'.$value.'"';
 				if(isset($field_format["javascript"]))
 					print $field_format["javascript"];
+				if($display == "text-nonedit")
+					print " readonly=''";
 				print '>';
 				break;
 			case "fixed":
@@ -1761,6 +1765,90 @@ function explanations($logo, $title, $explanations, $style="explanation")
 	print '</tr>';
 	print '</table>';
 	print '</div>';
+}
+
+
+class ConfFile
+{
+	public $sections = array();
+	public $filename;
+	public $structure = array();
+
+	function __construct($file_name)
+	{
+		$this->filename = $file_name;
+		if(!is_file($this->filename))
+			return;
+		$file=fopen($this->filename,"r");
+		$last_section = "";
+		while(!feof($file))
+		{
+			$row = fgets($file);
+			$row = trim($row);
+			if(!strlen($row))
+				continue;
+			if($row == "")
+				continue;
+			// new section started
+			// the second paranthesis is kind of weird but i got both cases
+			if(substr($row,0,1) == "[" && substr($row,-1,1)) {
+				$last_section = substr($row,1,strlen($row)-2);
+				$this->sections[$last_section] = array();
+				$this->structure[$last_section] = array();
+				continue;
+			}
+			if(substr($row,0,1) == ";") {
+				if($last_section == "")
+					array_push($this->structure, $row);
+				else
+					array_push($this->structure[$last_section], $row);
+				continue;
+			}
+			// this is not a section (it's part of a section or file does not have sections)
+			$params = explode("=", $row, 2);
+			if(count($params)>2 || count($params)<2)
+				// skip row (wrong format)
+				continue;
+			if($last_section == ""){
+				$this->sections[$params[0]] = trim($params[1]);
+				$this->structure[$params[0]] = trim($params[1]);
+			}else{
+				$this->sections[$last_section][$params[0]] = trim($params[1]);
+				$this->structure[$last_section][$params[0]] = trim($params[1]);
+			}
+		}
+		fclose($file);
+	}
+
+	function save()
+	{
+		$file = fopen($this->filename,"w") or exit("Could not open ".$this->filename." for writting");
+		foreach($this->structure as $name=>$value)
+		{
+			if(!is_array($value)) {
+				if(substr($value,0,1) == ";" && is_numeric($name)) {
+					//writing a comment
+					fwrite($file, $value."\n");
+					continue;
+				}
+				fwrite($file, "$name=".ltrim($value)."\n");
+				continue;
+			}else
+				fwrite($file, "[".$name."]\n");
+			$section = $value;
+			foreach($section as $param=>$value)
+			{
+				//writing a comment
+				if(substr($value,0,1) == ";" && is_numeric($param)) {
+					fwrite($file, $value."\n");
+					continue;
+				}
+				fwrite($file, "$param=".ltrim($value)."\n");
+			}
+			fwrite($file, "\n");
+		}
+		fclose($file);
+	}
 }
 
 /* vi: set ts=8 sw=4 sts=4 noet: */

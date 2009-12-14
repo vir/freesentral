@@ -22,6 +22,8 @@
  */
 ?>
 <?
+require_once("socketconn.php");
+
 global $module,$method,$action;
 
 if(!$method)
@@ -140,16 +142,25 @@ function home()
 	print '</div>';
 	print '</td><td class="topvalign">';
 	print '<div class="copac copachome">';
-	$status = exec("/etc/init.d/yate status");
-	print '<div class="titlu">SYSTEM STATUS</div>';
-	print '<div class="systemstatus"> '.
-			
-		'
-			<div style="float:right;"> Today, '.date('h:i a').'
+	//$status = exec("/etc/init.d/yate status");
 
-		</div>Yate: '.$status;
+	$sock = new SocketConn;
+	if($sock->socket) {
+		$uptime = $sock->command("uptime");
+		$status = $uptime;
+		$status = explode(" ",$status);
+		$status = strtolower($status[0]." ".$status[1]);
+		$err = "";
+	}else{
+		$status = ": Can't connect to yate";
+		$err = "error_";
+	}
+	print '<div class="titlu">SYSTEM STATUS</div>';
+	print '<div class="'.$err.'systemstatus"> '.'
+			<div style="float:right;"> Today, '.date('h:i a').'
+			</div>Yate '.$status;
 	print '</div>';
-print '<br/><br/>';
+	print '<br/><br/>';
 	print '</td></tr></table>';
 }
 

@@ -83,8 +83,8 @@ function digits()
 ),
 "Call pick up"=>array(
 	array(
-		"digits"=>"**, then extenion receiving the call",
-		"text"=>"pick up that call(works only if your and that extension are in the same group) "
+		"digits"=>"000, then extenion receiving the call or extension of a certain group",
+		"text"=>"pick up that call(works only if you and that extension are in the same group or call is to a group you are in) "
 	)
 ),
 "Flush digits"=>array(
@@ -101,6 +101,12 @@ function digits()
 	array(
 		"digits"=>"###",
 		"text"=>"enable pbx features after they were previously disabled"
+	)
+),
+"Call using Address book"=>array(
+	array(
+		"digits"=>"**, then insert the name of the person to call",
+		"text"=>"makes a call to the number associated to that name in the Address Book section"
 	)
 )
 	);
@@ -273,7 +279,7 @@ function call_pick_up()
 <div class="features_notice">
 Call pick up is allowed between members of the same group.
 <br/><br/>
-If an extension in your group is called you can pickup that call pressing ** and then insert the extension that received the call. 
+If an extension in your group is called you can pickup that call pressing ** and then insert the extension that received the call. Another case is pickup a call to a group that you are a member of. 
 <br/><br/>
 <center><a class="llink" href="main.php?module=<?print $module;?>&method=call_hunt"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=flush_digits">Next >></a></center>
 </div>
@@ -314,7 +320,21 @@ function retake()
 <div class="features_notice">
 Press ### after pressing ***(do disable pbx features) to enable your pbx features during a call.
 <br/><br/> 
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=passthrought"><< Previous</a></center>
+<center><a class="llink" href="main.php?module=<?print $module;?>&method=passthrought"><< Previous</a>| <a class="llink" href="main.php?module=<?print $module;?>&method=Address_Book">Next >></a></center>
+</div>
+<?
+}
+
+function Address_Book()
+{
+	global $module;
+
+?>
+<a name="address_book" class="features">Call using Address Book</a>
+<div class="features_notice">
+Press ** and then insert the name of the person you wish to call. This name coresponds to pressing the digits corresponding to each letter using the phone's keyboard.
+<br/><br/> 
+<center><a class="llink" href="main.php?module=<?print $module;?>&method=retake"><< Previous</a></center>
 </div>
 <?
 }

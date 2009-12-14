@@ -22,8 +22,11 @@
  */
 ?>
 <?
+global $module, $method, $path, $action, $page, $target_path, $telephony_cards;
 
-global $module, $method, $path, $action, $page, $target_path;
+require_once("lib/telephony_cards.php");
+require_once("lib/lib_wizard.php");
+
 
 if(!$method)
 	$method = $module;
@@ -41,11 +44,18 @@ $explanation["edit_admin"] = $explanation["admins"];
 $explanation["edit_short_name"] = $explanation["address_book"];
 
 $image = "images/address_book.png";
-explanations($image, "", $explanation);
 
-print '<div class="content">';
-$call();
-print '</div>';
+if($method != "wizard_cards") {
+	explanations($image, "", $explanation);
+	print '<div class="content">';
+	$call();
+	print '</div>';
+}else{
+	print '<div class="content wide">';
+	$call();
+	print '</div>';
+}
+	
 /*
 function equipments()
 {
@@ -179,166 +189,9 @@ function edit_setting_database()
 	$res = $setting->update();
 	notice($res[1],NULL,$res[0]);
 }
-/*
-function settings()
-{
-	global $module;
-
-	$prompts = Model::selection("mainprompt",NULL,"mainprompt");
-	$prompts = Model::objectsToArray($prompts,array("mainprompt"=>"", "in_use"=>"", "description"=>""));
-
-	table($prompts, "main prompt", "main.php?module=$module", array("&method=edit_prompt"=>"Edit", "&method=delete_prompt"=>"Delete"), "upload_prompt", "Upload prompt");
-
-	$settings = Model::selection("setting",NULL,"param");
-	$settings = Model::objectsToArray($settings, array("param"=>"setting", "value"=>""));
-
-	table($settings, "setting" ,"main.php?module=$module", array("&method=edit_setting"=>"Edit"));
-}
-
-function edit_setting()
-{
-	$setting = new Setting;
-	$setting->setting_id = getparam("setting_id");
-	$setting->select();
-
-	$array = array("ff_setting"=>$setting->param, "value"=>$setting->value);
-	start_form();
-	addHidden("database",array("setting_id"=>$setting->setting_id));
-	edit_form($array, "Edit setting", "Save");
-	end_form();
-}
-
-function edit_setting_database()
-{
-	$setting = new Setting;
-	$setting->setting_id = getparam("setting_id");
-	$setting->select();
-
-	$setting->value = getparam("value");
-	notify($setting->update());
-}
-
-function edit_prompt()
-{
-	$mainprompt = new MainPrompt;
-	$mainprompt->mainprompt_id = getparam("mainprompt_id");
-	$mainprompt->select();
-
-	$array = array("ff_mainprompt"=>$mainprompt->mainprompt, "description"=>$mainprompt->description, "in_use"=>($mainprompt->in_use == 't') ? 't' : 'f');
-
-	start_form();
-	addHidden("database", array("mainprompt_id"=>$mainprompt->mainprompt_id));
-	edit_form($array, "Edit main prompt", "Save");
-	end_form();
-}
-
-function edit_prompt_database()
-{
-	$mainprompt = new MainPrompt;
-	$mainprompt->mainprompt_id = getparam("mainprompt_id");
-	$mainprompt->select();
-
-	$mainprompt->description = getparam("description");
-
-	if(getparam("in_use") == "on" && $mainprompt->in_use) {
-		$prompt = Model::selection("mainprompt", array("in_use"=>true));
-		for($i=0; $i<count($prompt); $i++) {
-			$prompt[$i]->in_use = 'f';
-			$prompt[$i]->update();
-		}
-	}
-	$mainprompt->in_use = (getparam("in_use") == "on") ? 't' : 'f';
-
-	notify($mainprompt->update());
-}
-
-function delete_prompt()
-{
-	if(getparam("mainprompt") == "default_menu.u") {
-		errormess("This is the default prompt. You are not allowed to delete it.");
-		return;
-	}
-	ack_delete("prompt",getparam("mainprompt"), NULL, "mainprompt_id", getparam("mainprompt_id"));
-}
-
-function delete_prompt_database()
-{
-	$path = Model::selection("setting", array("param"=>"path"));
-	if(!count($path)) {
-		errormess("Please set the defualt path.");
-		return;
-	}
-	$path = $path[0]->value .'/';
-
-	$mainprompt = new MainPrompt;
-	$mainprompt->mainprompt_id = getparam("mainprompt_id");
-	$mainprompt->select();
-
-	unlink($path.$mainprompt->mainprompt);
-
-	message("Selected main prompt was deleted");
-}
-
-function upload_prompt()
-{
-	$array = array("fileselect_upload_main_menu_prompt"=>"", "description"=>"", "in_use"=>'f');
-
-	//start the form, third param true show that this form will be used for uploading
-	start_form(NULL,NULL,true);
-	addHidden("database",array("MAX_FILE_SIZE"=>"500000000", "destination_id"=>getparam("destination_id"), "letter"=>getparam("letter")));
-	edit_form($array,"Upload Main Menu prompt","Submit",8);
-	end_form();	
-}
-
-function upload_prompt_database()
-{
-	global $target_path, $path;
-
-	$file = $filename =  basename($_FILES['upload_main_menu_prompt']['name']);
-
-	$brfile = $filename;
-	while(true) {
-		$mps = Model::selection("mainprompt",array("mainprompt"=>$brfile));
-		if(!count($mps))
-			break;
-		$brfile = explode(".", $filename);
-		$brfile[0] .= '1';
-		$brfile = implode('.',$brfile);
-	}
-	$filename = $brfile;
-
-	if(!is_dir($target_path))
-		mkdir($target_path);
-	$file = "$target_path/$filename";
-
-	if (!move_uploaded_file($_FILES["upload_main_menu_prompt"]['tmp_name'],$file)) {
-		errormess("Could not upload file",$path);
-		return;
-	}
-
-	$mainprompt = new MainPrompt;
-	$mainprompt->mainprompt = $filename;
-	$mainprompt->description = getparam("description");
-	$mainprompt->in_use = (getparam("in_use") == "on") ? 't' : 'f';
-
-	if($mainprompt->in_use == 't') {
-		$prompt = Model::selection("mainprompt", array("in_use"=>true));
-		if(count($prompt)) {
-			for($i=0; $i<count($prompt); $i++) {
-				$prompt[$i]->in_use = 'f';
-				$prompt[$i]->update();
-			}
-		}
-	}
-
-	$mainprompt->insert();
-
-	message("File was uploaded");
-}
-*/
 
 function network()
-{	
+{
 	$fields = array("DEVICE"=>"network_interface", "BOOTPROTO"=>"protocol", "IPADDR"=>"ip_address", "NETMASK"=>"netmask", "GATEWAY"=>"gateway");
 
 	$ninterfaces = array();
@@ -482,96 +335,13 @@ function dependant_field_noedit($value, $name)
 	print '<div id="text_'.$name.'" style="display:table-cell;">&nbsp;'.$value."</div>";
 }
 
-class ConfFile
-{
-	public $sections = array();
-	public $filename;
-	public $structure = array();
-
-	function __construct($file_name)
-	{
-		$this->filename = $file_name;
-		if(!is_file($this->filename))
-			return;
-		$file=fopen($this->filename,"r");
-		$last_section = "";
-		while(!feof($file))
-		{
-			$row = fgets($file);
-			$row = trim($row);
-			if(!strlen($row))
-				continue;
-			if($row == "")
-				continue;
-			// new section started
-			// the second paranthesis is kind of weird but i got both cases
-			if(substr($row,0,1) == "[" && substr($row,-1,1)) {
-				$last_section = substr($row,1,strlen($row)-2);
-				$this->sections[$last_section] = array();
-				$this->structure[$last_section] = array();
-				continue;
-			}
-			if(substr($row,0,1) == ";") {
-				if($last_section == "")
-					array_push($this->structure, $row);
-				else
-					array_push($this->structure[$last_section], $row);
-				continue;
-			}
-			// this is not a section (it's part of a section or file does not have sections)
-			$params = explode("=", $row, 2);
-			if(count($params)>2 || count($params)<2)
-				// skip row (wrong format)
-				continue;
-			if($last_section == ""){
-				$this->sections[$params[0]] = trim($params[1]);
-				$this->structure[$params[0]] = trim($params[1]);
-			}else{
-				$this->sections[$last_section][$params[0]] = trim($params[1]);
-				$this->structure[$last_section][$params[0]] = trim($params[1]);
-			}
-		}
-		fclose($file);
-	}
-
-	function save()
-	{
-		$file = fopen($this->filename,"w") or exit("Could not open ".$this->filename." for writting");
-		foreach($this->structure as $name=>$value)
-		{
-			if(!is_array($value)) {
-				if(substr($value,0,1) == ";" && is_numeric($name)) {
-					//writing a comment
-					fwrite($file, $value."\n");
-					continue;
-				}
-				fwrite($file, "$name=".ltrim($value)."\n");
-				continue;
-			}else
-				fwrite($file, "[".$name."]\n");
-			$section = $value;
-			foreach($section as $param=>$value)
-			{
-				//writing a comment
-				if(substr($value,0,1) == ";" && is_numeric($param)) {
-					fwrite($file, $value."\n");
-					continue;
-				}
-				fwrite($file, "$param=".ltrim($value)."\n");
-			}
-			fwrite($file, "\n");
-		}
-		fclose($file);
-	}
-}
-
 function address_book()
 {
 	global $method, $action;
 	$method = "address_book";
 	$action = NULL;
-	$short_names = Model::selection("short_name", NULL, "short_name");	
-	tableOfObjects($short_names, array("short_name", "number", "name"), "short_name", array("&method=edit_short_name"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_short_name"=>'<img src="images/delete.gif" title="Edit" alt="Edit"/>'), array("&method=add_short_name"=>"Add shortcut"));
+	$short_names = Model::selection("short_name", array("extension_id"=>"__empty"), "short_name");	
+	tableOfObjects($short_names, array("short_name", "number", "name"), "short_name", array("&method=edit_short_name"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_short_name"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>'), array("&method=add_short_name"=>"Add shortcut"));
 }
 
 function edit_short_name($error=NULL)
@@ -706,6 +476,147 @@ function delete_user_database()
 	$user->user_id = getparam("user_id");
 	$res = $user->objDelete();
 	notice($res[1], "admins", $res[0]);
+}
+
+function cards()
+{
+	global $module;
+
+	$err = 0; $out = array();
+	exec("wanrouter hwprobe verbose", $out, $err);
+
+	if($err !== 0) {
+		errormess("No wanpipe cards present[".$err."]", "no");
+		return;
+	}
+
+	$spans = get_spans();
+	$out = array(); $err = array();
+	
+	exec("ls /etc/wanpipe/wanpipe*.conf",$out,$err);
+
+	if(!count($out)) {
+		message("The cards on your system are not configured. Click ".'<a class="llink" href="main.php?module='.$module.'&method=wizard_cards">here</a>'." to configure them.", "no");
+		return;
+	}
+	// for testing purposes
+	// print '<meta http-equiv="refresh" content="0;url='."main.php?module=$module&method=wizard_BRI".'">';
+
+	$card_ports = Model::selection("card_port", null, "name, \"BUS\", \"SLOT\", \"PORT\"");
+	$fields = array("card"=>"name", "protocol"=>"card_type", "function_get_port_type:type"=>"type", "filename");
+	tableOfObjects($card_ports, $fields, "card_port", array("&method=configuration_file"=>_("View&nbsp;configuration")), array("&method=wizard_cards"=>_("Configure ports")));
+}
+
+function configuration_file()
+{
+	global $path, $module;
+
+	$bus = getparam("BUS");
+	$slot = getparam("SLOT");
+	$port = getparam("PORT");
+
+	$card_port = Model::selection("card_port", array("BUS"=>$bus, "SLOT"=>$slot, "PORT"=>$port));
+	if(!count($card_port)) {
+		$path .= "&method=cards";
+		errormess(_("Invalid port"), $path);
+		return;
+	}
+	$filename = "/etc/wanpipe/".$card_port[0]->filename;
+	$fh = fopen($filename, "r");
+	$content = fread($fh,filesize($filename));
+
+	print '<a class="llink" href="main.php?module='.$module.'&method=cards">'._("Return").'</a><br/><br/>';
+	print str_replace("\n", "<br/>", $content);
+	print '<br/><br/><a class="llink" href="main.php?module='.$module.'&method=cards">'._("Return").'</a>';
+}
+
+function wizard_cards()
+{
+	global $steps, $logo, $title, $method, $module, $telephony_cards;
+	$method = "wizard_cards";
+
+	$spans = get_spans();
+	$steps = get_span_steps($spans);
+
+	//$title = _("Configuring Sangoma cards");
+	$title= "Configuring Sangoma cards";
+	$logo = "images/small_logo.png";
+
+	for($i=0; $i<count($spans); $i++) {
+		$tel_card = $telephony_cards[$spans[$i]["telephony_card"]];
+		$functions[$i] = "set_".$tel_card["type"]."_port";
+	}
+
+	$wizard = new Wizard($steps, $logo, $title, "wizard_cards_database", "main.php?module=$module&method=cards");
+}
+
+function wizard_cards_database()
+{
+	global $telephony_cards;
+
+	$spans = get_spans();
+	$fields = $_SESSION["fields"];
+	$message = "";
+	$errormess = "";
+	Database::transaction();
+	// delete existing BRI ports
+	Database::query("DELETE FROM card_ports");
+
+	$interfaces = "";
+	for($i=0; $i<count($spans); $i++)
+	{
+		$tel_card = $telephony_cards[$spans[$i]["telephony_card"]];
+		$card_type = $tel_card["type"];
+
+		if($card_type == "BRI" && isset($fields[$i]))
+			$fields[$i]["group"] = $i+1;
+		$function = "configure_".$card_type."_file";;
+		$ret = (isset($fields[$i])) ? $function($spans[$i], $i+1, $fields[$i]) : $function($spans[$i], $i+1);
+		if(!$ret[0])
+			$errormess .=  $ret[1];
+		else {
+			$message .= $ret[0];
+			$index = $i+1;
+			if($interfaces != "")
+				$interfaces .= " ";
+			$interfaces .= "wanpipe$index";
+		}
+	}
+
+	if($errormess != "") {
+		Database::rollback();
+		return array(false, $errormess);
+	}
+
+	// clean sig_trunks and gateways that would user ports that aren't anymore
+	$sig_trunk = new Sig_trunk;
+	$trunks = $sig_trunk->fieldSelect("sig_trunk_id, sig", null, null, null, array("column"=>"port", "inner_column"=>"name", "inner_table"=>"card_ports", "relation"=>"NOT IN"));
+	for($i=0; $i<count($trunks); $i++) {
+		$card_conf = new Card_conf;
+		$res = $card_conf->objDelete(array("section_name"=>$trunks[$i]["sig"]));
+
+		$gateway = new Gateway;
+		$res = $gateway->objDelete(array("sig_trunk_id"=>$trunks[$i]["sig_trunk_id"]));
+
+		$sig_trunk = new Sig_trunk;
+		$res = $sig_trunk->objDelete(array("sig_trunk_id"=>$trunks[$i]["sig_trunk_id"]));
+	}
+
+	Database::commit();
+
+	// add all configured interfaces in wanrouter.rc from  /etc/wanpipe
+	$conf_file = new ConfFile("/etc/wanpipe/wanrouter.rc");
+	$conf_file->sections["WAN_DEVICES"] = '"'.$interfaces.'"';
+	$conf_file->save();
+
+	$out = array(); $err = array();
+	exec("wanrouter restart",$out,$err);
+	if($err && $err != "")
+		$x = implode("<br/>",$err);
+	else
+		$x = implode("<br/>",$out);
+
+	return array(true,$x);
 }
 
 ?>

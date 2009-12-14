@@ -475,7 +475,7 @@ $steps = array(
 										"value" => "<font id=\"add1\" class=\"wizlink\" onClick=\"show_fields('6', 'add1');\">Add another key</font>",
 										"triggered_by" => 5
 									),*/
-					),
+					)/*,
 				array(
 						"upload_form" => true,
 						"step_name" => "Music on hold",
@@ -500,6 +500,6 @@ $steps = array(
 						"file5" => array(
 										"display"=>"file"
 										)
-					)
+					)*/
 			);
 ?>

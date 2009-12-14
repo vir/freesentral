@@ -38,6 +38,7 @@ class Wizard
 	public $step_nr;
 	public $error = '';
 	public $finished_settings = false;
+	public $on_finish = "main.php";
 
 	public $reserved_names = array("step_description"=>"", "step_image"=>"", "step_name"=>"", "upload_form"=>"", "on_submit"=>"");
 
@@ -47,12 +48,15 @@ class Wizard
 	 * @param $_logo Text, path and name of the image used as logo
 	 * @param $_title Text, title of the wizard, will be displayed on the same line as the logo, during all steps 
 	 * @param $function_for_finish Name of the function that should be called after Finish is pressed
+	 * @param $on_finish Where to go when the 'Close'(button after settings are done) is pressed. Ex: "main.php?module=HOME". This is also the default value of the field
 	 */
-	function __construct($_steps, $_logo, $_title, $function_for_finish)
+	function __construct($_steps, $_logo, $_title, $function_for_finish, $on_finish=null)
 	{
 		$this->steps = $_steps;
 		$this->logo = $_logo;
 		$this->title = $_title;
+		if($on_finish)
+			$this->on_finish = $on_finish;
 		
 		if(!isset($_SESSION["wizard_step_nr"]))
 			$_SESSION["wizard_step_nr"] = 0;
@@ -391,7 +395,7 @@ class Wizard
 				print '</tr>';
 				print '<tr>';
 				print '<td class="fillall wizard_submit" colspan="2">';
-				print '<input type="button" name="submit" value="Close" onClick="location.href=\'main.php\'">';
+				print '<input type="button" name="submit" value="Close" onClick="location.href=\''.$this->on_finish.'\'">';
 				print '</td>';
 				print '</tr>';
 				unset($_SESSION["fields"]);

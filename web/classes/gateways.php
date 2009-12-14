@@ -61,7 +61,9 @@ class Gateway extends Model
 					"status" => new Variable("text"), // yate will set this field after trying to autenticate
 					"modified" => new Variable("bool"),//field necesary for yate, autenticate again if modified is true
 					"callerid" => new Variable("text"),
-					"callername" => new Variable("text")
+					"callername" => new Variable("text"),
+
+					"sig_trunk_id" => new Variable("serial",null,"sig_trunks",true)
 				);
 	}
 

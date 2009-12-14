@@ -117,6 +117,111 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 				//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 				);
 
+	$sig_trunk = new Sig_trunk;
+	if($gateway->sig_trunk_id) {
+		$sig_trunk->sig_trunk_id = $gateway->sig_trunk_id;
+		$sig_trunk->select();
+	}
+
+	$gateway->merge($sig_trunk);
+
+	$switchtype = array("euro-isdn-e1", "euro-isdn-t1", "national-isdn", "dms100", "lucent5e", "att4ess", "qsig", "unknown");
+	$switchtype["selected"] = ($sig_trunk->switchtype) ? $sig_trunk->switchtype : "unknown";
+
+	$strategy = array("increment", "decrement", "lowest", "highest", "random");
+	$strategy["selected"] = ($sig_trunk->strategy) ? $sig_trunk->strategy : "increment";
+
+	$strategy_restrict = array("even", "odd", "even-fallback", "odd-fallback");
+	$strategy_restrict["selected"] = $sig_trunk->{"strategy-restrict"};
+
+	$numplans = array("unknown", "isdn", "data", "telex", "national", "private");
+	$numplans["selected"] = $sig_trunk->numplan;
+
+	$numtypes = array("unknown","international","national","net-specific","subscriber","abbreviated","reserved");
+	$numtypes["selected"] = $sig_trunk->numtype;
+
+	$presentation = array("allowed", "restricted", "unavailable");
+	$presentation["selected"] = $sig_trunk->presentation;
+
+	$screening = array("user-provided", "user-provided-passed", "user-provided-failed", "network-provided");
+	$screening["selected"] = $sig_trunk->screening;
+
+	$card_port = new Card_port;
+	$bri_ports = $card_port->fieldSelect("name", array("card_type"=>"BRI", "type"=>"TE"), null, "name", array("column"=>"name", "inner_column"=>"port", "relation"=>"NOT IN", "inner_table"=>"sig_trunks"));
+	if(!$bri_ports)
+		$bri_ports = array();
+	else{
+		$arr = array();
+		if(!is_array($bri_ports))
+			$bri_ports = array(0=>array("name"=>$bri_ports));
+		for($i=0; $i<count($bri_ports); $i++)
+			$arr[] = $bri_ports[$i]["name"];
+		$bri_ports = $arr;
+		if($sig_trunk->port)
+			$bri_ports[] = $sig_trunk->port;
+	}
+	$pri_ports = $card_port->fieldSelect("name", array("card_type"=>"PRI"), null, "name", array("column"=>"name", "inner_column"=>"port", "relation"=>"NOT IN", "inner_table"=>"sig_trunks"));
+	if(!$pri_ports)
+		$pri_ports = array();
+	else{
+		$arr = array();
+		if(!is_array($pri_ports))
+			$pri_ports = array(0=>array("name"=>$pri_ports));
+		for($i=0; $i<count($pri_ports); $i++)
+			$arr[] = $pri_ports[$i]["name"];
+		$pri_ports = $arr;
+		if($sig_trunk->port)
+			$pri_ports[] = $sig_trunk->port;
+	}
+
+	$format = array("alaw", "mulaw", "g721");
+	$BRI = $PRI = array(
+		"sig_trunk_id" => array("value"=>$sig_trunk->sig_trunk_id, "display"=>"hidden"),
+
+		"gateway" => array("column_name"=>_("Gateway"), "compulsory"=>true),
+
+		"enable" => array("column_name"=>_("Enable"), "display"=>"checkbox", "value"=> "t"),
+
+		"port" => array($bri_ports, "column_name"=>_("Port"), "display"=>"select", "compulsory"=>true, "comment"=>"Port number of the card to which the signalling and the voice are associated to"),
+
+		"switchtype" => array($switchtype, "column_name"=>_("Switch type"), "compulsory"=>true, "display"=>"select", "comment"=>_("Specify the trunk type")),
+
+		"rxunderrun" => array("column_name"=>_("Max. Interval"), "comment"=>_("Maximum interval in ms between two packets before we report.<br/>zero to disable or 2500+"), "advanced"=>true),
+
+		"strategy" => array($strategy, "column_name"=>_("Strategy"), "display"=>"select", "comment"=>"The strategy used to allocate voice channels for outgoing calls", "advanced"=>true),
+
+		"strategy-restrict" => array($strategy_restrict, "column_name"=>_("Strategy restrict"), "display"=>"select", "comment"=>_("Define channel allocation restrictions and behaviour"), "advanced"=>true),
+
+		"userparttest" => array("column_name"=>_("Test interval"), "comment"=>_("Remote user part test interval in seconds"), "advanced"=>true),
+
+		"channelsync" => array("column_name"=>_("Interval re-sync"), "comment"=>_("The interval (in seconds) at which the call controller will try to re-sync idle channels"), "advanced"=>true),
+
+		"channellock" => array("column_name"=>_("Max. time lock channel"), "comment"=>_("Maximum time (in ms) spent trying to lock a remote channel"), "advanced"=>true),
+
+		"numplan" => array($numplans, "display"=>"select", "column_name"=>_("Numbering plan"), "comment"=>_("Default numbering plan for outgoing calls"), "advanced"=>true),
+
+		"numtype" => array($numtypes, "display"=>"select", "column_name"=>_("Number type"), "comment"=>_("Default number type for outgoing calls"), "advanced"=>true),
+
+		"presentation" => array($presentation, "display"=>"select", "column_name"=>_("Presentation"), "comment"=>_("Default number presentation for outgoing calls"), "advanced"=>true),
+
+		"screening" => array($screening, "display"=>"select", "column_name"=>_("Screening"), "comment"=>_("Default number screening for outgoing calls"), "advanced"=>true),
+
+		"format" => array($format, "column_name"=>_("Format"), "display"=>"radio", "comment"=>_("If none of the formats is checked then server will use alaw")),
+
+		"print-messages" => array("display"=>"checkbox", "value"=>($sig_trunk->{"print-messages"} == "yes") ? "t" : "f", "column_name"=>_("Print messages"), "comment"=>_("Print decoded protocol data units to output"), "advanced"=>true),
+
+		"print-frames" => array("display"=>"checkbox", "value"=>($sig_trunk->{"print-frames"} == "yes") ? "t" : "f", "column_name"=>_("Print frames"), "comment"=>_("Print decoded Layer 2 (Q.921) frames to output"), "advanced"=>true),
+
+		"layer2dump" =>  array("column_name"=>_("Layer2 dump"), "comment"=>_("Filename to dump Q.921 packets to"), "advanced"=>true),
+
+		"layer3dump" =>  array("column_name"=>_("Layer3 dump"), "comment"=>_("Filename to dump Q.931 packets to"), "advanced"=>true),
+	);
+	if($sig_trunk->format)
+		$PRI["format"][0]["selected"] = $sig_trunk->format;
+	$PRI["port"][0] = $pri_ports;
+	$PRI["port"]["javascript"] = "onChange='set_format()'";
+	unset($BRI["format"]);
+
 	start_form(NULL,"post",false,"outbound");
 	addHidden("database",array("gateway_id"=>$gateway_id));
 	if(!$gateway_id) 
@@ -128,7 +233,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		unset($h323_fields["password"]["comment"]);
 		unset($iax_fields["password"]["comment"]);
 		$protocols = array("sip", "h323", "iax");
-		$allprotocols = array("sip", "h323", "iax", "pstn");
+		$allprotocols = array("sip", "h323", "iax", "pstn", "PRI", "BRI");
 
 		if($protocol && $gw_type == "Yes")
 		{
@@ -157,7 +262,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 
 		$gw_types = array("Yes","No");
 		$gw_types["selected"] = $gw_type;
-		$step1 = array("gateway_with_registration"=>array($gw_types, "display"=>"radios", "javascript"=>'onChange="gateway_type();"', "comment"=>"A gateway with registration is a gateway for which you need an username and a password that will be used to autentify."));
+		$step1 = array("gateway_with_registration"=>array($gw_types, "display"=>"radios", "javascript"=>'onChange="gateway_type();"', "comment"=>"A gateway with registration is a gateway for which you need an username and a password that will be used to autentify. If you wish to add a pstn/BRI/PRI gateway check 'No'."));
 
 		editObject($gateway,$step1,"Select type of gateway to add","no");
 
@@ -227,11 +332,12 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 							break;
 			}
 			?><div id="div_noreg_<?print $allprotocols[$i]?>" style="display:<? if ($protocol == $allprotocols[$i] && $gw_type == "No") print "block;"; else print "none;";?>"><?
+			$hide_advanced = ($allprotocols[$i] == "BRI" || $allprotocols[$i] == "PRI") ? true : false;
 			editObject(
 						$gateway,
 						${$allprotocols[$i]}, 
 						"Define ".strtoupper($allprotocols[$i])." gateway",
-						"Save",true,null,null,"noreg_".$allprotocols[$i]
+						"Save",true,null,null,"noreg_".$allprotocols[$i],null, $hide_advanced
 					);
 			?></div><?
 		}
@@ -239,8 +345,12 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		$function = ($gateway->username) ? $gateway->protocol . "_fields" : $gateway->protocol;
 		$gw_type = ($gateway->username) ? "reg" : "noreg";
 
+		if($gateway->protocol == "PRI" || $gateway->protocol == "BRI")
+			${$function}["port"][0]["selected"] = $sig_trunk->port;
+
 		unset(${$function}["default_dial_plan"]);
-		editObject($gateway,${$function}, "Edit ".strtoupper($gateway->protocol). " gateway", "Save", true,null,null,$gw_type."_".$gateway->protocol);
+		$hide_advanced = ($gateway->protocol == "BRI" || $gateway->protocol == "PRI") ? true : false;
+		editObject($gateway,${$function}, "Edit ".strtoupper($gateway->protocol). " gateway", "Save", true,null,null,$gw_type."_".$gateway->protocol,null, $hide_advanced);
 	}
 	end_form();
 }
@@ -254,6 +364,8 @@ function edit_gateway_database()
 		forbidden();
 		return;
 	}
+
+	Database::transaction();
 
 	$gateway_id = getparam("gateway_id");
 	$gateway = new Gateway;
@@ -271,6 +383,7 @@ function edit_gateway_database()
 	}
 	if(!$protocol)
 	{
+		Database::rollback();
 		notice("Can't make this operation. Don't have a protocol setted.", "gateways", false);
 		return;
 	}
@@ -305,26 +418,121 @@ function edit_gateway_database()
 				break;
 			case "pstn":
 				break;
+			case "BRI":
+			case "PRI":
+				$sig_trunk = new Sig_trunk;
+				$sig_trunk->sig_trunk_id = getparam($gw_type."_".$protocol."sig_trunk_id");
+				$sig_trunk->select();
+
+				$old_interface = $sig_trunk->sig;
+
+				$trunk_params = array();
+			//	$params["enable"] = (getparam("enable") == "on") ? "yes" : "no";
+				$names = array("enable"=>"bool", "switchtype", "number", "rxunderrun", "strategy", "strategy-restrict", "userparttest", "channelsync", "channellock", "numplan", "numtype", "presentation", "screening", "print-messages"=>"bool", "print-frames"=>"bool", "layer2dump", "layer3dump");
+				foreach($names as $key => $val)
+				{
+					$name = (is_numeric($key)) ? $val : $key;
+					$trunk_params[$name] = getparam($gw_type."_".$protocol.$name);
+					if(!is_numeric($key) && $val == "bool")
+						$trunk_params[$name] = ($trunk_params[$name] == "on") ? "yes" : "no";
+				};
+				$port = getparam($gw_type."_".$protocol."port");
+				$trunk_params["port"] = $port;
+				$card_port = Model::selection("card_port", array("name"=>$port));
+
+				if(!$port || !count($card_port)) {
+					Database::rollback();
+					edit_gateway("You need to select a port in order to add a gateway for ".$protocol, $protocol, $gw_type);
+					return;
+				}else
+					$card_port = $card_port[0];
+				switch($card_port->type) {
+					case "TE":
+						$trunk_params["type"] = "isdn-bri-cpe";
+						break;
+					case "NT":
+						$trunk_params["type"] = "isdn-bri-net";	// this should not be possible (set here only when working as TE)
+					case "E1":
+					case "T1":
+						$trunk_params["type"] = "isdn-pri-cpe";	// "isdn-pri-net" and "isdn-pri-cpe" are identical
+				}
+
+				$interface = str_replace(".conf","",$card_port->filename);
+				$trunk_params["sig"] = $interface;
+				$trunk_params["voice"] = $interface;
+				$trunk_params["format"] = getparam($gw_type."_".$protocol."format");
+
+				if(!$sig_trunk->sig_trunk_id)
+					$trunk_params["sig_trunk"] = getparam($gw_type."_".$protocol."gateway");
+				$res = ($sig_trunk->sig_trunk_id) ? $sig_trunk->edit($trunk_params) : $sig_trunk->add($trunk_params);
+
+				if(!$res[0]) {
+					Database::rollback();
+					edit_gateway("Can't define trunk for ".$protocol.": ".$res[1], $protocol, $gw_type);
+					return;
+				}
+
+				if($protocol == "BRI") {
+					$fields = array(
+						"span"=>array(
+							"params"=>array("module_name"=>"tdmcard", "param_name"=>"span", "section_name"=>$trunk_params["sig"], "param_value"=>$card_port->span), 
+							"conditions" => array("section_name"=>$old_interface, "module_name"=>"tdmcard", "param_name"=>"span")
+							), 
+						"type"=>array(
+							"params" => array("module_name"=>"tdmcard", "param_name"=>"type", "section_name"=>$trunk_params["sig"], "param_value"=>"CPE"),
+							"conditions" => array("section_name"=>$old_interface, "module_name"=>"tdmcard", "param_name"=>"type")
+							)
+					);
+				}else{	// when protocol is PRI
+					$flds = array("type"=>$card_port->type, "siggroup"=>$card_port->sig_interface, "voicegroup"=>$card_port->voice_interface, "voicechans"=>$card_port->voice_chans, "echocancel"=>$card_port->echocancel, "dtmfdetect"=>$card_port->dtmfdetect);
+
+					$fields = array();
+					foreach($flds as $name=>$val) {
+						$fields[$name] = array(
+							"params"=>array("module_name"=>"wpcard", "param_name"=>$name, "section_name"=>$interface, "param_value"=>$val),
+							"conditions"=>array("module_name"=>"wpcard", "param_name"=>$name, "section_name"=>$old_interface)
+						);
+					}
+				}
+				$err = false;
+				foreach($fields as $name=>$field_params) {
+					$res = set_card_confs($field_params["conditions"], $field_params["params"]);
+					if(!$res[0]) {
+						$err = true;
+						break;
+					}
+				}
+				if(!$err) {
+					$command = getparam($gw_type."_".$protocol."sig_trunk_id") ? "configure" : "create";
+					$sig_trunk->sendCommand($command);
+				}
+				break;
 		}
 	}
 	$params["protocol"] = $protocol;
-	$params["formats"] = get_formats($gw_type."_".$protocol."formats");
-	$params["enabled"] = (getparam($gw_type."_".$protocol."enabled") == "on") ? "t" : "f";
-	$params["rtp_forward"] = (getparam($gw_type."_".$protocol."rtp_forward") == "on") ? "t" : "f";
-	$params["modified"] = "t";
+	
+	if($protocol != "PRI" && $protocol != "BRI") {
+		$params["formats"] = get_formats($gw_type."_".$protocol."formats");
+		$params["enabled"] = (getparam($gw_type."_".$protocol."enabled") == "on") ? "t" : "f";
+		$params["rtp_forward"] = (getparam($gw_type."_".$protocol."rtp_forward") == "on") ? "t" : "f";
+		$params["modified"] = "t";
+	}else
+		$params["sig_trunk_id"] = $sig_trunk->sig_trunk_id;
+
 	$params["callerid"] = getparam($gw_type."_".$protocol."callerid");
 	$params["callername"] = getparam($gw_type."_".$protocol."callername");
-
 	$next = "outbound";
 
 	$res = ($gateway->gateway_id) ? $gateway->edit($params) : $gateway->add($params);
 	if(!$res[0]) {
-		if(isset($res[2])) 
+		Database::rollback();
+		if(isset($res[2]))
 			edit_gateway($res[1], $protocol, $gw_type);
 		else
 			notice($res[1], $next, $res[0]);
 		return;
 	}
+	Database::commit();
 	if(!$gateway_id && $gateway->gateway_id) {
 		if (getparam($gw_type."_".$protocol."default_dial_plan") == "on") {
 			$dial_plan = new Dial_Plan;
@@ -342,6 +550,17 @@ function edit_gateway_database()
 		}
 	}
 	notice($res[1], $next, $res[0]);
+}
+
+function set_card_confs($conditions, $params)
+{
+	$card_confs = Model::selection("card_conf", $conditions);
+	if(count($card_confs))
+		$card_conf = $card_confs[0];
+	else
+		$card_conf = new Card_conf;
+	$res = ($card_conf->param_name) ? $card_conf->edit($params,$conditions) : $card_conf->add($params);
+	return $res;
 }
 
 function edit_dial_plan($error = NULL)

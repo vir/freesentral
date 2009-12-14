@@ -236,7 +236,7 @@ function submenu()
 	if(!isset($struct[$dir.'_'.$module]))
 		return;
 	$i = 0;
-	$max = 9;
+	$max = 10;
 	print '<table class="secondmenu"> 
 			<tr>';
 	print '<td class="padd">&nbsp;</td>';
