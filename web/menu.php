@@ -263,9 +263,9 @@ function submenu()
 		if($method == $option && !$printed)
 			print("<td class=\"option\"><a class=\"secondlinkselected\" href=\"main.php?module=$module&method=$option\">");//.strtoupper($option)."</a></td>");
 		elseif(!$printed)
-			print("<td class=\"option\"><a class=\"secondlink\" href=\"main.php?module=$module&method=$option\"><div>");//.strtoupper($option)."</a></td>");
+			print("<td class=\"option\"><a class=\"secondlink\" href=\"main.php?module=$module&method=$option\">");//.strtoupper($option)."</a></td>");
 		print str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$option)));
-		print("</div></a></td><td class=\"option_separator\"><div></div></td>");
+		print("</a></td><td class=\"option_separator\"><div></div></td>");
 		$i++; 
 	}
 	print("<td class=\"fillfree\" colspan=\"$max\">&nbsp;</td>");
