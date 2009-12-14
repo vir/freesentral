@@ -194,7 +194,7 @@ function rewrite_digits($route, $nr)
 		$result = substr($nr,0,$route["position_to_start_adding"]-1) . $route["digits_to_add"] . substr($nr,$route["position_to_start_adding"]-1,strlen($nr));
 	}
 	if (!$result){
-		Yate::Output("Wrong: resulted number is empty");
+		Yate::Output("Wrong: resulted number is empty when nr='$nr' and route=".print_r($route,true));
 		return $nr;
 	}
 	return $result;
@@ -238,9 +238,9 @@ function makePickUp($called,$caller)
 
 	$keyforgroup = strlen($pickup_key) + 2;
 	if(strlen($called) == $keyforgroup && substr($called,0,strlen($pickup_key)) == $pickup_key) {
-		// someone is trying yo pickup a call that was made to a group
+		// someone is trying to pickup a call that was made to a group, (make sure caller is in that group)
 		$extension = substr($called,strlen($pickup_key),strlen($called));
-		$query = "SELECT group_id FROM groups WHERE extension='$extension'";
+		$query = "SELECT group_id FROM groups WHERE extension='$extension' AND group_id IN (SELECT group_id FROM group_members, extensions WHERE group_members.extension_id=extensions.extension_id AND extensions.extension='$caller')";
 		$res = query_to_array($query);
 		if(!count($res))
 			set_retval("tone/congestion");
@@ -398,7 +398,7 @@ function get_possible_options($number)
  * See if this call uses the address book. If so then find the real number the call should be sent to and modify $called param
  * @param $called Number the call was placed to
  */
-function routeToAddressBook(&$called)
+function routeToAddressBook(&$called, $username)
 {
 	global $adb_keys;
 
@@ -407,7 +407,7 @@ function routeToAddressBook(&$called)
 
 	$number = substr($called, strlen($adb_keys), strlen($called));
 	$possible_names = get_possible_options($number);
-	$query = "SELECT number FROM short_names WHERE short_name IN ($possible_names)";
+	$query = "SELECT short_names.number, 1 as option_nr FROM short_names, extensions WHERE extensions.extension='$username' AND extensions.extension_id=short_names.extension_id AND short_name IN ($possible_names) UNION SELECT number, 2 as option_nr FROM short_names WHERE extension_id IS NULL AND short_name IN ($possible_names) ORDER BY option_nr";
 	$res = query_to_array($query);
 	if(count($res)) {
 		if(count($res) > 1)
@@ -429,10 +429,8 @@ function return_route($called,$caller,$no_forward=false)
 	$call_type = "";
 	// keep the initial called number
 	$initial_called_number = $called;
-	
-	routeToAddressBook($called);
 
-	$username = $ev->GetValue("username");
+	$username = $ev->GetValue("username");	
 	$address = $ev->GetValue("address");
 	$address = explode(":", $address);
 	$address = $address[0];
@@ -461,6 +459,8 @@ function return_route($called,$caller,$no_forward=false)
 
 	// mark call as already autentified
 	$ev->params["already-auth"] = "yes";
+
+	routeToAddressBook($called, $username);
 
 	if(routeToDid($called))
 		return;
@@ -616,6 +616,9 @@ for (;;) {
 					$query_on = false;
 				break;
 			case "engine.status":
+				$module = $ev->GetValue("module");
+				if($module && $module!="register.php" && $module!="misc")
+					break;
 				$query = "SELECT gateway,(CASE WHEN status IS NULL THEN 'offline' else status END) as status FROM gateways WHERE enabled IS TRUE AND username IS NOT NULL";
 				$res = query_to_array($query);
 				$str = $ev->retval;
@@ -623,6 +626,7 @@ for (;;) {
 				for($i=0; $i<count($res);$i++) {
 					$str .= $res[$i]["gateway"] .'='.$res[$i]["status"].';';
 				}
+				$str .= "\n";
 				$ev->retval = $str;
 				$ev->handled = false;
 				break;

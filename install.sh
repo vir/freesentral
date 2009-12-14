@@ -34,6 +34,26 @@ readopt()
 	    ;;
     esac
 }
+
+cmp_dates() {
+	year1=`date -d"${1}" +%G`
+	year2=`date -d"${2}" +%G`
+	if [ ${year1} -gt ${year2} ]; then
+		return 1
+	else
+		if [ ${year1} -lt ${year2} ]; then
+			return 0
+		fi
+	fi
+	# if year is the same compare the number of day in the year
+	dayyear1=`date -d"${1}" +%j`
+	dayyear2=`date -d"${2}" +%j`
+	if [ ${dayyear1} -lt ${dayyear2} ]; then
+		return 0
+	fi
+	return 1
+}
+
 timezone="Europe/London"
 upload_dir="/var/tmp"
 enable_logging="on"
@@ -85,12 +105,14 @@ date_default_timezone_set('$timezone');
 EOF
 if [ "x$1" = "xweb" ]; then
 cat << EOF
-\$target_path = "$prompts";
+\$target_path = "${prompts}";
 \$do_not_load = array();        //modules that are inserted here won't be loaded
 \$limit = 20;  //max number to display on page
-\$enable_logging = "$enable_logging"; // possible values: "on"/"off", true/false, "yes"/"no" 
-\$upload_path = "$upload_dir";     // path where file for importing extensions will be uploaded
-
+\$enable_logging = "${enable_logging}"; // possible values: "on"/"off", true/false, "yes"/"no" 
+\$upload_path = "${upload_dir}";     // path where file for importing extensions will be uploaded
+\$default_ip = "ssl://${ip_yate}";	//	ip address where yate runs
+\$default_port = "5039";	// port used to connect to
+\$block = array("admin_settings"=>array("network"));	// don't change this. This option is still being tested
 ?>
 EOF
 else
@@ -129,6 +151,7 @@ configs="`yate-config --config 2>/dev/null`"
 scripts="`yate-config --scripts 2>/dev/null`"
 prompts="/var/spool/voicemail"
 webuser="apache"
+ip_yate="127.0.0.1"
 
 case "x`yate-config --version 2>/dev/null`" in
     x2.*|x3.*|x4.*|x5.*|x6.*|x7.*|x8.*|x9.*)
@@ -270,6 +293,7 @@ if [ "x$interactive" != "xno" ]; then
     scripts=`readopt "Install Yate scripts in" "$scripts"`
     prompts=`readopt "Install IVR prompts in" "$prompts"`
     webpage=`readopt "Install Web pages in" "$webpage"`
+	ip_yate=`readopt "Ip address for yate server" "$ip_yate"`
 	webuser=`readopt "Web user " "$webuser"`
     dbhost=`readopt "Database host" "$dbhost"`
     if [ -n "$dbhost" ]; then
@@ -329,7 +353,8 @@ if [ -n "$configs" ]; then
     fe="$configs/extmodule.conf";
     e="
 [scripts]
-register.php=
+register.php=param
+ctc-global.php=
 "
 
     if [ -e "$fe" ]; then
@@ -461,7 +486,7 @@ outgoing=external/nodata/queue_out.php
 $e" > "$fe"
     fi
 
-	# queues.conf
+	# pbxassist.conf
     fe="$configs/pbxassist.conf";
     e="
 [general]
@@ -631,6 +656,132 @@ trigger=^[0-9]$
 	echo "; File created by $version
 $e" > "$fe"
     fi
+
+	# openssl.conf
+    fe="$configs/openssl.conf";
+    e="
+; This file keeps the configuration of the openssl module
+; Each section, except for 'general' configures a server context
+
+[general]
+
+;[server_context]
+; This section configures a SSL server context
+
+; enable: boolean: Enable or disable the context
+; Defaults to yes
+;enable=yes
+
+; domains: string: Comma separated list of domains the context will be used for
+; A subdomain wildcard can be specified for a given domain, e.g.
+;  *.null.ro will match any null.ro subdomains (including the 'null.ro' domain)
+;domains=
+
+; certificate: string: The name of the file containing the certificate for the context
+; This parameter is required
+;certificate=
+
+; key: string: Optional certificate key file name
+;key=
+
+[freesentral_context]
+enable=yes
+certificate=freesentral.crt
+key=freesentral.key
+"
+
+    if [ -e "$fe" ]; then
+	if [ -z `readopt "Overwrite existing openssl.conf ?" "yes"` ]; then
+	    echo "Please edit file $fe like follows:"
+	    echo "$e"
+	    fe=""
+	fi
+    fi
+    if [ -n "$fe" ]; then
+	echo "Creating openssl configuration file"
+	mkdir -p "$configs"
+	echo "; File created by $version
+$e" > "$fe"
+    fi
+
+	# rmanager.conf
+    fe="$configs/rmanager.conf";
+    e="
+[general]
+; Each section creates a connection listener in the Remote Manager.
+; An empty (all defaults) general section is assumed only in server mode if the
+;  configuration file is missing.
+
+; port: int: TCP Port to listen on, 0 to disable the listener
+;port=5038
+
+; addr: ipaddress: IP address to bind to
+;addr=127.0.0.1
+
+; header: string: Header string to display on connect
+;header=YATE ${version}-${release} (http://YATE.null.ro) ready.
+
+; password: string: Password required to authenticate as admin, default empty!
+;password=
+
+; userpass: string: Password to authenticate as observer user, default empty!
+;userpass=
+
+; timeout: int: Timeout until authentication succeeds in msec
+;  Defaults to waiting 30s until closing an unauthenticated connection
+;  Set to zero to disable else enforced minimum value is 5000 ms (5s)
+;timeout=30000
+
+; telnet: bool: Initiate TELNET negotiation on connect
+;telnet=yes
+
+; output: bool: Enable output as soon as connecting
+;  This setting is ignored if an userpass is set
+;output=no
+
+; interactive: bool: Disable the TCP coalescing to improve interactivity
+;  This is almost never required and needs Yate to run as superuser
+;interactive=no
+
+; context: string: SSL context to use to secure the connection
+;  Setting a context enables SSL on the listener and overrides any domain
+;context=
+
+; domain: string: Domain used to identify the SSL context to use
+;  Setting a domain enables SSL on the listener
+;domain=
+
+; verify: keyword: SSL handshake client certificate verification type
+;  For acceptable values see the documentation of the openssl module
+;  By default no client certificate is required
+;    * none - Don't ask for a certificate, don't stop if verification fails (default)
+;    * peer - Certificate is verified only if provided (a server always provides one)
+;    * only - Server only - verify client certificate only if provided and only once
+;    * must - Server only - client must provide a certificate at every (re)negotiation
+;    * once - Server only - client must provide a certificate only at first negotiation 
+;verify=
+
+[freesentral_socket]
+port=5039
+addr=${ip_yate}
+header=Freesentral connection 
+context=freesentral_context
+verify=none
+"
+
+    if [ -e "$fe" ]; then
+	if [ -z `readopt "Overwrite existing openssl.conf ?" "yes"` ]; then
+	    echo "Please edit file $fe like follows:"
+	    echo "$e"
+	    fe=""
+	fi
+    fi
+    if [ -n "$fe" ]; then
+	echo "Creating openssl configuration file"
+	mkdir -p "$configs"
+	echo "; File created by $version
+$e" > "$fe"
+    fi
 fi
 
 if [ -n "$scripts" ]; then
@@ -644,8 +795,9 @@ fi
 if [ -n "$prompts" ]; then
     echo "Installing IVR prompts"
     mkdir -p "$prompts"
-	chown -R $webuser "$prompts"
+#	chown -R $webuser "$prompts"
     (cd prompts; tar cf - $tarexclude *) | tar xf - -C "$prompts/"
+	chown -R $webuser "$prompts"
 fi
 
 if [ -n "$webpage" ]; then
@@ -664,11 +816,89 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
 	tty -s && echo "At the password prompt please enter: $dbpass"
 	export PGPASSWORD="$dbpass"
     fi
+	echo "If you are updating then ignore: 'ERROR:  database \"${dbname}\" already exists'. If you are installing please use another name for the database."
     "$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE $dbname"
     unset PGPASSWORD
 fi
 
-echo "Trying to update database"
-cd "$webpage"
-chmod +x force_update.php
-./force_update.php
+if [ ! $webpage=="" ]; then
+	echo "Trying to update database"
+	cd "$webpage"
+	chmod +x force_update.php
+	./force_update.php
+fi
+
+answers_csr() {
+	echo --
+	echo SomeState
+	echo SomeCity
+	echo SomeOrganization
+	echo SomeOrganizationalUnit
+	echo localhost.localdomain
+	echo root@localhost.localdomain
+	echo ""
+	echo ""
+}
+
+# generate SSL certificate that will be used when sending requests from web to yate(only if this installs config file for yate)
+if [ -n "$configs" ]; then
+	# find out dir where certificates should be put
+# 	posib_dirs=([0]="/etc/httpd" [1]="/etc/apache2" [2]="/etc/apache" [3]="/usr/local/httpd" [4]="/usr/local/apache2" [5]="/usr/local/apache");
+# 	cert_dir=""
+# 	for index in 0 1 2 3 4 5
+# 	do
+# 		if [ -d "${posib_dirs[index]}" ]; then
+# 			cert_dir="${posib_dirs[index]}"
+# 		fi
+# 	done
+	# certificates are in yate's conf.d dir
+	cert_dir=${configs}
+	if [ ! -d "${cert_dir}" ]; then
+		echo "Can't find dir for installing SSL certificate"
+	else
+#		cert_dir="${cert_dir}/conf"
+#		key_dir="${cert_dir}/ssl.key"
+#		crt_dir="${cert_dir}/ssl.crt"
+		crt_dir=${cert_dir}
+		key_dir=${cert_dir}
+		csr_dir=${cert_dir}
+		if [ ! -d "${key_dir}" ]; then
+			mkdir "${key_dir}"
+		fi
+		if [ ! -d "${crt_dir}" ]; then
+			mkdir "${crt_dir}"
+		fi
+		key="${key_dir}/freesentral.key"
+		crt="${crt_dir}/freesentral.crt"
+		csr="${csr_dir}/freesentral.csr"
+
+		# check if a new certificate should be generated
+		# generate if certificate is already expired or if it will expire today
+		replace=0
+		if [ -f "${crt}" ]; then
+			str=`openssl x509 -in ${crt} -enddate -noout`
+			len=${#str}
+			expr_date=`date -u -d"${str:9:len}"`
+			now=`date -u`
+			cmp_dates "${now}" "${expr_date}"
+			res=$?
+			if [ ! "${res}" -eq "0" ]; then
+				replace=1
+			fi
+		fi
+		if [[ ! -f "${key}" || ${replace} -eq 1 ]]; then
+			# generate key file
+			openssl genrsa -des3  -passout pass:freesentral -out "${key}" 1024  2> /dev/null
+			echo "Generating SSL key"
+			answers_csr | openssl req -new -passin pass:freesentral -key "${key}" -out "${csr}" 2> /dev/null
+			echo "Generating SSL csr"
+			cp "${key}" "${key}.orig"
+			openssl rsa -passin pass:freesentral  -in "${key}.orig" -out "${key}" 2> /dev/null
+			openssl x509 -req -days 1825 -in "${csr}" -signkey "${key}" -out "${crt}" 2> /dev/null
+			rm -f "${key}.orig"
+		fi
+#		In order to check if the .key and .crt are valid the modules from the below commands must be the same
+#		openssl rsa -noout -text -in freesentral.key -modulus
+#		openssl x509 -noout -text -in freesentral.crt -modulus
+	fi
+fi
