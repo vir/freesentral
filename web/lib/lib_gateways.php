@@ -435,7 +435,7 @@ function edit_gateway_database()
 					$trunk_params[$name] = getparam($gw_type."_".$protocol.$name);
 					if(!is_numeric($key) && $val == "bool")
 						$trunk_params[$name] = ($trunk_params[$name] == "on") ? "yes" : "no";
-				};
+				}
 				$port = getparam($gw_type."_".$protocol."port");
 				$trunk_params["port"] = $port;
 				$card_port = Model::selection("card_port", array("name"=>$port));
@@ -496,7 +496,8 @@ function edit_gateway_database()
 				}
 				$err = false;
 				foreach($fields as $name=>$field_params) {
-					$res = set_card_confs($field_params["conditions"], $field_params["params"]);
+					$new = ($old_interface) ? false : true;
+					$res = set_card_confs($field_params["conditions"], $field_params["params"], $new);
 					if(!$res[0]) {
 						$err = true;
 						break;
@@ -552,12 +553,15 @@ function edit_gateway_database()
 	notice($res[1], $next, $res[0]);
 }
 
-function set_card_confs($conditions, $params)
+function set_card_confs($conditions, $params, $new)
 {
-	$card_confs = Model::selection("card_conf", $conditions);
-	if(count($card_confs))
-		$card_conf = $card_confs[0];
-	else
+	if(!$new) {
+		$card_confs = Model::selection("card_conf", $conditions);
+		if(count($card_confs))
+			$card_conf = $card_confs[0];
+		else
+			$card_conf = new Card_conf;
+	}else
 		$card_conf = new Card_conf;
 	$res = ($card_conf->param_name) ? $card_conf->edit($params,$conditions) : $card_conf->add($params);
 	return $res;

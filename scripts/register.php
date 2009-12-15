@@ -88,6 +88,8 @@ function build_location($params, $called, &$copy_ev)
 			case "h323":
 				return "h323/$called@".$params["server"].":".$params["port"];
 			case "pstn":
+			case "PRI":
+			case "BRI":
 				$params["link"] = $params["gateway"];
 				return "sig/".$called;
 			case "iax":
