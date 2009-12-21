@@ -30,6 +30,20 @@ for($i=0; $i<count($posib); $i++) {
 		${$posib[$i]} = false;
 }
 
+function debug($mess)
+{
+	Yate::Debug("FreeSentral : register.php : ".$mess);
+}
+
+function format_array($arr)
+{
+	$str =  str_replace("\n", "", print_r($arr, true));
+	$str = str_replace("\t","",$str);
+	while(strlen($str) != strlen(str_replace("  "," ",$str)))
+		$str = str_replace("  "," ",$str);
+	return $str;
+}
+
 function set_caller_id()
 {
 	global $caller_id, $timer_caller_id, $caller_name;
@@ -40,7 +54,7 @@ function set_caller_id()
 		$caller_id = $res[0]["callerid"];
 		$caller_name = $res[0]["callername"];
 	}
-	Yate::Output("Reseted CalledID to '$caller_id', Callername to '$caller_name'");
+	debug("Reseted CalledID to '$caller_id', Callername to '$caller_name'");
 	$timer_caller_id = 0;
 }
 
@@ -196,7 +210,7 @@ function rewrite_digits($route, $nr)
 		$result = substr($nr,0,$route["position_to_start_adding"]-1) . $route["digits_to_add"] . substr($nr,$route["position_to_start_adding"]-1,strlen($nr));
 	}
 	if (!$result){
-		Yate::Output("Wrong: resulted number is empty when nr='$nr' and route=".print_r($route,true));
+		debug("Wrong: resulted number is empty when nr='$nr' and route=".format_array($route));
 		return $nr;
 	}
 	return $result;
@@ -211,9 +225,11 @@ function routeToGroup($called)
 {
 	global $uploaded_prompts, $ev, $s_moh;
 
+//	debug("entered routeToGroup('$called')");
 	$path = "$uploaded_prompts/moh/";
 
 	if(strlen($called) == 2) {
+		debug("trying routeToGroup('$called')");
 		// call to a group
 		$query = "SELECT group_id, (CASE WHEN playlist_id IS NULL THEN (SELECT playlist_id FROM playlists WHERE in_use='t') else playlist_id END) as playlist_id FROM groups WHERE extension='$called'";
 		$res = query_to_array($query);
@@ -237,6 +253,8 @@ function routeToGroup($called)
 function makePickUp($called,$caller)
 {
 	global $pickup_key;
+
+	debug("entered makePickUp(called='$called',caller='$caller')");
 
 	$keyforgroup = strlen($pickup_key) + 2;
 	if(strlen($called) == $keyforgroup && substr($called,0,strlen($pickup_key)) == $pickup_key) {
@@ -274,8 +292,11 @@ function routeToExtension($called)
 {
 	global $no_pbx, $ev, $voicemail;
 
-	if (strlen($called) != 3)
+//	debug("entered routeToExtension('$called')");
+	if (strlen($called) < 3)
 		return false;
+
+	debug("trying routeToExtension(called='$called')");
 
 	$query = "SELECT location,extension_id FROM extensions WHERE extension='$called'";
 	$res = query_to_array($query);
@@ -289,7 +310,7 @@ function routeToExtension($called)
 		$query = "SELECT value FROM settings WHERE param='vm'";
 		$res = query_to_array($query);
 		if (!$res || !count($res)) {
-			Yate::Output("Voicemail is not set!!!");
+			debug("Voicemail is not set!!!");
 			$voicemail = NULL;
 		} else 
 			$voicemail = $res[0]["value"];
@@ -337,6 +358,7 @@ function routeToExtension($called)
 
 function routeToDid(&$called)
 {
+	debug("entered routeToDid('$called')");
 	// default route is a did 
 	$query = "SELECT destination FROM dids WHERE number='$called'";
 	$res = query_to_array($query);
@@ -404,8 +426,12 @@ function routeToAddressBook(&$called, $username)
 {
 	global $adb_keys;
 
+//	debug("entered routeToAddressBook(called='$called', username='$username')");
+
 	if(substr($called,0,strlen($adb_keys)) != $adb_keys)
 		return;
+
+	debug("trying routeToAddressBook(called='$called', username='$username')");
 
 	$number = substr($called, strlen($adb_keys), strlen($called));
 	$possible_names = get_possible_options($number);
@@ -413,10 +439,10 @@ function routeToAddressBook(&$called, $username)
 	$res = query_to_array($query);
 	if(count($res)) {
 		if(count($res) > 1)
-			Yate::Output("Problem with finding real number from address book. Multiple mathces. Picking first one");
+			Yate::Output("!!!!!!! Problem with finding real number from address book. Multiple mathces. Picking first one");
 		$called = $res[0]["number"];
 	}else
-		Yate::Debug("Called number '$called' seems to be using the address book. No match found. Left routing to continue.");
+		debug("Called number '$called' seems to be using the address book. No match found. Left routing to continue.");
 	return;
 }
 
@@ -436,10 +462,12 @@ function return_route($called,$caller,$no_forward=false)
 	$address = $ev->GetValue("address");
 	$address = explode(":", $address);
 	$address = $address[0];
-
 	$reason = $ev->GetValue("reason");
 
-	if($ev->GetValue("already-auth") != "yes" && $reason!="divert_busy" && $reason != "divert_noanswer") {
+	$already_auth = $ev->GetValue("already-auth");
+	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason')");
+
+	if($already_auth != "yes" && $reason!="divert_busy" && $reason != "divert_noanswer") {
 		// check to see if user is allowed to make this call
 		$query = "SELECT value FROM settings WHERE param='annonymous_calls'";
 		$res = query_to_array($query);
@@ -453,12 +481,14 @@ function return_route($called,$caller,$no_forward=false)
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {
+			debug("could not auth call");
 			set_retval(NULL, "noauth");
 			return;
 		}
 		$call_type = ($username) ? "from inside" : "from outside";  // from inside/outside of freesentral
 	}
 
+	debug("classified call as being '$call_type'");
 	// mark call as already autentified
 	$ev->params["already-auth"] = "yes";
 
@@ -479,6 +509,7 @@ function return_route($called,$caller,$no_forward=false)
 
 	if($call_type == "from outside" && $initial_called_number == $called) {
 		// if this is a call from outside our system and would be routed outside(from first step) and the number that was initially called was not modified with passing thought any of the above steps  => don't send it
+		debug("forbidding call to '$initial_called_number' because call is 'from outside'");
 		set_retval(null, "forbidden");
 		return;
 	}
@@ -513,13 +544,14 @@ function return_route($called,$caller,$no_forward=false)
 	}
 	$best_option = count($fallback) - 1;
 	set_retval($fallback[$best_option]["location"]);
-	Yate::Debug("Sending $id to ".$fallback[$best_option]["location"]);
+	debug("Sending $id to ".$fallback[$best_option]["location"]);
 	unset($fallback[$best_option]["location"]);
 	$ev->params = $fallback[$best_option];
 	unset($fallback[$best_option]);
 	if(count($fallback))
 		$s_fallbacks[$id] = $fallback;
-	Yate::Debug("There are ".count($s_fallbacks)." in fallback array. : ".serialize($s_fallbacks));
+//	debug("There are ".count($s_fallbacks)." in fallback : ".format_array($s_fallbacks));
+	debug("There are ".count($s_fallbacks)." in fallback");
 
 	return;
 }
@@ -579,6 +611,7 @@ Yate::Install("chan.hangup");
 Yate::Install("user.notify");
 Yate::Install("engine.status");
 Yate::Install("engine.command");
+Yate::Install("engine.debug");
 
 // Ask to be restarted if dying unexpectedly 
 Yate::SetLocal("restart","true");
@@ -609,13 +642,33 @@ for (;;) {
 	switch ($ev->type) {
 	case "incoming":
 		switch ($ev->name) {
-			case "engine.command":
-				Yate::Debug("Got engine.command : line=".$ev->GetValue("line"));
+			case "engine.debug":
+				$module = $ev->GetValue("module");
+				if($module != "freesentral")
+					break;
 				$line = $ev->GetValue("line");
-				if($line == "query on")
+				if($line == "on") {
+					Yate::Output(true);
+					Yate::Debug(true);
+					Yate::Output("Enabling debug on FreeSentral routing");
+				}elseif($line == "off"){
+					Yate::Output("Disabling debug on FreeSentral routing");
+					Yate::Output(false);
+					Yate::Debug(false);
+				}else
+					break;
+				$ev->handled = true;
+				break;
+			case "engine.command":
+				debug("Got engine.command : line=".$ev->GetValue("line"));
+				$line = $ev->GetValue("line");
+				if($line == "query on") 
 					$query_on = true;
 				elseif($line == "query off")
 					$query_on = false;
+				else
+					break;
+				$ev->handled = true;
 				break;
 			case "engine.status":
 				$module = $ev->GetValue("module");
@@ -687,30 +740,30 @@ for (;;) {
 				break;
 			case "call.answered":
 				$id = $ev->GetValue("targetid");
-				Yate::Debug("Got call.answered for '$id'. Removing fallback if setted:".serialize($s_fallbacks));
+			//	debug("Got call.answered for '$id'. Removing fallback if setted in fallback array :".format_array($s_fallbacks));
 				if (isset($s_fallbacks[$id])) {
-					Yate::Debug("Removing fallback for '$id'");
+					debug("Removing fallback for '$id'");
 					unset($s_fallbacks[$id]);
 				}
-				Yate::Debug("There are ".count($s_fallbacks)." in fallback array.".serialize($s_fallbacks));
+				debug("There are ".count($s_fallbacks)." in fallback : ".format_array($s_fallbacks));
 				break;
 			case "chan.hangup":
 				$id = $ev->GetValue("id");
 				$reason = $ev->GetValue("reason");
-				Yate::Debug("Got '".$ev->name."' for '$id' with reason '$reason':".serialize($s_fallbacks));
+			//	debug("Got '".$ev->name."' for '$id' with reason '$reason'. Fallback :".format_array($s_fallbacks));
 				if (isset($s_fallbacks[$id])) {
-					Yate::Debug("Dropping all fallback for '$id'");
+					debug("Dropping all fallback for '$id'");
 					unset($s_fallbacks[$id]);
 				}
 				break;
 			case "chan.disconnected":
 				$id = $ev->GetValue("id");
 				$reason = $ev->GetValue("reason");
-				Yate::Debug("Got '".$ev->name."' for '$id' with reason '$reason':".serialize($s_fallbacks));
+			//	debug("Got '".$ev->name."' for '$id' with reason '$reason'. Fallback :".format_array($s_fallbacks));
 				if (!isset($s_fallbacks[$id]))
 					break;
 				if (in_array($reason, $stoperror)) {
-					Yate::Debug("Dropping all fallback for '$id'");
+					debug("Dropping all fallback for '$id'");
 					unset($s_fallbacks[$id]);
 					break;
 				}
@@ -719,7 +772,7 @@ for (;;) {
 				$nr = count($s_fallbacks[$id]) - 1;
 
 				$callto = $s_fallbacks[$id][$nr]["location"];
-				Yate::Debug("Doing fallback for '$id' to '$callto'");
+				debug("Doing fallback for '$id' to '$callto'");
 				unset($s_fallbacks[$id][$nr]["location"]);
 				$msg->params = $s_fallbacks[$id][$nr];
 				$msg->params["callto"] = $callto;
@@ -728,7 +781,7 @@ for (;;) {
 					unset($s_fallbacks[$id][$nr]);
 				else
 					unset($s_fallbacks[$id]);
-				Yate::Debug("There are ".count($s_fallbacks)." in fallback array.".serialize($s_fallbacks));
+				debug("There are ".count($s_fallbacks)." in fallback :".format_array($s_fallbacks));
 				break;
 			case "call.cdr":
 				$operation = $ev->GetValue("operation");
