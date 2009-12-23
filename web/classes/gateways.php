@@ -62,6 +62,7 @@ class Gateway extends Model
 					"modified" => new Variable("bool"),//field necesary for yate, autenticate again if modified is true
 					"callerid" => new Variable("text"),
 					"callername" => new Variable("text"),
+					"send_extension" => new Variable("bool","f"), // if set call will keep extension in the caller parameter
 
 					"sig_trunk_id" => new Variable("serial",null,"sig_trunks",true)
 				);

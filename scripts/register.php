@@ -527,8 +527,12 @@ function return_route($called,$caller,$no_forward=false)
 	$fallback = array();
 	for($i=$start; $i>=0; $i--) {
 		$fallback[$j] = $ev->params;
-		$fallback[$j]["caller"] = ($res[$i]["callerid"]) ? $res[$i]["callerid"] : $caller_id;
-		$fallback[$j]["callername"] = ($res[$i]["callername"]) ? $res[$i]["callername"] : $caller_name;
+		$custom_caller_id = ($res[$i]["callerid"]) ? $res[$i]["callerid"] : $caller_id;
+		if($res[$i]["send_extension"] == "f")
+			$fallback[$j]["caller"] = $custom_caller_id;
+		$custom_caller_name = ($res[$i]["callername"]) ? $res[$i]["callername"] : $caller_name;
+		if($res[$i]["send_extension"] == "f")
+			$fallback[$j]["callername"] = $custom_caller_name;
 		$fallback[$j]["called"] = rewrite_digits($res[$i],$called);
 		$fallback[$j]["formats"] = ($res[$i]["formats"]) ? $res[$i]["formats"] : $ev->GetValue("formats");
 		$fallback[$j]["rtp_forward"] = ($rtp_f == "possible" && $res[$i]["rtp_forward"] == 't') ? "yes" : "no";
