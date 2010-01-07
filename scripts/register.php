@@ -475,10 +475,10 @@ function return_route($called,$caller,$no_forward=false)
 		$anonim = $res[0]["value"];
 		if(strtolower($anonim) != "yes")
 			// if annonymous calls are not allowed the call has to be from a known extension or from a known ip
-			$query = "SELECT extension_id,'t' as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		else {
 			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
-			$query = "SELECT extension_id, 't' as trusted FROM extensions WHERE extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {
@@ -795,7 +795,7 @@ for (;;) {
 				$reason = $ev->GetValue("reason");
 				switch($operation) {
 					case "initialize":
-						$query = "INSERT INTO call_logs(time, chan, address, direction, billid, caller, called, duration, billtime, ringtime, status, reason, ended) VALUES(TIMESTAMP 'EPOCH' + INTERVAL '".$ev->GetValue("time")." s', '".$ev->GetValue("chan")."', '".$ev->GetValue("address")."', '".$ev->GetValue("direction")."', '".$ev->GetValue("billid")."', '".$ev->GetValue("caller")."', '".$ev->GetValue("called")."', INTERVAL '".$ev->GetValue("duration")." s', INTERVAL '".$ev->GetValue("billtime")." s', INTERVAL '".$ev->GetValue("ringtime")." s', '".$ev->GetValue("status")."', '$reason', false);\nUPDATE extensions SET inuse_count=(CASE WHEN inuse_count IS NOT NULL THEN inuse_count+1 ELSE 1 END) WHERE extension='".$ev->GetValue("external")."'";
+						$query = "INSERT INTO call_logs(time, chan, address, direction, billid, caller, called, duration, billtime, ringtime, status, reason, ended) VALUES(TIMESTAMP 'EPOCH' + INTERVAL '".$ev->GetValue("time")." s', '".$ev->GetValue("chan")."', '".$ev->GetValue("address")."', '".$ev->GetValue("direction")."', '".$ev->GetValue("billid")."', '".$ev->GetValue("caller")."', '".$ev->GetValue("called")."', INTERVAL '".$ev->GetValue("duration")." s', INTERVAL '".$ev->GetValue("billtime")." s', INTERVAL '".$ev->GetValue("ringtime")." s', '".$ev->GetValue("status")."', '$reason', false);UPDATE extensions SET inuse_count=(CASE WHEN inuse_count IS NOT NULL THEN inuse_count+1 ELSE 1 END) WHERE extension='".$ev->GetValue("external")."'";
 						$res = query_nores($query);
 						break;
 					case "update":
@@ -803,7 +803,7 @@ for (;;) {
 						$res = query_nores($query);
 						break;
 					case "finalize":
-						$query = "UPDATE call_logs SET address='".$ev->GetValue("address")."', direction='".$ev->GetValue("direction")."', billid='".$ev->GetValue("billid")."', caller='".$ev->GetValue("caller")."', called='".$ev->GetValue("called")."', duration=INTERVAL '".$ev->GetValue("duration")." s', billtime=INTERVAL '".$ev->GetValue("billtime")." s', ringtime=INTERVAL '".$ev->GetValue("ringtime")." s', status='".$ev->GetValue("status")."', reason='$reason', ended='t' WHERE chan='".$ev->GetValue("chan")."' AND time=TIMESTAMP 'EPOCH' + INTERVAL '".$ev->GetValue("time")." s';\nUPDATE extensions SET inuse_count=(CASE WHEN inuse_count>0 THEN inuse_count-1 ELSE 0 END), inuse_last=now() WHERE extension='".$ev->GetValue("external")."'";
+						$query = "UPDATE call_logs SET address='".$ev->GetValue("address")."', direction='".$ev->GetValue("direction")."', billid='".$ev->GetValue("billid")."', caller='".$ev->GetValue("caller")."', called='".$ev->GetValue("called")."', duration=INTERVAL '".$ev->GetValue("duration")." s', billtime=INTERVAL '".$ev->GetValue("billtime")." s', ringtime=INTERVAL '".$ev->GetValue("ringtime")." s', status='".$ev->GetValue("status")."', reason='$reason', ended='t' WHERE chan='".$ev->GetValue("chan")."' AND time=TIMESTAMP 'EPOCH' + INTERVAL '".$ev->GetValue("time")." s';UPDATE extensions SET inuse_count=(CASE WHEN inuse_count>0 THEN inuse_count-1 ELSE 0 END), inuse_last=now() WHERE extension='".$ev->GetValue("external")."'";
 						$res = query_nores($query);
 						break;
 					}
