@@ -63,6 +63,7 @@ class Gateway extends Model
 					"callerid" => new Variable("text"),
 					"callername" => new Variable("text"),
 					"send_extension" => new Variable("bool","f"), // if set call will keep extension in the caller parameter
+					"trusted" => new Variable("bool","f"),	// allow calls from this gateway or it's incomming gateways to be routed to other gateways
 
 					"sig_trunk_id" => new Variable("serial",null,"sig_trunks",true)
 				);

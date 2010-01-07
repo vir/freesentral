@@ -465,7 +465,8 @@ function return_route($called,$caller,$no_forward=false)
 	$reason = $ev->GetValue("reason");
 
 	$already_auth = $ev->GetValue("already-auth");
-	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason')");
+	$trusted_auth = $ev->GetValue("trusted-auth");
+	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason', trusted='$trusted_auth')");
 
 	if($already_auth != "yes" && $reason!="divert_busy" && $reason != "divert_noanswer") {
 		// check to see if user is allowed to make this call
@@ -474,10 +475,10 @@ function return_route($called,$caller,$no_forward=false)
 		$anonim = $res[0]["value"];
 		if(strtolower($anonim) != "yes")
 			// if annonymous calls are not allowed the call has to be from a known extension or from a known ip
-			$query = "SELECT extension_id FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id FROM incoming_gateways WHERE ip='$address' UNION SELECT gateway_id FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id,'t' as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		else {
 			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
-			$query = "SELECT extension_id FROM extensions WHERE extension='$called' OR extension='$username' UNION SELECT group_id FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id FROM incoming_gateways WHERE ip='$address' UNION SELECT gateway_id FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id, 't' as trusted FROM extensions WHERE extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {
@@ -485,12 +486,14 @@ function return_route($called,$caller,$no_forward=false)
 			set_retval(NULL, "noauth");
 			return;
 		}
+		$trusted_auth = ($res[0]["trusted"] == "t") ? "t" : "f";
 		$call_type = ($username) ? "from inside" : "from outside";  // from inside/outside of freesentral
 	}
 
 	debug("classified call as being '$call_type'");
 	// mark call as already autentified
 	$ev->params["already-auth"] = "yes";
+	$ev->params["trusted-auth"] = $trusted_auth;
 
 	routeToAddressBook($called, $username);
 
@@ -507,7 +510,7 @@ function return_route($called,$caller,$no_forward=false)
 	if(routeToExtension($called))
 		return;
 
-	if($call_type == "from outside" && $initial_called_number == $called) {
+	if($call_type == "from outside" && $initial_called_number == $called && !$trusted_auth) {
 		// if this is a call from outside our system and would be routed outside(from first step) and the number that was initially called was not modified with passing thought any of the above steps  => don't send it
 		debug("forbidding call to '$initial_called_number' because call is 'from outside'");
 		set_retval(null, "forbidden");

@@ -63,6 +63,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
 						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 						"send_extension"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Check this if you want to send the extension as caller number when routing to this gateway."),
+						"trusted"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Allow calls from this gateway or it's associated gateways to be routed to another gateway."),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallest priority.")
 						);
 
@@ -79,6 +80,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
 						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 						"send_extension"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Check this if you want to send the extension as caller number when routing to this gateway."),
+						"trusted"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Allow calls from this gateway or it's associated gateways to be routed to another gateway."),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 					);
 	unset($iax_fields["rtp_forward"]);
@@ -94,6 +96,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 							"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
 							"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 							"send_extension"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Check this if you want to send the extension as caller number when routing to this gateway."),
+							"trusted"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Allow calls from this gateway or it's associated gateways to be routed to another gateway."),
 							"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 						);
 
@@ -104,6 +107,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
 						"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 						"send_extension"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Check this if you want to send the extension as caller number when routing to this gateway."),
+						"trusted"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Allow calls from this gateway or it's associated gateways to be routed to another gateway."),
 						"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 					//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 					);
@@ -118,6 +122,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 					"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
 					"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 					"send_extension"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Check this if you want to send the extension as caller number when routing to this gateway."),
+					"trusted"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Allow calls from this gateway or it's associated gateways to be routed to another gateway."),
 					"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 				//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 				);
@@ -194,6 +199,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
 		"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 		"send_extension"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Check this if you want to send the extension as caller number when routing to this gateway."),
+		"trusted"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Allow calls from this gateway or it's associated gateways to be routed to another gateway."),
 
 		"rxunderrun" => array("column_name"=>_("Max. Interval"), "comment"=>_("Maximum interval in ms between two packets before we report.<br/>zero to disable or 2500+"), "advanced"=>true),
 
@@ -532,6 +538,7 @@ function edit_gateway_database()
 	$params["callerid"] = getparam($gw_type."_".$protocol."callerid");
 	$params["callername"] = getparam($gw_type."_".$protocol."callername");
 	$params["send_extension"] = (getparam($gw_type."_".$protocol."send_extension") == "on") ? "t" : "f";
+	$params["trusted"] = (getparam($gw_type."_".$protocol."trusted") == "on") ? "t" : "f";
 	$next = "outbound";
 
 	$res = ($gateway->gateway_id) ? $gateway->edit($params) : $gateway->add($params);

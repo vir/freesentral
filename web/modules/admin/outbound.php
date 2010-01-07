@@ -42,7 +42,7 @@ if($method == "dial_plan" || $method == "edit_dial_plan")
 else
 	$image = "images/gateways.png";
 
-$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define ips that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.", "System_CallerID"=>"The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then this will be used.");
+$explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define IPs that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.", "System_CallerID"=>"The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then this will be used.");
 $explanation["edit_incoming_gateway"] = $explanation["incoming_gateways"];
 $explanation["edit_dial_plan"] = $explanation["dial_plan"];
 
@@ -78,7 +78,7 @@ function incoming_gateways()
 	$gateway->gateway_id = getparam("gateway_id");
 	$gateway->select();
 
-	print '<font class="subheader">Incoming ips for gateway '.$gateway->gateway.'</font><br/><br/>';
+	print '<font class="subheader">Incoming IPs for gateway '.$gateway->gateway.'</font><br/><br/>';
 
 	$incoming_gateways = Model::selection("incoming_gateway", array("gateway_id"=>$gateway_id), "incoming_gateway");
 
