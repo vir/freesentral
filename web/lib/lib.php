@@ -290,7 +290,7 @@ function pages($total = NULL, $params = array())
 			$stop_at = $pg_nr + 5 - (floor($page/$limit)+1);
 
 		$next_page = $page + $limit;
-		while($next_page<=$total && $pg_nr<$stop_at)
+		while($next_page<$total && $pg_nr<$stop_at)
 		{
 			$pg_nr++;
 			print '<a class="pagelink" href="'.$link.'&page='.$next_page.'">'.$pg_nr.'</a>&nbsp;&nbsp;';
@@ -298,8 +298,11 @@ function pages($total = NULL, $params = array())
 		}
 
 		$next_page = $page + $limit;
-		print '<a class="pagelink" href="'.$link.'&page='.$next_page.'">>></a>&nbsp;&nbsp;';
+
+		if($next_page<$total)
+			print '<a class="pagelink" href="'.$link.'&page='.$next_page.'">>></a>&nbsp;&nbsp;';
 	}
+
 	print '</center>';
 }
 
@@ -665,7 +668,7 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 			case "hidden":
 			case "text-nonedit":
 				print '<input class="'.$css.'" type="'.$display.'" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'"';
-				if($display != "file")
+				if($display != "file" && $display != "password")
 					print ' value="'.$value.'"';
 				if(isset($field_format["javascript"]))
 					print $field_format["javascript"];
