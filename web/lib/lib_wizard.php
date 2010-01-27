@@ -22,7 +22,6 @@
  */
 ?>
 <?
-require_once("conf_wizard.php");
 global $trigger_name, $upload_path;
 
 /**
@@ -39,6 +38,7 @@ class Wizard
 	public $error = '';
 	public $finished_settings = false;
 	public $on_finish = "main.php";
+	public $ending_message;
 
 	public $reserved_names = array("step_description"=>"", "step_image"=>"", "step_name"=>"", "upload_form"=>"", "on_submit"=>"");
 
@@ -50,13 +50,14 @@ class Wizard
 	 * @param $function_for_finish Name of the function that should be called after Finish is pressed
 	 * @param $on_finish Where to go when the 'Close'(button after settings are done) is pressed. Ex: "main.php?module=HOME". This is also the default value of the field
 	 */
-	function __construct($_steps, $_logo, $_title, $function_for_finish, $on_finish=null)
+	function __construct($_steps, $_logo, $_title, $function_for_finish, $on_finish=null, $mess_on_finish=null)
 	{
 		$this->steps = $_steps;
 		$this->logo = $_logo;
 		$this->title = $_title;
 		if($on_finish)
 			$this->on_finish = $on_finish;
+		$this->ending_message = $mess_on_finish;
 		
 		if(!isset($_SESSION["wizard_step_nr"]))
 			$_SESSION["wizard_step_nr"] = 0;
@@ -72,7 +73,6 @@ class Wizard
 		elseif(getparam("submit") == "Skip" && ($this->step_nr < (count($this->steps)-1)))
 		{
 			$this->setStep(true); // set step allowing variables to be null, even if they were required for the completion of this step
-
 			if ($this->error == '')
 				$this->incStep();
 		}elseif(getparam("submit") == "Finish" || ($this->step_nr == (count($this->steps) -1) && getparam("submit") != "Retry")) {
@@ -101,8 +101,8 @@ class Wizard
 	 */
 	function loadStep()
 	{
-		global $fields;
 		global $trigger_name;
+
 		// load the array of fields from the conf file for this step
 		$fields = $this->steps[$this->step_nr];
 		// set the reserved fields for this step (image, description, title) and stem remove them from the lists of fields
@@ -152,6 +152,7 @@ class Wizard
 					}
 			}
 		}
+		$this->fields = $fields;
 	}
 
 	/**
@@ -164,6 +165,7 @@ class Wizard
 	function setStep($skip = false)
 	{
 		global $upload_path;
+
 		$fields = $this->steps[$this->step_nr];
 
 		foreach($fields as $field_name=>$field_def)
@@ -268,7 +270,7 @@ class Wizard
 	 */
 	function htmlFrame()
 	{
-		global $fields;
+		$fields = $this->fields;
 
 		if($this->reserved_names["upload_form"] != "")
 			start_form(NULL, "post", true);
@@ -388,7 +390,8 @@ class Wizard
 			if($fin[0]) {
 				print '<tr>';
 				print '<td class="fillall" colspan="2">';
-				print '<br/><br/>The wizard has finished configuring your system.<br/><br/>';
+				$mess = ($this->ending_message) ? $this->ending_message : "The wizard has finished configuring your system.";
+				print '<br/><br/>'.$mess.'<br/><br/>';
 				print $fin[1];
 				print '<br/><br/>';
 				print '</td>';

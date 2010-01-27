@@ -37,7 +37,7 @@ function import_database()
 		notice("File format must be .csv", "no", false);
 		extensions();
 		return;
-	}	
+	}
 
 	if(!is_dir($upload_path))
 		mkdir($upload_path);

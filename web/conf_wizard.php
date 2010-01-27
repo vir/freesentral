@@ -28,7 +28,7 @@ $logo = "images/small_logo.png";
 $title = "Configuring FreeSentral";
 $trigger_name = "add";
 //where uploaded files will be stored until Finish is pressed
-$upload_path = "/var/www/uploads";
+$upload_path = "/tmp";
 
 // array defining the steps 
 // this example has 8 steps: from 0 to 7

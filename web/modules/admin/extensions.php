@@ -463,7 +463,9 @@ function import($error = NULL)
 
 function export()
 {
-	$file = "exported_extensions.xls";
+	global $upload_path;
+	
+	$file = "upload/exported_extensions.xls";
 	if(is_file($file)) {
 		unlink($file);
 	}
@@ -479,5 +481,5 @@ function export()
 	}
 	fclose($fh);
 //	message('Extensions were exported. <a class="llink" href="exported_extensions.xls">Download</a>');
-	notice('Extensions were exported. <a class="llink" href="exported_extensions.xls">Download</a>');
+	notice('Extensions were exported. <a class="llink" href="'.$file.'">Download</a>');
 }

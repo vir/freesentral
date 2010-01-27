@@ -144,7 +144,7 @@ dbname="$pkgname"
 dbuser="postgres"
 dbpass=""
 timezone="Europe/London"
-upload_dir="/var/tmp"
+upload_dir="/tmp"
 enable_logging="on"
 
 configs="`yate-config --config 2>/dev/null`"
@@ -826,6 +826,9 @@ if [ ! $webpage=="" ]; then
 	cd "$webpage"
 	chmod +x force_update.php
 	./force_update.php
+
+	mkdir upload
+	chown apache upload/
 fi
 
 answers_csr() {
