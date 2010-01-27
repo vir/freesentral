@@ -46,13 +46,14 @@ function format_array($arr)
 
 function set_caller_id()
 {
-	global $caller_id, $timer_caller_id, $caller_name;
+	global $caller_id, $timer_caller_id, $caller_name, $system_prefix;
 
-	$query = "SELECT MAX(CASE WHEN param='callerid' THEN value ELSE NULL END) as callerid, MAX(CASE WHEN param='callername' THEN value ELSE NULL END) as callername FROM settings";
+	$query = "SELECT MAX(CASE WHEN param='callerid' THEN value ELSE NULL END) as callerid, MAX(CASE WHEN param='callername' THEN value ELSE NULL END) as callername, MAX(CASE WHEN param='prefix' THEN value ELSE NULL END) as system_prefix FROM settings";
 	$res = query_to_array($query);
 	if(count($res)) {
 		$caller_id = $res[0]["callerid"];
 		$caller_name = $res[0]["callername"];
+		$system_prefix = $res[0]["system_prefix"];
 	}
 	debug("Reseted CalledID to '$caller_id', Callername to '$caller_name'");
 	$timer_caller_id = 0;
@@ -290,15 +291,16 @@ function makePickUp($called,$caller)
  */
 function routeToExtension($called)
 {
-	global $no_pbx, $ev, $voicemail;
+	global $no_pbx, $ev, $voicemail, $system_prefix;
 
 //	debug("entered routeToExtension('$called')");
 	if (strlen($called) < 3)
 		return false;
 
-	debug("trying routeToExtension(called='$called')");
+	$pref_ext = $system_prefix.$called;
+	debug("trying routeToExtension(called='$called' or called='$pref_ext')");
 
-	$query = "SELECT location,extension_id FROM extensions WHERE extension='$called'";
+	$query = "SELECT location,extension_id FROM extensions WHERE extension='$called' OR extension='$pref_ext'";
 	$res = query_to_array($query);
 	if(!count($res))
 		return false;
@@ -451,7 +453,7 @@ function routeToAddressBook(&$called, $username)
  */
 function return_route($called,$caller,$no_forward=false)
 {
-	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id, $caller_name;
+	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id, $caller_name, $system_prefix;
 
 	$rtp_f = $ev->GetValue("rtp_forward");
 	$call_type = "";
@@ -531,11 +533,12 @@ function return_route($called,$caller,$no_forward=false)
 	for($i=$start; $i>=0; $i--) {
 		$fallback[$j] = $ev->params;
 		$custom_caller_id = ($res[$i]["callerid"]) ? $res[$i]["callerid"] : $caller_id;
-		if($res[$i]["send_extension"] == "f")
-			$fallback[$j]["caller"] = $custom_caller_id;
 		$custom_caller_name = ($res[$i]["callername"]) ? $res[$i]["callername"] : $caller_name;
-		if($res[$i]["send_extension"] == "f")
+		if($res[$i]["send_extension"] == "f") {
+			$fallback[$j]["caller"] = $custom_caller_id;
 			$fallback[$j]["callername"] = $custom_caller_name;
+		}elseif($system_prefix)
+			$fallback[$j]["caller"] = $system_prefix.$fallback[$j]["caller"];
 		$fallback[$j]["called"] = rewrite_digits($res[$i],$called);
 		$fallback[$j]["formats"] = ($res[$i]["formats"]) ? $res[$i]["formats"] : $ev->GetValue("formats");
 		$fallback[$j]["rtp_forward"] = ($rtp_f == "possible" && $res[$i]["rtp_forward"] == 't') ? "yes" : "no";

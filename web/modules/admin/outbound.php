@@ -547,17 +547,23 @@ function delete_dial_plan_database()
 function System_CallerID()
 {
 	$setting = new Setting;
-	$res = $setting->fieldSelect("MAX(CASE WHEN param='callerid' THEN value ELSE NULL END) as callerid, MAX(CASE WHEN param='callername' THEN value ELSE NULL END) as callername");
+	$res = $setting->fieldSelect("MAX(CASE WHEN param='callerid' THEN value ELSE NULL END) as callerid, MAX(CASE WHEN param='callername' THEN value ELSE NULL END) as callername, MAX(CASE WHEN param='prefix' THEN value ELSE NULL END) as prefix");
+
+	$fields = array(
+				"system_CallerID" => array("value"=>$res[0]["callerid"], "comment"=>"This will be the number used when a call will be made outside your system."), 
+				"system_Callername" => array("value"=>$res[0]["callername"], "comment"=>"This will be the callername used when a call is made outside the system"),
+				"system_prefix" => array("value"=>$res[0]["prefix"], "comment"=>"Prefix will be added in front of the extension when routing to a gateway where 'Send extension' was checked. Also, extensions will be matched if called number will be this prefix+extension number.")
+			);
 
 	start_form();
 	addHidden("database");
-	editObject(null, array("system_CallerID"=>array("value"=>$res[0]["callerid"], "comment"=>"This will be the number used when a call will be made outside your system."), "system_Callername"=>array("value"=>$res[0]["callername"], "comment"=>"This will be the callername used when a call is made outside the system")), "System call parameters");
+	editObject(null, $fields, "System call parameters");
 	end_form();
 }
 
 function System_CallerID_database()
 {
-	$params = array("callerid"=>"system_CallerID", "callername"=>"system_Callername");
+	$params = array("callerid"=>"system_CallerID", "callername"=>"system_Callername", "prefix"=>"system_prefix");
 
 	foreach($params as $dbname=>$webname) {
 		$setting = Model::selection("setting", array("param"=>$dbname));
