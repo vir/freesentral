@@ -2055,7 +2055,7 @@ class Model
 	 */
 	protected static function makeOrderClause($order)
 	{
-		// When writting the String one must pay attention to use "" for fields and tables that are in
+		// When writing the String one must pay attention to use "" for fields and tables that are in
 		// the special words in PostgreSQL
 		if(!count($order))
 			return;
@@ -2302,9 +2302,9 @@ class Model
 	}
 
 	/**
-	 * Get the name of the object that should be used when writting logs
+	 * Get the name of the object that should be used when writing logs
 	 * This function returns the class of the object. If other name is desired one should reimplement it in the derived classes
-	 * @return Name to be used when writting logs for this object 
+	 * @return Name to be used when writing logs for this object 
 	 */
 	public function getNameInLogs()
 	{

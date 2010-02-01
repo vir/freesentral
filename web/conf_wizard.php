@@ -105,7 +105,7 @@ $steps = array(
 				array(
 						"step_image" => "images/extension.png",
 						"step_name" => "Extensions",
-						"step_description" => "Extensions - Internal phones attached to the IP PBX",
+						"step_description" => "Extensions - Internal phones attached to the IP PBX.",
 						"on_submit" => "verify_extensions",
 						"from" => array(
 										"value"=>"", 
@@ -125,7 +125,7 @@ $steps = array(
 				array(
 						"step_image" => "images/extension.png",
 						"step_name" => "Groups",
-						"step_description" => "Groups - Organize your extensions in groups. You can have as many extensions as you want in a group. An intension can join more than one group.",
+						"step_description" => "Groups - Organize your extensions in groups. You can have as many extensions as you want in a group. An extension can join more than one group.",
 						"on_submit" => "verify_groups",
 						"group" => array(
 										"compulsory" => true,
@@ -231,7 +231,7 @@ $steps = array(
 						"step_image" => "images/gateways.png",
 						"step_name" => "Outbound: Gateway and default Dial Plan",
 						"step_description" => "Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. <br/><br/>
-						Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the possibility to direct calls of your choice to go to a specified gateway. <br/><br/>
+						Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the option to direct calls of your choice to go to a specified gateway. <br/><br/>
 						The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then this will be used.",
 						"on_submit" => "verify_gateway",
 						"gateway" => array(
@@ -312,7 +312,7 @@ $steps = array(
 													"comment"=>"The default extension where call will be transfered if caller doesn't press any digit when reaching the Auto Attendant"
 												),
 						"explain" => array(
-											"value" => "The Auto Attendant has two states: online and offline. Each of this states has its own prompt.",
+											"value" => "The Auto Attendant has two states: online and offline. Each of these states has its own prompt.",
 											"display" => "message"
 										),
 						"online_prompt" => array(	
@@ -325,8 +325,8 @@ $steps = array(
 												"compulsory" => true,
 												"comment" => "Accepted format .mp3. Upload prompt for offline Auto Attendant."
 												),
-						"explanation_schedulling" => array(
-														"value" => "Schedulling online Auto Attendant. The time frames when the online auto attendant is not schedulled, the offline one is used.",
+						"explanation_scheduling" => array(
+														"value" => "Schedulling online Auto Attendant. The time frames when the online auto attendant is not scheduled, the offline one is used.",
 														"display" => "message"
 													),
 						//Note!! "custom_submit"=>"set_wiz_period", set_wiz_period will be called to set this field in $_SESSION, 

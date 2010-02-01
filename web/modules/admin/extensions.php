@@ -51,7 +51,7 @@ if($action)
 else
 	$call = $method;
 
-$explanation = array("default" => "Extensions - Internal phones attached to the IP PBX", "groups"=>"Groups - organize extensions in groups, in order to use the call hunting and queues functionality");
+$explanation = array("default" => "Extensions - Internal phones attached to the IP PBX.", "groups"=>"Groups - organise extensions in groups, in order to use the call hunting and queues functionality.");
 
 $explanation["edit_group"] = $explanation["groups"];
 
@@ -318,7 +318,7 @@ function edit_range($error=NULL)
 	$fields = array(
 					"from"=>array("value"=>getparam("from"), "compulsory"=>true, "comment"=>"Numeric value. Minimum 3 digits"),
 					"to"=>array("value"=>getparam("to"), "compulsory"=>true, "comment"=>"Numeric value, higher than that inserted in the 'From' field. Must be the same number of digits as the 'From' field."),
-					"generate_passwords"=>array("value"=>"t","display"=>"checkbox", "comment"=>"Check in order to generate random 6 digits passwords for the newly added extensions")
+					"generate_passwords"=>array("value"=>"t","display"=>"checkbox", "comment"=>"Check to generate random 6 digits passwords for the newly added extensions.")
 				);
 
 	start_form();
@@ -469,7 +469,7 @@ function export()
 	if(is_file($file)) {
 		unlink($file);
 	}
-	$fh = fopen($file, 'w') or die("Can't open file for writting.");
+	$fh = fopen($file, 'w') or die("Can't open file for writing.");
 	$extensions = Model::selection("extension",NULL,"extension");
 
 	$names = "Extension,Firstname,Lastname,Address\n";

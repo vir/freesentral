@@ -43,7 +43,7 @@ class Setting extends Model
 
 	public static function defaultObject()
 	{
-		$params = array('vm'=>array('external/nodata/leavemaildb.php','script used for leaving a voicemail message'), "version"=>'1', "annonymous_calls"=>array("no", "allow call from annomynous users if call is for one of the extensions. Use just 'yes' or 'no' as values"));
+		$params = array('vm'=>array('external/nodata/leavemaildb.php','Script used for leaving a voicemail message.'), "version"=>'1', "annonymous_calls"=>array("no", "Allow calls from anomynous users if call is for one of the extensions. Use just 'yes' or 'no' as values."));
 		$setting = new Setting;
 		$nr_settings = $setting->fieldSelect("count(*)");
 		if ($nr_settings>=count($params))

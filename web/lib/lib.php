@@ -858,7 +858,8 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 
 	if(!count($objects))
 	{
-		plainmessage("<table class=\"$css\"><tr><td style=\"text-align:right;\">There isn't any $object_name in the database.</td></tr>");
+		$plural = get_plural_form($object_name);
+		plainmessage("<table class=\"$css\"><tr><td style=\"text-align:right;\">There aren't any $plural in the database.</td></tr>");
 		if(!count($general_actions)){
 			print '</table>';
 			return;
@@ -1037,6 +1038,22 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 	print "</table>";
 }
 
+function get_plural_form($object_name)
+{
+	if(class_exists($object_name)){
+		$obj = new $object_name;
+		$plural = $obj->getTableName();
+	}else{
+		if(substr($object_name,-1) == "s")
+			$plural = $object_name;
+		elseif(substr($object_name, -1) == "y")
+			$plural = substr($object_name,0,strlen($object_name)-1)."ies";
+		else
+			$plural = $object_name."s";
+	}
+	return $plural;
+}
+
 function trim_value(&$value) 
 { 
 	$value = trim($value); 
@@ -1050,7 +1067,8 @@ function table($array, $formats, $element_name, $id_name, $element_actions =arra
 		$css = "content";
 	if(!count($array))
 	{
-		plainmessage("<table class=\"$css\"><tr><td>There isn't any $element_name in the database.</td></tr>");
+		$plural = get_plural_form($element_name);
+		plainmessage("<table class=\"$css\"><tr><td>There aren't any $plural in the database.</td></tr>");
 		if(!count($general_actions)){
 			print '</table>';
 			return;
@@ -1825,7 +1843,7 @@ class ConfFile
 
 	function save()
 	{
-		$file = fopen($this->filename,"w") or exit("Could not open ".$this->filename." for writting");
+		$file = fopen($this->filename,"w") or exit("Could not open ".$this->filename." for writing");
 		foreach($this->structure as $name=>$value)
 		{
 			if(!is_array($value)) {

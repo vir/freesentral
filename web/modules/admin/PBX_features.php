@@ -96,7 +96,7 @@ function digits()
 "Enable/Disable PBX features"=>array(
 	array(
 		"digits"=>"***",
-		"text"=>"disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company your called to"
+		"text"=>"disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company you called to"
 	),
 	array(
 		"digits"=>"###",
@@ -153,7 +153,7 @@ function digits()
 <br/><br/>
 # - after a certain number of digits will delete the entered digits.
 <br/><br/>
-*** - disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company your called to.
+*** - disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company you called to.
 <br/><br/>
 ### - enable pbx features
 <?
@@ -189,7 +189,7 @@ Press # after a certain number of digits in order to delete the digits yor enter
 </div>
 <a name="passthrough" class="features">Pass Throught</a>
 <div class="features_notice">
-Press *** do disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company your called to. 
+Press *** do disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company you called to. 
 </div>
 <a name="retake" class="features">Retake PBX features</a>
 <div class="features_notice">
@@ -305,7 +305,7 @@ function passthrought()
 ?>
 <a name="passthrough" class="features">Pass Throught</a>
 <div class="features_notice">
-Press *** do disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company your called to. 
+Press *** do disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company you called to. 
 <br/><br/> 
 <center><a class="llink" href="main.php?module=<?print $module;?>&method=flush_digits"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=retake">Next >></a></center>
 </div>

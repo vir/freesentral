@@ -48,7 +48,7 @@ else
 
 $actions = array("&method=edit_music_on_hold"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_music_on_hold"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>', "&method=upload_music_on_hold"=>'<img src="images/upload.gif" title="ReUpload file" alt="ReUpload file"/>', "&method=listen_music_on_hold"=>'<img src="images/listen.gif" title="Play" alt="Play"/>');
 
-$explanation = array("default"=>"Music on hold - The caller on hold can hear music while waiting to be picked-up. After uploading songs, you can define playlists and set the one can be in use.");
+$explanation = array("default"=>"Music on hold - The caller on hold can hear music while waiting to be picked-up. After uploading songs, you can define playlists and set the one to be used.");
 
 print '<div style="display:inline; float:left; width:21%;margin-right:10px;">';
 draw_tree();
@@ -271,7 +271,7 @@ function edit_playlist($error = NULL)
 
 	$fields = array(
 					"playlist" => array("compulsory"=>true, "comment"=>"Name of this playlist. Must be unique."),
-					"in_use" => array("comment"=>"Check if you wish this to be the playlist for music on hold. Selected playlist will be used for a groups music on hold if no playlist was associated to this group.")
+					"in_use" => array("comment"=>"Check to make this the default playlist for the system.")
 				);
 
 	$title = ($playlist->playlist_id) ? "Edit playlist" : "Create playlist";

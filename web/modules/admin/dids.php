@@ -35,7 +35,7 @@ if($action)
 else
 	$call = $method;
 
-$explanation = array("default"=>"DIDs - A call can go directly to a phone from inside the FreeSentral, by definining the destination as a Did. The destination can be an extension, a group of extensions, a voicemail, etc. ", "conferences"=>"Conferences - use the number associated to each room to connect to the active conference rooms.");
+$explanation = array("default"=>"DIDs - A call can go directly to a phone from inside the FreeSentral, by defining the destination as a DID. The destination can be an extension, a group of extensions, a voicemail, etc. ", "conferences"=>"Conferences - use the number associated with each room to connect to the active conference room.");
 $explanation["edit_conference"] = $explanation["conferences"];
 
 explanations("images/dids.png", "", $explanation);
@@ -111,7 +111,7 @@ function dids()
 	$dids = $did->extendedSelect(array("destination"=>"__NOT LIKEconf/"),"number");
 
 	$formats = array("did","number","destination","function_get_default_destination:default_destination"=>"extension,group");
-	tableOfObjects($dids, $formats, "did", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'),array("&method=add_did"=>"Add DID"));
+	tableOfObjects($dids, $formats, "DIDs", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>'),array("&method=add_did"=>"Add DID"));
 }
 
 function edit_did($error=NULL)
