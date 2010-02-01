@@ -770,14 +770,14 @@ verify=none
 "
 
     if [ -e "$fe" ]; then
-	if [ -z `readopt "Overwrite existing openssl.conf ?" "yes"` ]; then
+	if [ -z `readopt "Overwrite existing rmanager.conf ?" "yes"` ]; then
 	    echo "Please edit file $fe like follows:"
 	    echo "$e"
 	    fe=""
 	fi
     fi
     if [ -n "$fe" ]; then
-	echo "Creating openssl configuration file"
+	echo "Creating rmanager configuration file"
 	mkdir -p "$configs"
 	echo "; File created by $version
 $e" > "$fe"
