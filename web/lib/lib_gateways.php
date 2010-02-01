@@ -747,8 +747,8 @@ function edit_dial_plan_database()
 		edit_dial_plan($res[1]);
 		return;
 	}
-	$next = ($_SESSION["wizard"] == "notused") ? "outbound" : "dial_plan";
-	notice($res[1],$next,$res[0]);
+
+	notice($res[1],"dial_plan",$res[0]);
 }
 
 

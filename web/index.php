@@ -49,9 +49,6 @@ $user->username = $username;
 $user->password = $password;
 if($user->login()){
 	$level = 'admin';
-	$setting = Model::selection("setting", array("param"=>"wizard"));
-	if(count($setting))
-		$_SESSION["wizard"] = $setting[0]->value;
 }else{
 	$extension = new Extension;
 	$extension->extension = $username;

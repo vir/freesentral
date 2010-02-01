@@ -564,8 +564,16 @@ function System_CallerID()
 function System_CallerID_database()
 {
 	$params = array("callerid"=>"system_CallerID", "callername"=>"system_Callername", "prefix"=>"system_prefix");
+	$call_backs = array("prefix"=>"verify_system_prefix");
 
 	foreach($params as $dbname=>$webname) {
+		if(isset($call_backs[$dbname])) {
+			$func = $call_backs[$dbname];
+			if(!$func(getparam($webname))) {
+				System_CallerID();
+				return;
+			}
+		}
 		$setting = Model::selection("setting", array("param"=>$dbname));
 		if(!count($setting)) {
 			$setting = new Setting;
@@ -579,6 +587,19 @@ function System_CallerID_database()
 			errormess($res[1], "no");
 	}
 	System_CallerID();
+}
+
+function verify_system_prefix($prefix)
+{
+	if(!strlen($prefix))
+		return true;
+	$extension = new Extension;
+	$nr = $extension->fieldSelect("count(*)", array("extension"=>"__LIKE$prefix"));
+	if($nr) {
+		errormess("System prefix must not start the same as any defined extension.");
+		return false;
+	}
+	return true;
 }
 
 /*function edit_dial_plan($error = NULL, $sel_protocol = NULL)

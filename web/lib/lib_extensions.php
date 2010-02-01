@@ -60,6 +60,9 @@ function import_database()
 	$names = explode(",",$content[0]);	
 	$error = '';
 
+	$setting = new Setting;
+	$prefix = $setting->fieldSelect("MAX(CASE WHEN param='prefix' THEN value ELSE NULL END) as prefix");
+
 	for($i=1; $i<count($content); $i++)
 	{
 		$line = $content[$i];
@@ -89,6 +92,11 @@ function import_database()
 		$extension->extension = $fields["extension"];
 		if($extension->objectExists("extension_id")) {
 			print "Skipping ".$extension->extension." because it already exists.<br/>";
+			Database::rollback();
+			continue;
+		}
+		if($prefix && $prefix==substr($extension->extension,0,strlen($prefix))) {
+			print "Skipping ".$extension->extension." because it starts the same as the system prefix.<br/>";
 			Database::rollback();
 			continue;
 		}
@@ -142,6 +150,15 @@ function edit_extension_database()
 	$params = form_params(array("extension", "firstname", "lastname", "address", /*"max_minutes",*/ "password"));
 	if(getparam("generate_password") == "on")
 		$params["password"] = rand(100000, 999999);
+
+	$setting = new Setting;
+	$prefix = $setting->fieldSelect("MAX(CASE WHEN param='prefix' THEN value ELSE NULL END) as prefix");
+	if($prefix && $prefix==substr(getparam("extension"),0,strlen($prefix))) {
+		errormess("Extension starts the same as the system prefix.","no");
+		extensions();
+		return;
+	}
+
 	$res = ($extension->extension_id) ? $extension->edit($params) : $extension->add($params);
 	notice($res[1],"no",$res[0]);
 	extensions();
@@ -151,7 +168,7 @@ function edit_range_database()
 {
 	global $module;
 
-	$call = ($_SESSION["wizard"] == "notused") ? "extensions" : "edit_range";
+	$call = "edit_range";
 
 	$from = getparam("from");
 	$to = getparam("to");
@@ -173,9 +190,13 @@ function edit_range_database()
 
 	if($error != "")
 	{
+		errormess($error, "no");
 		$call();
 		return;
 	}
+
+	$setting = new Setting;
+	$prefix = $setting->fieldSelect("MAX(CASE WHEN param='prefix' THEN value ELSE NULL END) as prefix");
 
 	$generate_password = getparam("generate_passwords");
 	for($i=Numerify($from); $i<=Numerify($to); $i++)
@@ -187,6 +208,10 @@ function edit_range_database()
 		if($extension->objectExists())
 		{
 			print 'Skipping extention '.$extension->extension.' because it was previously added.<br/>';
+			continue;
+		}
+		if($prefix && $prefix==substr($extension->extension,0,strlen($prefix))) {
+			print "Skipping extension ".$extension->extension." because it starts the same as the system prefix.<br/>";
 			continue;
 		}
 		if($generate_password == "on")

@@ -229,7 +229,8 @@ function routeToGroup($called)
 //	debug("entered routeToGroup('$called')");
 	$path = "$uploaded_prompts/moh/";
 
-	if(strlen($called) == 2) {
+	$cnt = 2+strlen($system_prefix);
+	if(strlen($called) == 2 || (strlen($called)==$cnt && substr($called,0,strlen($system_prefix))==$system_prefix)) {
 		debug("trying routeToGroup('$called')");
 		// call to a group
 		$query = "SELECT group_id, (CASE WHEN playlist_id IS NULL THEN (SELECT playlist_id FROM playlists WHERE in_use='t') else playlist_id END) as playlist_id FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called'";
@@ -273,7 +274,7 @@ function makePickUp($called,$caller)
 	if(substr($called,0,strlen($pickup_key)) == $pickup_key) {
 		// try to improvize a pick up -> pick up the current call of a extension that is in the same group as the caller
 		$extension = substr($called,strlen($pickup_key),strlen($called));
-		$query = "SELECT chan FROM call_logs, extensions, group_members WHERE direction='outgoing' AND ended IS NOT TRUE AND extensions.extension=call_logs.called AND (extensions.extension='$extension' OR '$system_prefix' || extensions.extension='$extension') AND extensions.extension_id=group_members.extension_id AND group_members.group_id IN (SELECT group_id FROM group_members NATURAL JOIN extensions WHERE extensions.extension='$caller')";
+		$query = "SELECT chan FROM call_logs, extensions, group_members WHERE direction='outgoing' AND ended IS NOT TRUE AND (extensions.extension=call_logs.called OR '$system_prefix' || extensions.extension=call_logs.called) AND (extensions.extension='$extension' OR '$system_prefix' || extensions.extension='$extension') AND extensions.extension_id=group_members.extension_id AND group_members.group_id IN (SELECT group_id FROM group_members NATURAL JOIN extensions WHERE extensions.extension='$caller')";
 		$res = query_to_array($query);
 		if(count($res))
 			set_retval("pickup/".$res[0]["chan"]);  //make the pickup
@@ -482,7 +483,7 @@ function return_route($called,$caller,$no_forward=false)
 			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		else {
 			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
-			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called' UNION SELECT did_id, 't' as trusted FROM dids WHERE number='$called' OR '$system_prefix' || number='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {
