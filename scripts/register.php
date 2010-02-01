@@ -55,7 +55,7 @@ function set_caller_id()
 		$caller_name = $res[0]["callername"];
 		$system_prefix = $res[0]["system_prefix"];
 	}
-	debug("Reseted CalledID to '$caller_id', Callername to '$caller_name'");
+	debug("Reseted CalledID to '$caller_id', Callername to '$caller_name', System prefix to '$system_prefix'");
 	$timer_caller_id = 0;
 }
 
@@ -127,7 +127,7 @@ function build_location($params, $called, &$copy_ev)
  */ 
 function get_location($called)
 {
-	global $voicemail;
+	global $voicemail, $system_prefix;
 
 	if($called == "vm") {
 		if($voicemail)
@@ -137,7 +137,7 @@ function get_location($called)
 	}
 
 	//  divert to a did
-	$query = "SELECT destination FROM dids WHERE number='$called'";
+	$query = "SELECT destination FROM dids WHERE number='$called' OR '$system_prefix' || number='$called'";
 	$res = query_to_array($query);
 	if(count($res)) {
 		if(is_numeric($res[0]["destination"]))
@@ -149,7 +149,7 @@ function get_location($called)
 	}
 
 	// divert to an extension without thinking of it's divert functions
-	$query = "SELECT location FROM extensions WHERE extension='$called'";
+	$query = "SELECT location FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called'";
 	$res = query_to_array($query);
 	if(count($res)) 
 		return $res[0]["location"];
@@ -224,7 +224,7 @@ function rewrite_digits($route, $nr)
  */
 function routeToGroup($called)
 {
-	global $uploaded_prompts, $ev, $s_moh;
+	global $uploaded_prompts, $ev, $s_moh, $system_prefix;
 
 //	debug("entered routeToGroup('$called')");
 	$path = "$uploaded_prompts/moh/";
@@ -232,7 +232,7 @@ function routeToGroup($called)
 	if(strlen($called) == 2) {
 		debug("trying routeToGroup('$called')");
 		// call to a group
-		$query = "SELECT group_id, (CASE WHEN playlist_id IS NULL THEN (SELECT playlist_id FROM playlists WHERE in_use='t') else playlist_id END) as playlist_id FROM groups WHERE extension='$called'";
+		$query = "SELECT group_id, (CASE WHEN playlist_id IS NULL THEN (SELECT playlist_id FROM playlists WHERE in_use='t') else playlist_id END) as playlist_id FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called'";
 		$res = query_to_array($query);
 		if(!count($res))
 			return false;
@@ -253,7 +253,7 @@ function routeToGroup($called)
  */
 function makePickUp($called,$caller)
 {
-	global $pickup_key;
+	global $pickup_key, $system_prefix;
 
 	debug("entered makePickUp(called='$called',caller='$caller')");
 
@@ -261,7 +261,7 @@ function makePickUp($called,$caller)
 	if(strlen($called) == $keyforgroup && substr($called,0,strlen($pickup_key)) == $pickup_key) {
 		// someone is trying to pickup a call that was made to a group, (make sure caller is in that group)
 		$extension = substr($called,strlen($pickup_key),strlen($called));
-		$query = "SELECT group_id FROM groups WHERE extension='$extension' AND group_id IN (SELECT group_id FROM group_members, extensions WHERE group_members.extension_id=extensions.extension_id AND extensions.extension='$caller')";
+		$query = "SELECT group_id FROM groups WHERE (extension='$extension' OR '$system_prefix' || extension='$extension') AND group_id IN (SELECT group_id FROM group_members, extensions WHERE group_members.extension_id=extensions.extension_id AND extensions.extension='$caller')";
 		$res = query_to_array($query);
 		if(!count($res))
 			set_retval("tone/congestion");
@@ -273,7 +273,7 @@ function makePickUp($called,$caller)
 	if(substr($called,0,strlen($pickup_key)) == $pickup_key) {
 		// try to improvize a pick up -> pick up the current call of a extension that is in the same group as the caller
 		$extension = substr($called,strlen($pickup_key),strlen($called));
-		$query = "SELECT chan FROM call_logs, extensions, group_members WHERE direction='outgoing' AND ended IS NOT TRUE AND extensions.extension=call_logs.called AND extensions.extension='$extension' AND extensions.extension_id=group_members.extension_id AND group_members.group_id IN (SELECT group_id FROM group_members NATURAL JOIN extensions WHERE extensions.extension='$caller')";
+		$query = "SELECT chan FROM call_logs, extensions, group_members WHERE direction='outgoing' AND ended IS NOT TRUE AND extensions.extension=call_logs.called AND (extensions.extension='$extension' OR '$system_prefix' || extensions.extension='$extension') AND extensions.extension_id=group_members.extension_id AND group_members.group_id IN (SELECT group_id FROM group_members NATURAL JOIN extensions WHERE extensions.extension='$caller')";
 		$res = query_to_array($query);
 		if(count($res))
 			set_retval("pickup/".$res[0]["chan"]);  //make the pickup
@@ -300,7 +300,7 @@ function routeToExtension($called)
 	$pref_ext = $system_prefix.$called;
 	debug("trying routeToExtension(called='$called' or called='$pref_ext')");
 
-	$query = "SELECT location,extension_id FROM extensions WHERE extension='$called' OR extension='$pref_ext'";
+	$query = "SELECT location,extension_id FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called'";
 	$res = query_to_array($query);
 	if(!count($res))
 		return false;
@@ -360,9 +360,11 @@ function routeToExtension($called)
 
 function routeToDid(&$called)
 {
+	global $system_prefix;
+
 	debug("entered routeToDid('$called')");
 	// default route is a did 
-	$query = "SELECT destination FROM dids WHERE number='$called'";
+	$query = "SELECT destination FROM dids WHERE number='$called' OR '$system_prefix' || number='$called'";
 	$res = query_to_array($query);
 	if(count($res)) {
 		if(is_numeric($res[0]["destination"]))
@@ -480,7 +482,7 @@ function return_route($called,$caller,$no_forward=false)
 			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		else {
 			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
-			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {
@@ -523,6 +525,7 @@ function return_route($called,$caller,$no_forward=false)
 	$res = query_to_array($query);
 
 	if(!count($res)) {
+		debug("Could not find a matching dial plan=> rejecting with error: no route");
 		set_retval(NULL,"no route");
 		return;
 	}
@@ -833,3 +836,4 @@ for (;;) {
 
 /* vi: set ts=8 sw=4 sts=4 noet: */
 ?>
+

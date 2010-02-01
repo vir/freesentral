@@ -40,7 +40,7 @@ class Gateway extends Model
 					// for gateways with registration
 					"username" => new Variable("text"),
 					"password" => new Variable("text"),
-					"enabled" => new Variable("bool"),
+					"enabled" => new Variable("bool","t"),
 					// various params that are not compulsory
 					"description" => new Variable("text"),
 					"interval" => new Variable("text"),
