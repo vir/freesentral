@@ -126,6 +126,9 @@ function define_extensions($fields)
 	if($from > $to)
 		return array(false, "Field 'From' must be smaller than 'To'.");
 
+	$setting = new Setting;
+	$prefix = $setting->fieldSelect("MAX(CASE WHEN param='prefix' THEN value ELSE NULL END) as prefix");
+
 	$message = '';
 	for($i=Numerify($from); $i<=Numerify($to); $i++)
 	{
@@ -136,6 +139,10 @@ function define_extensions($fields)
 		if($extension->objectExists())
 		{
 			$message .= 'Skipping extention '.$extension->extension.' because it was previously added.<br/>';
+			continue;
+		}
+		if($prefix && $prefix==substr($extension->extension,0,strlen($prefix))) {
+			$message .= "Skipping extension ".$extension->extension." because it starts the same as the system prefix.<br/>";
 			continue;
 		}
 		$extension->password = rand(100000,999999);
