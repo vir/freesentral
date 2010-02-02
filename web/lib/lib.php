@@ -138,8 +138,24 @@ function getparam($param,$escape = true)
 		$ret = $_GET[$param];
 	else
 		return NULL;
-	if ($escape)
+	if ($escape && !is_array($ret))
 		$ret = addslashes($ret);
+	elseif(is_array($ret)) {
+		foreach($ret as $index=>$value) {
+			$ret[$index] = addslashes($value);
+			if (substr($ret[$index],0,6) == "__sql_")
+				$ret[$index] = NULL; 
+			if ($ret[$index] == "__empty")
+				$ret[$index] = NULL;
+			if ($ret[$index] == "__non_empty" || $ret[$index] == "__not_empty")
+				$ret[$index] = NULL;
+			if (substr($ret[$index],0,6) == "__LIKE")
+				$ret[$index] = NULL;
+			if (substr($ret[$index],0,10) == "__NOT LIKE")
+				$ret = NULL;
+		}
+		return $ret;
+	}
 	if (substr($ret,0,6) == "__sql_")
 		$ret = NULL; 
 	if ($ret == "__empty")
@@ -282,7 +298,7 @@ function pages($total = NULL, $params = array())
 	}
 	$pg_nr = $page/$limit + 1;
 	print '<font class="pagelink" href="#">'.$pg_nr.'</font>&nbsp;&nbsp;';
-	if(($page+$limit)<$total)
+	if(($page+$limit)<=$total)
 	{
 		if($pg_nr>=3)
 			$stop_at = $pg_nr + 2;
@@ -417,9 +433,11 @@ function editObject($object, $fields, $title, $submit="Submit", $compulsory_noti
 		$css = "edit";
 	print '<center>';
 	print '<table class="'.$css.'" cellspacing="0" cellpadding="0">';
-	print '<tr class="'.$css.'">';
-	print '<th class="'.$css.'" colspan="2">'.$title.'</th>';
-	print '</tr>';
+	if($title) {
+		print '<tr class="'.$css.'">';
+		print '<th class="'.$css.'" colspan="2">'.$title.'</th>';
+		print '</tr>';
+	}
 
 	$show_advanced = false;
 	$have_advanced = false;
@@ -576,7 +594,11 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 			print '<td class="'.$css.' left_td"';
 			if(isset($td_width["left"]))
 				print ' style="width:'.$td_width["left"].'"';
-			print '>'.ucfirst(str_replace("_","&nbsp;",$field_name));
+			print '>';
+			if(!isset($field_format["column_name"]))
+				print ucfirst(str_replace("_","&nbsp;",$field_name));
+			else
+				print ucfirst($field_format["column_name"]);
 			if(isset($field_format["required"]))
 				$field_format["compulsory"] = $field_format["required"];
 			if(isset($field_format["compulsory"]))
@@ -596,11 +618,15 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 				print '</textarea>';
 				break;
 			case "select":
+			case "mul_select":
 				print '<select class="'.$css.'" name="'.$form_identifier.$field_name.'" id="'.$form_identifier.$field_name.'" ';
 				if(isset($field_format["javascript"]))
 					print $field_format["javascript"];
+				if($display == "mul_select")
+					print ' multiple="multiple" size="5"';
 				print '>';
-				print '<option value="">Not selected</option>';
+				if($display != "mul_select")
+					print '<option value="">Not selected</option>';
 				$options = (is_array($var_name)) ? $var_name : array();
 				if(isset($options["selected"]))
 					$selected = $options["selected"];
@@ -614,15 +640,22 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 					if(count($opt) == 2) {
 						$optval = $field_name.'_id';
 						$name = $field_name;
-						if ($opt[$optval] === $selected)
-							print '<option value=\''.$opt[$optval].'\' SELECTED >' . $opt[$name] . '</option>';
-						else
-							print '<option value=\''.$opt[$optval].'\'>' . $opt[$name] . '</option>';
+						if ($opt[$optval] === $selected || isset($selected[$opt[$optval]])) {
+							print '<option value=\''.$opt[$optval].'\' SELECTED ';
+							if($opt[$optval] == "__disabled")
+								print ' disabled="disabled"';
+							print '>' . $opt[$name] . '</option>';
+						} else {
+							print '<option value=\''.$opt[$optval].'\'';
+							if($opt[$optval] == "__disabled")
+								print ' disabled="disabled"';
+							print '>' . $opt[$name] . '</option>';
+						}
 					}else{
-						if ($opt == $selected)
-						print '<option SELECTED >' . $opt . '</option>';
+						if ($opt == $selected || isset($select[$opt]))
+							print '<option SELECTED >' . $opt . '</option>';
 						else
-						print '<option>' . $opt . '</option>';
+							print '<option>' . $opt . '</option>';
 					}
 				}
 				print '</select>';
@@ -1252,8 +1285,11 @@ function ack_delete($object, $value=NULL, $message=NULL, $object_id=NULL, $value
 		$value_id = getparam($object_id);
 
 	print "<br/><br/>Are you sure you want to delete ".str_replace("_","&nbsp;",$object)." $value?";
-	if ($message) 
-		print " If you delete it you will also delete or set to NULL it's associated objects from $message";
+	if ($message) {
+		if(substr($message,0,1) == ",")
+			$message = substr($message, 1, strlen($message));
+		print " If you delete it you will also delete or set to NULL it's associated objects from $message.";
+	}
 	print "<br/><br/>";
 
 	print '<a class="llink" href="main.php?module=' . $module . '&method=' . $method . '&action=database&' . $object_id . '=' . $value_id . $additional . '">Yes</a>';
@@ -1870,6 +1906,111 @@ class ConfFile
 		}
 		fclose($file);
 	}
+}
+
+
+function build_dropdown($arr, $name, $show_not_selected = true, $disabled = "", $css="", $javascript="", $just_options=false)
+{
+	if(!$just_options)
+		$res = '<select class="dropdown '.$css.'" name="'.$name.'" id="'.$name.'" '.$disabled.' '.$javascript.'>'."\n";
+	else
+		$res = '';
+	if($show_not_selected)
+		$res .= '<option value=""> - </option>'."\n";
+	$selected = (isset($arr["selected"]))? $arr["selected"] : "";
+	unset($arr["selected"]);
+	for($i=0; $i<count($arr); $i++) {
+		if(is_array($arr[$i])) {
+			$value = $arr[$i]["field_id"];
+			$value_name = $arr[$i]["field_name"];
+			$res .= "<option value=\"$value\"";
+			if($selected == $value)
+				$res .= " SELECTED";
+			if($value === "__disabled")
+				$res .= " disabled=\"disabled\"";
+			$res .= ">$value_name</option>\n";
+		}
+	}
+	if(!$just_options)
+		$res .= "</select>\n";
+	return $res;
+}
+
+function format_for_dropdown($vals)
+{
+	$arr = array();
+	for($i=0; $i<count($vals); $i++)
+		array_push($arr, array("field_id"=>$vals[$i], "field_name"=>$vals[$i]));
+	return $arr;
+}
+
+function formTable($rows, $th=null, $title = null, $submit = null, $width=null, $id=null, $css_first_column='')
+{
+	if(is_array($th))
+		$cols = count($th);
+	elseif(isset($rows[0]))
+		$cols = count($rows[0]);
+	else
+		$cols = count($rows);
+	$width = ($width) ? "style=\"width:".$width."px;\"" : "";
+	$id = ($id) ? " id=\"$id\"" : "";
+	print '<table class="formtable" cellspacing="0" cellpadding="0" '.$width.' '.$id.'>'."\n";
+	if($title) {
+		print "<tr>\n";
+		print '<th class="title_formtable" colspan="'.$cols.'">'.$title.'</td>'."\n";
+		print "</tr>\n";
+	}
+	if(is_array($th)) {
+		print "<tr>\n";
+		for($i=0; $i<count($th); $i++) {
+			if(is_array($th[$i])) {
+				$style = "style=\"width:".$th[$i]["width"].";\"";
+				$info = $th[$i][0];
+			}else{
+				$style = "";
+				$info = $th[$i];
+			}
+			print "<th class=\"formtable\" $style>".$info."</th>\n";
+		}
+		print "</tr>\n";
+	}
+	if(isset($rows[0])) {
+		for($i=0; $i<count($rows); $i++) {
+			$row = $rows[$i];
+			print "<tr>\n";
+			if(is_array($row)) {
+				for($j=0; $j<count($row); $j++) {
+					$css = ($i%2 == 0) ? "formtable evenrow" : "formtable";
+			//		if($j == 0)
+			//			$css .= " $css_first_column"."";
+					if($i%2 == 0)
+						print "<td class=\"$css\">". $row[$j] ."</td>\n";
+					else
+						print "<td class=\"$css\">". $row[$j] ."</td>\n";
+				}
+			}else{
+				print '<td class="white_row" colspan="'.count($th).'">'.$row.'</td>';
+			}
+			print "</tr>\n";
+		}
+	}else{
+		$i = 0;
+		foreach($rows as $key=>$format) {
+			print "<tr>\n";
+			$css = ($i%2 === 0) ? "formtable evenrow" : "formtable oddrow";
+			display_pair($key, $format, null, null, $css, null, null);
+			print "</tr>\n";
+			$i++;
+		}
+	}
+	if($submit) {
+		print "<tr>\n";
+		print "<td class=\"submit_formtable\" colspan=$cols>";
+		print $submit;
+		print "</td>";
+		print "</tr>\n";
+	}
+	print "</table>\n";
 }
 
 /* vi: set ts=8 sw=4 sts=4 noet: */

@@ -71,7 +71,7 @@ Array (
 */
 
 // for testing purposes
-$out=Array (
+/*$out=Array (
 	"\n" ,
 	"-----------------------------------------",
 	"| Wanpipe Hardware Probe Info (verbose) |" ,
@@ -91,7 +91,7 @@ $out=Array (
 	"\n",
 	"Card Cnt: A104=1 ",
 	"\n"
-);
+);*/
 
 	$ports = (count($out)-4-3) / 2;      // 4 useless lines at the beginning and 3 at the end, per 2 because there are 2 lines for every port
 

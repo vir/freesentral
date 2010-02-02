@@ -1039,7 +1039,7 @@ class Model
 	  * @param $class Object class that we want to check for
 	  * @param $id Name of the id field for the type of @ref $class object
 	  * @param $value_id Value of the id
-	  * @param $additional Other conditions that will be written directly in the query
+	  * @param $additional Other conditions that will be writen directly in the query
 	  * @return true if the object exits, false if not
 	  */
 	public static function rowExists($param, $value, $class, $id, $value_id = NULL, $additional = NULL)
@@ -1157,49 +1157,54 @@ class Model
 				$where = '';
 		}else
 			$where = $this->makeWhereClause($conditions, true);
+	//	Debug::output("entered objDelete ".get_class($this)." with conditions ".$where);
 
 		if($where == '') 
 			return array(false, "Don't have any condition for deleting.");
 
-		//check if this object was already retrieved from the database (only when no condition was passed when calling this function)
-		if(!$this->_retrieved && !count($orig_cond))
-			$this->select($conditions);
+		//if(!$this->_retrieved && !count($orig_cond))
+			//check if this object was already retrieved from the database (only when no condition was passed when calling this function)
+		//	$objs = array($this->select($conditions));
+		//else
+		$objs = Model::selection(get_class($this),$conditions);
 
-		// array of pairs object_name=>array(var_name=>var_value) in which we have to check for deleting on cascade
+		// array of pairs object_name=>array(array(var_name=>var_value),array(var_name2=>var_value2)) in which we have to check for deleting on cascade
 		$to_delete = array();
-		foreach($vars as $var_name=>$var)
+		for($i=0; $i<count($objs); $i++) 
 		{
-			$value = $this->{$var_name};
-			if (!$value)
-				continue;
-			//search inside the other objects if there are column that reference $var_name column
-			foreach(self::$_models as $class_name=>$class_vars)
+			foreach($vars as $var_name=>$var)
 			{
-				foreach($class_vars as $class_var_name=>$class_var)
+				$value = $objs[$i]->{$var_name};
+				if (!$value)
+					continue;
+				//search inside the other objects if there are column that reference $var_name column
+				foreach(self::$_models as $class_name=>$class_vars)
 				{
-					if ($class_var->_key == $table && ($class_var_name == $var_name || $class_var->_matchkey == $var_name))
-						// if variable $class_var_name from object $class_name points to $var_name
-						$class_var_name = ($class_var->_matchkey) ? $class_var->_matchkey : $var_name;
-					else
-						continue;
-
-					if (strtolower($class_name) == strtolower(get_class($this)))
-						continue;
-
-					$obj = new $class_name;
-					$obj->{$class_var_name} = $value;
-					if ($class_var->_critical)
-						// if relation is critical equivalent to delete on cascade, add $class_name to array of classes on which same method will be applied 
-						$to_delete[$class_name] = array($class_var_name=>$value);
-					else
+					foreach($class_vars as $class_var_name=>$class_var)
 					{
-						// relation is not critical. we just need to set to NULL the fields pointing to this one
-						$nr = $obj->fieldSelect('count(*)',array($class_var_name=>$value));
-						if($nr)
+						if (!($class_var->_key == $table && ($class_var_name == $var_name || $class_var->_matchkey == $var_name)))
+							continue;
+
+						$obj = new $class_name;
+						$obj->{$class_var_name} = $value;
+						if ($class_var->_critical)
 						{
-							//set column $class_var_name to NULL in all rows that have the value $value 
-							$obj->{$class_var_name} = NULL;
-							$obj->fieldUpdate(array($class_var_name=>$value),array($class_var_name));
+							// if relation is critical equivalent to delete on cascade, add $class_name to array of classes on which same method will be applied 
+							if(!isset($to_delete[$class_name]))
+								$to_delete[$class_name] = array(array($class_var_name=>$value));
+							else
+								$to_delete[$class_name][] = array($class_var_name=>$value);
+						}
+						else
+						{
+							// relation is not critical. we just need to set to NULL the fields pointing to this one
+							$nr = $obj->fieldSelect('count(*)',array($class_var_name=>$value));
+							if($nr)
+							{
+								//set column $class_var_name to NULL in all rows that have the value $value 
+								$obj->{$class_var_name} = NULL;
+								$obj->fieldUpdate(array($class_var_name=>$value),array($class_var_name));
+							}
 						}
 					}
 				}
@@ -1210,10 +1215,11 @@ class Model
 		$cnt = count($seen);
 		array_push($seen,strtolower(get_class($this)));
 
-		foreach($to_delete as $object_name=>$condition)
+		foreach($to_delete as $object_name=>$conditions)
 		{
 			$obj = new $object_name;
-			$obj->objDelete($condition,$seen);
+			for($i=0;$i<count($conditions);$i++)
+				$obj->objDelete($conditions[$i],$seen);
 		}
 		if($res)
 			if ($cnt) 
@@ -1247,67 +1253,77 @@ class Model
 		$vars = self::getVariables(get_class($this));
 		if(!$vars)
 			return null;
+
 		$original_message = $message;
+		$orig_cond = $conditions;
 		$table = $this->getTableName();
-		if(!count($conditions))
+		if(!count($conditions)) 
 		{
 			if($this->isInvalid())
-				return "Could not try to delete object of class ".get_class($this).". Object was previously invalidated.";
+				return array(false, "Could not try to delete object of class ".get_class($this).". Object was previously invalidated.");
 			
 			if(($id_name = $this->GetIdName()))
 			{
 				$var = $this->variable($id_name);
 				$id_value = $var->escape($this->{$id_name});
-				if(!$id_value)
+				if(!$id_value || $id_value == "NULL")
 					$where = '';
-				else
-					$where = " where \"$id_name\"='$id_value'";
+				else {
+					$where = " where \"$id_name\"=$id_value";
+					$conditions[$id_name] = $id_value;
+				}
 			}else
 				$where = '';
 		}else
 			$where = $this->makeWhereClause($conditions, true);
 
-		// array of pairs object_name=>array(var_name=>var_value) in which we have to check for deleting on cascade
+		$objs = Model::selection(get_class($this),$conditions);
+		// array of pairs object_name=>array(array(var_name=>var_value),array(var_name2=>var_value2)) in which we have to check for deleting on cascade
 		$to_delete = array();
-		foreach($vars as $var_name=>$var)
+		for($i=0; $i<count($objs); $i++) 
 		{
-			$value = $this->{$var_name};
-			if (!$value)
-				continue;
-			foreach(self::$_models as $class_name=>$class_vars)
+			foreach($vars as $var_name=>$var)
 			{
-				foreach($class_vars as $class_var_name=>$class_var)
+				$value = $objs[$i]->{$var_name};
+				if (!$value)
+					continue;
+				//search inside the other objects if there are column that reference $var_name column
+				foreach(self::$_models as $class_name=>$class_vars)
 				{
-					if ($class_var->_key == $this->getTableName() && ($class_var_name == $var_name || $class_var->_matchkey == $var_name))
-						$class_var_name = ($class_var->_matchkey) ? $class_var->_matchkey : $var_name;
-					else
-						continue;
-					if (strtolower($class_name) == strtolower(get_class($this)))
-						continue;
-					$obj = new $class_name;
-					$obj->{$class_var_name} = $value;
-					if ($class_var->_critical) 
-						$to_delete[$class_name] = array($class_var_name=>$value);
-					else
+					foreach($class_vars as $class_var_name=>$class_var)
 					{
-						$nr = $obj->fieldSelect('count(*)',array($class_var_name=>$value));
-						if($nr) 
-							$message .= strtolower($class_name)."s, ";
+						if (!($class_var->_key == $table && ($class_var_name == $var_name || $class_var->_matchkey == $var_name)))
+							continue;
+
+						$obj = new $class_name;
+						$obj->{$class_var_name} = $value;
+						if ($class_var->_critical)
+						{
+							// if relation is critical equivalent to delete on cascade, add $class_name to array of classes on which same method will be applied 
+							if(!isset($to_delete[$class_name]))
+								$to_delete[$class_name] = array(array($class_var_name=>$value));
+							else
+								$to_delete[$class_name][] = array($class_var_name=>$value);
+						}
+						else
+						{
+							$nr = $obj->fieldSelect('count(*)',array($class_var_name=>$value));
+							if($nr)
+								$message .= ", ".$obj->getTableName();
+						}
 					}
 				}
 			}
 		}
-		$message .= $this->getTableName().' ';
-		foreach($to_delete as $object_name=>$condition)
+		$message .= ", ".$this->getTableName();
+ 
+		foreach($to_delete as $object_name=>$conditions)
 		{
 			$obj = new $object_name;
-			$message .= $obj->ackDelete($condition);
+			for($i=0;$i<count($conditions);$i++)
+				$message .= $obj->ackDelete($conditions[$i]);
 		}
-		if($original_message == "")
-		{
-			$message = substr($message,0,strlen($message)-1);
-			$message .= " ";
-		}
+
 		return $message;
 	}
 
@@ -1648,7 +1664,7 @@ class Model
 	}
 
 	/**
-	 * Get the name of a table corresponding to this object. Method can be overwritted from derived class when other name for the table is desired. 
+	 * Get the name of a table corresponding to this object. Method can be overwrited from derived class when other name for the table is desired. 
 	 * @return Name of table corresponding to $this object
 	 */
 	public function getTableName()
