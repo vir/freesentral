@@ -65,7 +65,6 @@ class Sig_trunk extends Model
 			}
 			if(count($card_confs))
 				$str .= " ".Model::escapeSpace($this->sig.'.'."module").'='.$card_confs[0]->module_name;
-print "<br/>".$str."</br>";
 			$socket->write($str);
 		}
 	}
