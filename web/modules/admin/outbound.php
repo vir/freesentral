@@ -481,6 +481,12 @@ function delete_gateway_database()
 	$gateway->select();
 
 	if($gateway->protocol == "BRI" || $gateway->protocol == "PRI") {
+		$socket = new SocketConn;
+		if($socket->error != "") {
+			errormess("I can't connect to yate.<br/> Note!! Check if you have all needed libraries: php_sockets, php_ssl and if yate is running.");
+			return;
+		}
+		$socket->close();
 		$sig_trunk = new Sig_trunk;
 		$sig_trunk->sig_trunk_id = $gateway->sig_trunk_id;
 		$sig_trunk->sig_trunk = $gateway->gateway;
@@ -495,13 +501,15 @@ function delete_gateway_database()
 			return;
 		}
 
-		$res = $sig_trunk->objDelete();
+		$sig_trunk->enable = "no";
+		$sig_trunk->port = "no";
+		$res = $sig_trunk->fieldUpdate(array("sig_trunk_id"=>$gateway->sig_trunk_id), array("enable","port"));
 		if(!$res[0]) {
 			Database::rollback();
 			notice("Could not delete gateway: ".$res[1], "gateways", $res[0]);
 			return;
 		}
-		$sig_trunk->sendCommand("remove");
+		$sig_trunk->sendCommand("configure");
 	}
 	//notify($gateway->objDelete(),$path);
 	$res = $gateway->objDelete();

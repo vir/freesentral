@@ -554,6 +554,13 @@ function wizard_cards_database()
 {
 	global $telephony_cards;
 
+	$out = array(); $err = array();
+	exec("wanrouter stop",$out,$err);
+	if($err && $err != "")
+		$x = implode("<br/>",$err);
+	else
+		$x = implode("<br/>",$out);
+
 	$spans = get_spans();
 	$fields = $_SESSION["fields"];
 	$message = "";

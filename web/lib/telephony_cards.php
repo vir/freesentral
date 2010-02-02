@@ -7,14 +7,14 @@ $telephony_cards = array(
 	"AFT-A500" => array("type"=>"BRI", "device_type"=>"WAN_AFT_ISDN_BRI", "image"=>"images/pci_a500.jpg"),
 	"AFT-B700" => array("type"=>"BRI", "device_type"=>"WAN_AFT_ISDN_BRI", "image"=>"images/flex_bri_2.jpg", "fax_detection"=>true, "dtmf_detection"=>true, "echo_cancelling"=>true),
 
-	"AFT-A101D" => array("type"=>"PRI", "device_type"=>"WAN_AFT", "echo_cancelling"=>true, "image"=>"images/small_a101.jpg", "S514CPU"=>"function_get_S514CPU:PORT"),
-	"AFT-A102D" => array("type"=>"PRI", "device_type"=>"WAN_AFT", "echo_cancelling"=>true, "image"=>"images/small_a102.jpg", "S514CPU"=>"function_get_S514CPU:PORT"),
-	"AFT-A104D" => array("type"=>"PRI", "device_type"=>"WAN_AFT", "echo_cancelling"=>true, "image"=>"images/small_a104.jpg", "S514CPU"=>"A"),
-	"AFT-A108D" => array("type"=>"PRI", "device_type"=>"WAN_AFT", "echo_cancelling"=>true, "image"=>"images/small_a108.jpg", "S514CPU"=>"A"),
+	"AFT-A101D" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "echo_cancelling"=>true, "image"=>"images/small_a101.jpg", "S514CPU"=>"function_get_S514CPU:PORT"),
+	"AFT-A102D" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "echo_cancelling"=>true, "image"=>"images/small_a102.jpg", "S514CPU"=>"function_get_S514CPU:PORT"),
+	"AFT-A104D" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "echo_cancelling"=>true, "image"=>"images/small_a104.jpg", "S514CPU"=>"A"),
+	"AFT-A108D" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "echo_cancelling"=>true, "image"=>"images/small_a108.jpg", "S514CPU"=>"A"),
 
-	"AFT-A101" => array("type"=>"PRI", "device_type"=>"WAN_AFT", "S514CPU"=>"function_get_S514CPU:PORT", "image"=>"images/small_a101.jpg"),
-	"AFT-A102" => array("type"=>"PRI", "device_type"=>"WAN_AFT", "S514CPU"=>"function_get_S514CPU:PORT", "image"=>"images/small_a102.jpg"),
-	"AFT-A104" => array("type"=>"PRI", "device_type"=>"WAN_AFT", "S514CPU"=>"A", "image"=>"images/small_a104.jpg"),
+	"AFT-A101" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "S514CPU"=>"function_get_S514CPU:PORT", "image"=>"images/small_a101.jpg"),
+	"AFT-A102" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "S514CPU"=>"function_get_S514CPU:PORT", "image"=>"images/small_a102.jpg"),
+	"AFT-A104" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "S514CPU"=>"A", "image"=>"images/small_a104.jpg"),
 	"AFT-A108" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "S514CPU"=>"A", "image"=>"images/small_a108.jpg"),
 );
 
@@ -333,13 +333,13 @@ function configure_PRI_file($span, $nr, $fields=array())
 #================================================
 
 [devices]
-wanpipe1 = $device_type, Comment
+wanpipe$nr = $device_type, Comment
 
 [interfaces]
 w".$nr."g1 = wanpipe$nr, , API, Comment
 w".$nr."g2 = wanpipe$nr, , API, Comment
 
-[wanpipe1]
+[wanpipe$nr]
 CARD_TYPE       = AFT
 S514CPU         = $s514cpu
 CommPort        = PRI

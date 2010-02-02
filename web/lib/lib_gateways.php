@@ -156,6 +156,9 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 	$screening = array("user-provided", "user-provided-passed", "user-provided-failed", "network-provided");
 	$screening["selected"] = $sig_trunk->screening;
 
+	$pri_types = array("isdn-pri-cpe", "isdn-pri-net");
+	$pri_types["selected"] = $sig_trunk->type;
+
 	$card_port = new Card_port;
 	$bri_ports = $card_port->fieldSelect("name", array("card_type"=>"BRI", "type"=>"TE"), null, "name", array("column"=>"name", "inner_column"=>"port", "relation"=>"NOT IN", "inner_table"=>"sig_trunks"));
 	if(!$bri_ports)
@@ -196,6 +199,8 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 
 		"switchtype" => array($switchtype, "column_name"=>_("Switch type"), "compulsory"=>true, "display"=>"select", "comment"=>_("Specify the trunk type")),
 
+		"type" => array($pri_types, "advanced"=>true, "compulsory"=>true, "display"=>"select", "comment"=>"One side must be NET, the other one CPE. Set according to your peer."),
+
 		"callerid"=>array("advanced"=>true, "comment"=>"Use this to set the caller number when call is routed to this gateway. If none set then the System's CallerID will be used."),
 		"callername"=>array("advanced"=>true, "comment"=>"Use this to set the callername when call is routed to this gateway. If none set then the System's Callername will be used."),
 		"send_extension"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Check this if you want to send the extension as caller number when routing to this gateway."),
@@ -231,6 +236,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 
 		"layer3dump" =>  array("column_name"=>_("Layer3 dump"), "comment"=>_("Filename to dump Q.931 packets to"), "advanced"=>true),
 	);
+	unset($BRI["type"]);
 	if($sig_trunk->format)
 		$PRI["format"][0]["selected"] = $sig_trunk->format;
 	$PRI["port"][0] = $pri_ports;
@@ -435,6 +441,12 @@ function edit_gateway_database()
 				break;
 			case "BRI":
 			case "PRI":
+				$socket = new SocketConn;
+				if($socket->error != "") {
+					errormess("I can't connect to yate.<br/> Note!! Check if you have all needed libraries: php_sockets, php_ssl and if yate is running.");
+					return;
+				}
+				$socket->close();
 				$sig_trunk = new Sig_trunk;
 				$sig_trunk->sig_trunk_id = getparam($gw_type."_".$protocol."sig_trunk_id");
 				$sig_trunk->select();
@@ -469,7 +481,8 @@ function edit_gateway_database()
 						$trunk_params["type"] = "isdn-bri-net";	// this should not be possible (set here only when working as TE)
 					case "E1":
 					case "T1":
-						$trunk_params["type"] = "isdn-pri-cpe";	// "isdn-pri-net" and "isdn-pri-cpe" are identical
+						$val = getparam($gw_type."_".$protocol."type");
+						$trunk_params["type"] = ($val) ? $val : "isdn-pri-cpe";	// "isdn-pri-net" and "isdn-pri-cpe" are identical.
 				}
 
 				$interface = str_replace(".conf","",$card_port->filename);
@@ -477,8 +490,18 @@ function edit_gateway_database()
 				$trunk_params["voice"] = $interface;
 				$trunk_params["format"] = getparam($gw_type."_".$protocol."format");
 
-				if(!$sig_trunk->sig_trunk_id)
-					$trunk_params["sig_trunk"] = getparam($gw_type."_".$protocol."gateway");
+				if(!$sig_trunk->sig_trunk_id) {
+					$name=getparam($gw_type."_".$protocol."gateway");
+					while(true) {
+						$s_trnk = new Sig_Trunk;
+						$s_trnk->sig_trunk = $name;
+						if($s_trnk->objectExists())
+							$name = $name."_";
+						else
+							break;
+					}
+					$trunk_params["sig_trunk"] = $name;
+				}
 				$res = ($sig_trunk->sig_trunk_id) ? $sig_trunk->edit($trunk_params) : $sig_trunk->add($trunk_params);
 
 				if(!$res[0]) {

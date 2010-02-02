@@ -10,7 +10,7 @@ class Sig_trunk extends Model
 					"sig_trunk_id" => new Variable("serial"),
 					"sig_trunk" => new Variable("text", "!null"),
 					"enable" => new Variable("text", "no"),
-					"type" => new Variable("text", "!null"),	// isdn-bri-net, isdn-bri-cpe, isdn-pri-net, isdn-pri-cpe, ss7-isup
+					"type" => new Variable("text", "isdn-pri-cpe"),	// isdn-bri-net, isdn-bri-cpe, isdn-pri-net, isdn-pri-cpe, ss7-isup
 					"switchtype" => new Variable("text", "!null"),	// euro-isdn-e1, euro-isdn-t1, national-isdn, dms100, lucent5e, att4ess, qsig, unknown
 					"sig" => new Variable("text"),	// should point to conf entry from card_conf where param_name=section name
 					"voice" => new Variable("text"),	// should point to conf entry from card_conf where param_name=section name
@@ -48,11 +48,16 @@ class Sig_trunk extends Model
 		return parent::setObj($params);
 	}
 
-	// possible operations: append/remove/modify
+	// possible operations: configure/create
+	// to delete set: enable=no
 	public function sendCommand($operation)
 	{
 		$socket = new SocketConn;
 		if($socket->error == "") {
+			if($operation == "remove") {
+				$this->enable = "no";
+				$operation = "configure";
+			}
 			$str = "control sig $operation section=".Model::escapeSpace($this->sig_trunk) .' '. $this->toString('', array("sig_trunk", "sig_trunk_id"));
 			$card_confs = Model::selection("card_conf", array("section_name"=>$this->sig));
 			for($i=0; $i<count($card_confs); $i++) {
@@ -60,6 +65,7 @@ class Sig_trunk extends Model
 			}
 			if(count($card_confs))
 				$str .= " ".Model::escapeSpace($this->sig.'.'."module").'='.$card_confs[0]->module_name;
+print "<br/>".$str."</br>";
 			$socket->write($str);
 		}
 	}
