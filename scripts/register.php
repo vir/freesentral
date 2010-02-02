@@ -103,9 +103,17 @@ function build_location($params, $called, &$copy_ev)
 			case "h323":
 				return "h323/$called@".$params["server"].":".$params["port"];
 			case "pstn":
+				$params["link"] = $params["gateway"];
+				$copy_ev["link"] = $params["link"];
+				return "sig/".$called;
 			case "PRI":
 			case "BRI":
-				$params["link"] = $params["gateway"];
+				$query = "SELECT sig_trunk FROM sig_trunks WHERE sig_trunk_id=".$params["sig_trunk_id"];
+				$res = query_to_array($query);
+				if(!count($res))
+					debug("Can't find sig_trunk for gateway ".$params["gateway"]);
+				$params["link"] = (count($res)) ? $res[0]["sig_trunk"] : $params["gateway"];
+				$copy_ev["link"] = $params["link"];
 				return "sig/".$called;
 			case "iax":
 				if(!$params["iaxuser"])
@@ -468,6 +476,9 @@ function return_route($called,$caller,$no_forward=false)
 	$address = explode(":", $address);
 	$address = $address[0];
 	$reason = $ev->GetValue("reason");
+	$isdn_address = $ev->GetValue("address");
+	$isdn_address = explode("/",$isdn_address);
+	$sig_trunk = $isdn_address[0];
 
 	$already_auth = $ev->GetValue("already-auth");
 	$trusted_auth = $ev->GetValue("trusted-auth");
@@ -480,10 +491,10 @@ function return_route($called,$caller,$no_forward=false)
 		$anonim = $res[0]["value"];
 		if(strtolower($anonim) != "yes")
 			// if annonymous calls are not allowed the call has to be from a known extension or from a known ip
-			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways LEFT OUTER JOIN sig_trunks ON gateways.sig_trunk_id=sig_trunks.sig_trunk_id WHERE server='$address' OR server LIKE '$address:%' OR sig_trunk='$sig_trunk'";
 		else {
 			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
-			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called' UNION SELECT did_id, 't' as trusted FROM dids WHERE number='$called' OR '$system_prefix' || number='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways WHERE server='$address' OR server LIKE '$address:%'";
+			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called' UNION SELECT did_id, 't' as trusted FROM dids WHERE number='$called' OR '$system_prefix' || number='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways LEFT OUTER JOIN sig_trunks ON gateways.sig_trunk_id=sig_trunks.sig_trunk_id WHERE server='$address' OR server LIKE '$address:%' OR sig_trunk='$sig_trunk'";
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {

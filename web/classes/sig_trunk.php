@@ -61,10 +61,12 @@ class Sig_trunk extends Model
 			$str = "control sig $operation section=".Model::escapeSpace($this->sig_trunk) .' '. $this->toString('', array("sig_trunk", "sig_trunk_id"));
 			$card_confs = Model::selection("card_conf", array("section_name"=>$this->sig));
 			for($i=0; $i<count($card_confs); $i++) {
-				$str .= " ".Model::escapeSpace($this->sig.'.'.$card_confs[$i]->param_name).'='.Model::escapeSpace($card_confs[$i]->param_value);
+				//$str .= " ".Model::escapeSpace($this->sig.'.'.$card_confs[$i]->param_name).'='.Model::escapeSpace($card_confs[$i]->param_value);
+				$str .= " ".$this->sig.'.'.$card_confs[$i]->param_name.'='.$card_confs[$i]->param_value;
 			}
 			if(count($card_confs))
-				$str .= " ".Model::escapeSpace($this->sig.'.'."module").'='.$card_confs[0]->module_name;
+				//$str .= " ".Model::escapeSpace($this->sig.'.'."module").'='.$card_confs[0]->module_name;
+				$str .= " ".$this->sig.'.'."module".'='.$card_confs[0]->module_name;
 			$socket->write($str);
 		}
 	}
