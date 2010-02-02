@@ -171,8 +171,8 @@ function keys($wizard = false)
 	$method  = "keys";
 
 	$prompt = Model::selection("prompt",array("status"=>"online"));
-	if(!count($prompt))
-		return;
+	//if(!count($prompt))
+	//	return;
 	$prompt_id = $prompt[0]->prompt_id;
 	$key = new Key;
 	$key->extend(array("status"=>"prompts"));
