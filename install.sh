@@ -143,7 +143,8 @@ dbhost="localhost"
 dbname="$pkgname"
 dbuser="postgres"
 dbpass=""
-timezone="Europe/London"
+timezone=`sed -n 's/^ZONE= *//p' /etc/sysconfig/clock 2>/dev/null`
+test -z "$timezone" && timezone="Europe/London"
 upload_dir="/tmp"
 enable_logging="on"
 
