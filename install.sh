@@ -339,6 +339,22 @@ cat <<EOF
     PosgreSQL tool '$psqlcmd'
 EOF
 
+case "x$DESTDIR" in
+    x)
+	;;
+    x/)
+	DESTDIR=""
+	;;
+    x*/)
+	;;
+    *)
+	DESTDIR="$DESTDIR/"
+	;;
+esac
+if [ "x$DESTDIR" != "x" ]; then
+    echo "Destination directory: '$DESTDIR'"
+fi
+
 if [ "x$interactive" != "xno" ]; then
     if [ -z `readopt "Proceed with installation?" "yes"` ]; then
 	echo "Aborting..."
@@ -351,7 +367,7 @@ if [ -n "$configs" ]; then
     echo "Installing Yate configuration files"
 
 	# extmodule.conf
-    fe="$configs/extmodule.conf";
+    fe="$DESTDIR$configs/extmodule.conf";
     e="
 [scripts]
 register.php=param
@@ -367,13 +383,13 @@ ctc-global.php=
     fi
     if [ -n "$fe" ]; then
 	echo "Creating extmodule configuration file"
-	mkdir -p "$configs"
+	mkdir -p "$DESTDIR$configs"
 	echo "; File created by $version
 $e" > "$fe"
     fi
 
 	# moh.conf
-    fe="$configs/moh.conf";
+    fe="$DESTDIR$configs/moh.conf";
     e="
 [mohs]
 madplay=while true; do madplay -q --no-tty-control -m -R 8000 -o raw:- -z \${mohlist}; done
@@ -388,13 +404,13 @@ madplay=while true; do madplay -q --no-tty-control -m -R 8000 -o raw:- -z \${moh
     fi
     if [ -n "$fe" ]; then
 	echo "Creating moh configuration file"
-	mkdir -p "$configs"
+	mkdir -p "$DESTDIR$configs"
 	echo "; File created by $version
 $e" > "$fe"
     fi
 
 	# pgsqldb.conf
-    fe="$configs/pgsqldb.conf";
+    fe="$DESTDIR$configs/pgsqldb.conf";
     e="
 [freesentral]
 host=$dbhost
@@ -412,13 +428,13 @@ password=$dbpass
     fi
     if [ -n "$fe" ]; then
 	echo "Creating pgsqldb configuration file"
-	mkdir -p "$configs"
+	mkdir -p "$DESTDIR$configs"
 	echo "; File created by $version
 $e" > "$fe"
     fi	
 
 	# queues.conf
-    fe="$configs/queues.conf";
+    fe="$DESTDIR$configs/queues.conf";
     e="
 [general]
 ; General settings of the queues module
@@ -482,13 +498,13 @@ outgoing=external/nodata/queue_out.php
     fi
     if [ -n "$fe" ]; then
 	echo "Creating queues configuration file"
-	mkdir -p "$configs"
+	mkdir -p "$DESTDIR$configs"
 	echo "; File created by $version
 $e" > "$fe"
     fi
 
 	# pbxassist.conf
-    fe="$configs/pbxassist.conf";
+    fe="$DESTDIR$configs/pbxassist.conf";
     e="
 [general]
 ; Common settings
@@ -653,13 +669,13 @@ trigger=^[0-9]$
     fi
     if [ -n "$fe" ]; then
 	echo "Creating pbxassist configuration file"
-	mkdir -p "$configs"
+	mkdir -p "$DESTDIR$configs"
 	echo "; File created by $version
 $e" > "$fe"
     fi
 
 	# openssl.conf
-    fe="$configs/openssl.conf";
+    fe="$DESTDIR$configs/openssl.conf";
     e="
 ; This file keeps the configuration of the openssl module
 ; Each section, except for 'general' configures a server context
@@ -700,13 +716,13 @@ key=freesentral.key
     fi
     if [ -n "$fe" ]; then
 	echo "Creating openssl configuration file"
-	mkdir -p "$configs"
+	mkdir -p "$DESTDIR$configs"
 	echo "; File created by $version
 $e" > "$fe"
     fi
 
 	# rmanager.conf
-    fe="$configs/rmanager.conf";
+    fe="$DESTDIR$configs/rmanager.conf";
     e="
 [general]
 ; Each section creates a connection listener in the Remote Manager.
@@ -779,7 +795,7 @@ verify=none
     fi
     if [ -n "$fe" ]; then
 	echo "Creating rmanager configuration file"
-	mkdir -p "$configs"
+	mkdir -p "$DESTDIR$configs"
 	echo "; File created by $version
 $e" > "$fe"
     fi
@@ -787,27 +803,27 @@ fi
 
 if [ -n "$scripts" ]; then
     echo "Installing Yate scripts"
-    mkdir -p "$scripts"
+    mkdir -p "$DESTDIR$scripts"
     # this is a convenient way to filter what we copy
-    (cd scripts; tar cf - $tarexclude *) | tar xf - -C "$scripts/"
-    confdata > "$scripts/config.php"
+    (cd scripts; tar cf - $tarexclude *) | tar xf - -C "$DESTDIR$scripts/"
+    confdata > "$DESTDIR$scripts/config.php"
 fi
 
 if [ -n "$prompts" ]; then
     echo "Installing IVR prompts"
-    mkdir -p "$prompts"
+    mkdir -p "$DESTDIR$prompts"
 #	chown -R $webuser "$prompts"
-    (cd prompts; tar cf - $tarexclude *) | tar xf - -C "$prompts/"
-	chown -R $webuser "$prompts"
+    (cd prompts; tar cf - $tarexclude *) | tar xf - -C "$DESTDIR$prompts/"
+	chown -R $webuser "$DESTDIR$prompts"
 fi
 
 if [ -n "$webpage" ]; then
     echo "Installing Web application"
-    mkdir -p "$webpage"
-    (cd web; tar cf - $tarexclude *) | tar xf - -C "$webpage/"
+    mkdir -p "$DESTDIR$webpage"
+    (cd web; tar cf - $tarexclude *) | tar xf - -C "$DESTDIR$webpage/"
     if [ -n "$dbhost" ]; then
 	echo "Creating configuration file"
-	confdata web > "$webpage/config.php"
+	confdata web > "$DESTDIR$webpage/config.php"
     fi
 fi
 
@@ -824,7 +840,7 @@ fi
 
 if [ ! $webpage=="" ]; then
 	echo "Trying to update database"
-	cd "$webpage"
+	cd "$DESTDIR$webpage"
 	chmod +x force_update.php
 	./force_update.php
 
@@ -856,7 +872,7 @@ if [ -n "$configs" ]; then
 # 		fi
 # 	done
 	# certificates are in yate's conf.d dir
-	cert_dir=${configs}
+	cert_dir=$DESTDIR${configs}
 	if [ ! -d "${cert_dir}" ]; then
 		echo "Can't find dir for installing SSL certificate"
 	else
