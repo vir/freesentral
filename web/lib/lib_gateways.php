@@ -758,7 +758,7 @@ function edit_dial_plan_database()
 		edit_dial_plan("You must select a gateway");
 		return;
 	}
-	if(getparam("check_to_match_everything") != "on" && !getparam("prefix"))
+	if(getparam("check_to_match_everything") != "on" && !strlen(getparam("prefix")))
 	{
 		edit_dial_plan("Please insert the prefix you wish to match or check to match everything");
 		return;

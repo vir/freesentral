@@ -640,7 +640,7 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 					if(count($opt) == 2) {
 						$optval = $field_name.'_id';
 						$name = $field_name;
-						if ($opt[$optval] === $selected || isset($selected[$opt[$optval]])) {
+						if ($opt[$optval] === $selected || (is_array($selected) && in_array($opt[$optval],$selected))) {
 							print '<option value=\''.$opt[$optval].'\' SELECTED ';
 							if($opt[$optval] == "__disabled")
 								print ' disabled="disabled"';
@@ -652,7 +652,7 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 							print '>' . $opt[$name] . '</option>';
 						}
 					}else{
-						if ($opt == $selected || isset($select[$opt]))
+						if ($opt == $selected ||  (is_array($selected) && in_array($opt[$optval],$selected)))
 							print '<option SELECTED >' . $opt . '</option>';
 						else
 							print '<option>' . $opt . '</option>';
@@ -1290,6 +1290,7 @@ function ack_delete($object, $value=NULL, $message=NULL, $object_id=NULL, $value
 			$message = substr($message, 1, strlen($message));
 		print " If you delete it you will also delete or set to NULL it's associated objects from $message.";
 	}
+
 	print "<br/><br/>";
 
 	print '<a class="llink" href="main.php?module=' . $module . '&method=' . $method . '&action=database&' . $object_id . '=' . $value_id . $additional . '">Yes</a>';
