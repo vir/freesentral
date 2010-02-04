@@ -79,9 +79,10 @@ EOF
 maketarball()
 {
     wd=`pwd|sed 's,^.*/,,'`
-    mkdir -p tarballs
+    mkdir -p packing/tarballs
     cd ..
-    tar "c${1}f" "${wd}/tarballs/${2}" $tarexclude "${wd}"
+    excl=`find "${wd}" -name '*~' -o -name '.*.swp' | sed 's/^/--exclude /'`
+    tar "c${1}f" "${wd}/packing/tarballs/${2}" $tarexclude $excl "${wd}"
 }
 
 confdata()
@@ -202,7 +203,7 @@ pkglong="FreeSentral"
 shortver="1.0"
 version="$pkglong v$shortver"
 interactive="yes"
-tarexclude="--exclude CVS --exclude .cvsignore --exclude .svn --exclude .xvpics --exclude tarballs --exclude config.php"
+tarexclude="--exclude CVS --exclude .cvsignore --exclude .svn --exclude .xvpics --exclude packing/tarballs --exclude config.php"
 
 dbhost="localhost"
 dbname="$pkgname"
