@@ -447,6 +447,6 @@ function get_mp3_len ($file)
 
 function shell_command($comand)
 {
-	return shell_exec("/usr/local/sbin/freesentral-ctl-apache $comand 2>&1");
+	return shell_exec("/usr/libexec/freesentral/ctl-apache $comand 2>&1");
 }
 ?>
