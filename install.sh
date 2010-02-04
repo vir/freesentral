@@ -133,6 +133,70 @@ EOF
 fi
 }
 
+answers_csr() {
+	echo --
+	echo SomeState
+	echo SomeCity
+	echo SomeOrganization
+	echo SomeOrganizationalUnit
+	echo localhost.localdomain
+	echo root@localhost.localdomain
+	echo ""
+	echo ""
+}
+
+generate_certificate_now()
+{
+	if [ "x${generate_certificate}" = "xyes" ]; then
+		# generate SSL certificate that will be used when sending requests from web to yate(only if this installs config file for yate)
+		echo "Trying to generate SSL certificate"
+		cert_dir=$DESTDIR${configs}
+		if [ ! -d "${cert_dir}" ]; then
+			mkdir -p "${cert_dir}"
+		fi
+
+		crt_dir=${cert_dir}
+		key_dir=${cert_dir}
+		csr_dir=${cert_dir}
+		if [ ! -d "${key_dir}" ]; then
+			mkdir -p "${key_dir}"
+		fi
+		if [ ! -d "${crt_dir}" ]; then
+			mkdir -p "${crt_dir}"
+		fi
+		key="${key_dir}/freesentral.key"
+		crt="${crt_dir}/freesentral.crt"
+		csr="${csr_dir}/freesentral.csr"
+
+		# check if a new certificate should be generated
+		# generate if certificate is already expired or if it will expire today
+		replace=0
+		if [ -f "${crt}" ]; then
+			str=`openssl x509 -in ${crt} -enddate -noout`
+			len=${#str}
+			expr_date=`date -u -d"${str:9:len}"`
+			now=`date -u`
+			cmp_dates "${now}" "${expr_date}"
+			res=$?
+			if [ "${res}" != "0" ]; then
+				replace=1
+			fi
+		fi
+		if [ "${replace}" = 1 -o ! -f "${key}" ]; then
+			# generate key file
+			openssl genrsa -des3  -passout pass:freesentral -out "${key}" 1024  2> /dev/null
+			echo "Generating SSL key"
+			answers_csr | openssl req -new -passin pass:freesentral -key "${key}" -out "${csr}" 2> /dev/null
+			echo "Generating SSL csr"
+			cp "${key}" "${key}.orig"
+			openssl rsa -passin pass:freesentral -in "${key}.orig" -out "${key}" 2> /dev/null
+			openssl x509 -req -days 1825 -in "${csr}" -signkey "${key}" -out "${crt}" 2> /dev/null
+			rm -f "${key}.orig"
+			rm -f "${csr}"
+		fi
+	fi
+}
+
 pkgname="freesentral"
 pkglong="FreeSentral"
 shortver="1.0"
@@ -214,6 +278,10 @@ if [ "$#" = "1" ]; then
 	    echo "$pkglong $shortver"
 	    exit
 	    ;;
+	xgenerate_certificate)
+		generate_certificate_now
+		exit
+		;;
     esac
 fi
 
@@ -805,57 +873,7 @@ verify=none
 	echo "; File created by $version
 $e" > "$fe"
     fi
-	if [ "x${generate_certificate}" = "xyes" ]; then
-		# generate SSL certificate that will be used when sending requests from web to yate(only if this installs config file for yate)
-		echo "Trying to generate SSL certificate"
-		cert_dir=$DESTDIR${configs}
-		if [ ! -d "${cert_dir}" ]; then
-			echo "Can't find dir for installing SSL certificate"
-		else
-			crt_dir=${cert_dir}
-			key_dir=${cert_dir}
-			csr_dir=${cert_dir}
-			if [ ! -d "${key_dir}" ]; then
-				mkdir -p "${key_dir}"
-			fi
-			if [ ! -d "${crt_dir}" ]; then
-				mkdir -p "${crt_dir}"
-			fi
-			key="${key_dir}/freesentral.key"
-			crt="${crt_dir}/freesentral.crt"
-			csr="${csr_dir}/freesentral.csr"
-
-			# check if a new certificate should be generated
-			# generate if certificate is already expired or if it will expire today
-			replace=0
-			if [ -f "${crt}" ]; then
-				str=`openssl x509 -in ${crt} -enddate -noout`
-				len=${#str}
-				expr_date=`date -u -d"${str:9:len}"`
-				now=`date -u`
-				cmp_dates "${now}" "${expr_date}"
-				res=$?
-				if [ "${res}" != "0" ]; then
-					replace=1
-				fi
-			fi
-			if [ "${replace}" = 1 -o ! -f "${key}" ]; then
-				# generate key file
-				openssl genrsa -des3  -passout pass:freesentral -out "${key}" 1024  2> /dev/null
-				echo "Generating SSL key"
-				answers_csr | openssl req -new -passin pass:freesentral -key "${key}" -out "${csr}" 2> /dev/null
-				echo "Generating SSL csr"
-				cp "${key}" "${key}.orig"
-				openssl rsa -passin pass:freesentral -in "${key}.orig" -out "${key}" 2> /dev/null
-				openssl x509 -req -days 1825 -in "${csr}" -signkey "${key}" -out "${crt}" 2> /dev/null
-				rm -f "${key}.orig"
-				rm -f "${csr}"
-			fi
-	#		In order to check if the .key and .crt are valid the modules from the below commands must be the same
-	#		openssl rsa -noout -text -in freesentral.key -modulus
-	#		openssl x509 -noout -text -in freesentral.crt -modulus
-		fi
-	fi
+	generate_certificate_now
 fi
 
 if [ -n "$scripts" ]; then
@@ -904,15 +922,3 @@ if [ ! $webpage=="" ]; then
 	mkdir upload
 	chown apache upload/
 fi
-
-answers_csr() {
-	echo --
-	echo SomeState
-	echo SomeCity
-	echo SomeOrganization
-	echo SomeOrganizationalUnit
-	echo localhost.localdomain
-	echo root@localhost.localdomain
-	echo ""
-	echo ""
-}
