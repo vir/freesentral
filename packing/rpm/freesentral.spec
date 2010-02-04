@@ -9,7 +9,6 @@ URL:		http://www.freesentral.com/
 Source:		http://yate.null.ro/tarballs/freesentral/%{name}-%{version}.tar.gz
 BuildArch:	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
-BuildRequires:	yate-devel >= 3.0.0
 Requires:	yate >= 3.0.0
 Requires:	yate-scripts
 Requires:	yate-ssl
@@ -66,7 +65,8 @@ configuration. It is based on the Yate telephony server.
 
 %install
 DESTDIR=%{buildroot} ./install.sh --quiet --config %{_sysconfdir}/%{name} \
- --psql no --generate_certificate no --webpage /var/www/html
+ --scripts /usr/share/yate/scripts --prompts /var/spool/voicemail --webpage /var/www/html \
+ --psql no --generate_certificate no
 mkdir -p %{buildroot}/etc/rc.d/init.d
 cp -p packing/rpm/%{name} %{buildroot}/etc/rc.d/init.d/
 cp -p packing/rpm/%{name}-* %{buildroot}/etc/rc.d/init.d/
