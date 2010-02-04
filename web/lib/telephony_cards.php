@@ -18,16 +18,25 @@ $telephony_cards = array(
 	"AFT-A108" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "S514CPU"=>"A", "image"=>"images/small_a108.jpg"),
 );
 
+function verify_wanrouter_output($out)
+{
+	if(substr_count(strtolower($out), "command not found") || substr_count(strtolower($out),"no such device"))
+		return false;
+	return true;
+}
+
 function get_spans()
 {
 	global $telephony_cards;
 
-	$err = 0; $out = array();
-	exec("wanrouter hwprobe verbose", $out, $err);
-	if($err != 0) {
-		errormess($err, "no");
+	$out = shell_command("wanrouter_hwprobe");
+	if(!verify_wanrouter_output($out)) {
+		errormess("No wanpipe cards present:".$out, "no");
 		return;
 	}
+
+	$out = explode("\n",$out);
+
 /*
 // $out will be something like this
 Array ( 

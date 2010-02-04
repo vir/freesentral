@@ -444,4 +444,9 @@ function get_mp3_len ($file)
 
 	return (filesize($file) - $headerlen) / $framelen / ($samp / $framesize);
 }
+
+function shell_command($comand)
+{
+	return shell_exec("/usr/local/sbin/freesentral-ctl-apache $comand 2>&1");
+}
 ?>
