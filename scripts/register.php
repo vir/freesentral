@@ -467,7 +467,6 @@ function return_route($called,$caller,$no_forward=false)
 	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id, $caller_name, $system_prefix;
 
 	$rtp_f = $ev->GetValue("rtp_forward");
-	$call_type = "";
 	// keep the initial called number
 	$initial_called_number = $called;
 
@@ -482,7 +481,8 @@ function return_route($called,$caller,$no_forward=false)
 
 	$already_auth = $ev->GetValue("already-auth");
 	$trusted_auth = $ev->GetValue("trusted-auth");
-	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason', trusted='$trusted_auth')");
+	$call_type = $ev->GetValue("call_type");
+	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason', trusted='$trusted_auth', call_type='$call_type')");
 
 	if($already_auth != "yes" && $reason!="divert_busy" && $reason != "divert_noanswer") {
 		// check to see if user is allowed to make this call
@@ -510,6 +510,7 @@ function return_route($called,$caller,$no_forward=false)
 	// mark call as already autentified
 	$ev->params["already-auth"] = "yes";
 	$ev->params["trusted-auth"] = $trusted_auth;
+	$ev->params["call_type"] = $call_type;
 
 	routeToAddressBook($called, $username);
 
@@ -552,7 +553,7 @@ function return_route($called,$caller,$no_forward=false)
 		if($res[$i]["send_extension"] == "f") {
 			$fallback[$j]["caller"] = $custom_caller_id;
 			$fallback[$j]["callername"] = $custom_caller_name;
-		}elseif($system_prefix)
+		}elseif($system_prefix && $call_type == "from inside")
 			$fallback[$j]["caller"] = $system_prefix.$fallback[$j]["caller"];
 		$fallback[$j]["called"] = rewrite_digits($res[$i],$called);
 		$fallback[$j]["formats"] = ($res[$i]["formats"]) ? $res[$i]["formats"] : $ev->GetValue("formats");
