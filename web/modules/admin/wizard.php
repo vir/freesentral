@@ -183,7 +183,6 @@ function define_groups($fields)
 					if(!$res[0])
 							return array(false, $res[1]);
 				}
-
 				$group_member = new Group_Member;
 				$params = array("group_id"=>$group->group_id, "extension_id"=>$extension->extension_id);
 				$res = $group_member->add($params);
@@ -208,6 +207,8 @@ function define_groups($fields)
 			{
 				$extension = new Extension;
 				$extension->extension = Numerify($j);
+				while(strlen($extension->extension) < strlen($from))
+					$extension->extension = '0'.$extension->extension;
 				$extension->select('extension');
 				if(!$extension->extension_id) {
 					$res = $extension->add(array("extension"=>$extension->extension, "password"=>rand(100000,999999)));

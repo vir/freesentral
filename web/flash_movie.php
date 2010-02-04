@@ -37,7 +37,7 @@ $mp3 = getparam("mp3");
 print fgets($fh);
 die();*/
 //session_start();
-ming_useswfversion(8);
+//ming_useswfversion(7);
 //creating the new flash movie
 $m = new SWFMovie();
 $len = $m->streamMp3(fopen($mp3, "r"));

@@ -67,8 +67,9 @@ $0
     [--psql executable]
     [--dbhost host] [--dbname name]
     [--dbuser user] [--dbpass password]
-	[--enable_logging on/off]
-	[--timezone localtimezone]
+    [--enable_logging on/off]
+    [--generate_certificate yes/no]
+    [--timezone localtimezone]
     [--quiet]
         or one of the following unique parameters:
     help version tarball tgz tbz
@@ -153,6 +154,7 @@ scripts="`yate-config --scripts 2>/dev/null`"
 prompts="/var/spool/voicemail"
 webuser="apache"
 ip_yate="127.0.0.1"
+generate_certificate="yes"
 
 case "x`yate-config --version 2>/dev/null`" in
     x2.*|x3.*|x4.*|x5.*|x6.*|x7.*|x8.*|x9.*)
@@ -276,6 +278,10 @@ while [ "$#" != "0" ]; do
 		;;
 	x--enable_logging)
 		enable_logging="$1"
+		shift
+		;;
+	x--generate_certificate)
+		generate_certificate="$1"
 		shift
 		;;
 	*)
@@ -799,6 +805,57 @@ verify=none
 	echo "; File created by $version
 $e" > "$fe"
     fi
+	if [ "x${generate_certificate}" = "xyes" ]; then
+		# generate SSL certificate that will be used when sending requests from web to yate(only if this installs config file for yate)
+		echo "Trying to generate SSL certificate"
+		cert_dir=$DESTDIR${configs}
+		if [ ! -d "${cert_dir}" ]; then
+			echo "Can't find dir for installing SSL certificate"
+		else
+			crt_dir=${cert_dir}
+			key_dir=${cert_dir}
+			csr_dir=${cert_dir}
+			if [ ! -d "${key_dir}" ]; then
+				mkdir -p "${key_dir}"
+			fi
+			if [ ! -d "${crt_dir}" ]; then
+				mkdir -p "${crt_dir}"
+			fi
+			key="${key_dir}/freesentral.key"
+			crt="${crt_dir}/freesentral.crt"
+			csr="${csr_dir}/freesentral.csr"
+
+			# check if a new certificate should be generated
+			# generate if certificate is already expired or if it will expire today
+			replace=0
+			if [ -f "${crt}" ]; then
+				str=`openssl x509 -in ${crt} -enddate -noout`
+				len=${#str}
+				expr_date=`date -u -d"${str:9:len}"`
+				now=`date -u`
+				cmp_dates "${now}" "${expr_date}"
+				res=$?
+				if [ "${res}" != "0" ]; then
+					replace=1
+				fi
+			fi
+			if [ "${replace}" = 1 -o ! -f "${key}" ]; then
+				# generate key file
+				openssl genrsa -des3  -passout pass:freesentral -out "${key}" 1024  2> /dev/null
+				echo "Generating SSL key"
+				answers_csr | openssl req -new -passin pass:freesentral -key "${key}" -out "${csr}" 2> /dev/null
+				echo "Generating SSL csr"
+				cp "${key}" "${key}.orig"
+				openssl rsa -passin pass:freesentral -in "${key}.orig" -out "${key}" 2> /dev/null
+				openssl x509 -req -days 1825 -in "${csr}" -signkey "${key}" -out "${crt}" 2> /dev/null
+				rm -f "${key}.orig"
+				rm -f "${csr}"
+			fi
+	#		In order to check if the .key and .crt are valid the modules from the below commands must be the same
+	#		openssl rsa -noout -text -in freesentral.key -modulus
+	#		openssl x509 -noout -text -in freesentral.crt -modulus
+		fi
+	fi
 fi
 
 if [ -n "$scripts" ]; then
@@ -859,66 +916,3 @@ answers_csr() {
 	echo ""
 	echo ""
 }
-
-# generate SSL certificate that will be used when sending requests from web to yate(only if this installs config file for yate)
-if [ -n "$configs" ]; then
-	# find out dir where certificates should be put
-# 	posib_dirs=([0]="/etc/httpd" [1]="/etc/apache2" [2]="/etc/apache" [3]="/usr/local/httpd" [4]="/usr/local/apache2" [5]="/usr/local/apache");
-# 	cert_dir=""
-# 	for index in 0 1 2 3 4 5
-# 	do
-# 		if [ -d "${posib_dirs[index]}" ]; then
-# 			cert_dir="${posib_dirs[index]}"
-# 		fi
-# 	done
-	# certificates are in yate's conf.d dir
-	cert_dir=$DESTDIR${configs}
-	if [ ! -d "${cert_dir}" ]; then
-		echo "Can't find dir for installing SSL certificate"
-	else
-#		cert_dir="${cert_dir}/conf"
-#		key_dir="${cert_dir}/ssl.key"
-#		crt_dir="${cert_dir}/ssl.crt"
-		crt_dir=${cert_dir}
-		key_dir=${cert_dir}
-		csr_dir=${cert_dir}
-		if [ ! -d "${key_dir}" ]; then
-			mkdir "${key_dir}"
-		fi
-		if [ ! -d "${crt_dir}" ]; then
-			mkdir "${crt_dir}"
-		fi
-		key="${key_dir}/freesentral.key"
-		crt="${crt_dir}/freesentral.crt"
-		csr="${csr_dir}/freesentral.csr"
-
-		# check if a new certificate should be generated
-		# generate if certificate is already expired or if it will expire today
-		replace=0
-		if [ -f "${crt}" ]; then
-			str=`openssl x509 -in ${crt} -enddate -noout`
-			len=${#str}
-			expr_date=`date -u -d"${str:9:len}"`
-			now=`date -u`
-			cmp_dates "${now}" "${expr_date}"
-			res=$?
-			if [ ! "${res}" -eq "0" ]; then
-				replace=1
-			fi
-		fi
-		if [[ ! -f "${key}" || ${replace} -eq 1 ]]; then
-			# generate key file
-			openssl genrsa -des3  -passout pass:freesentral -out "${key}" 1024  2> /dev/null
-			echo "Generating SSL key"
-			answers_csr | openssl req -new -passin pass:freesentral -key "${key}" -out "${csr}" 2> /dev/null
-			echo "Generating SSL csr"
-			cp "${key}" "${key}.orig"
-			openssl rsa -passin pass:freesentral  -in "${key}.orig" -out "${key}" 2> /dev/null
-			openssl x509 -req -days 1825 -in "${csr}" -signkey "${key}" -out "${crt}" 2> /dev/null
-			rm -f "${key}.orig"
-		fi
-#		In order to check if the .key and .crt are valid the modules from the below commands must be the same
-#		openssl rsa -noout -text -in freesentral.key -modulus
-#		openssl x509 -noout -text -in freesentral.crt -modulus
-	fi
-fi
