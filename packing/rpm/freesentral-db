@@ -13,13 +13,10 @@ RETVAL=0
 
 init() {
     echo -n $"Creating FreeSentral Database: "
-    /usr/libexec/freesentral/install.sh --quiet --config no --scripts no --prompts no --webpage no
-    case "X$RETVAL" in
+    /usr/libexec/freesentral/install.sh --quiet --config '' --scripts '' --prompts '' --webpage ''
+    case "X$?" in
 	X0)
 	    success
-	    ;;
-	X1)
-	    passed
 	    ;;
 	*)
 	    failure

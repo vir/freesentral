@@ -44,6 +44,7 @@ configuration. It is based on the Yate telephony server.
 /usr/share/yate/scripts/*
 %dir /usr/libexec/%{name}
 %attr(755,root,root) /usr/libexec/%{name}/install.sh
+%attr(500,root,root) /usr/libexec/%{name}/init-first
 %attr(500,root,root) /usr/libexec/%{name}/ctl-root
 %attr(550,root,apache) /usr/libexec/%{name}/ctl-apache
 /etc/rc.d/init.d/freesentral*
