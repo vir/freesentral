@@ -13,8 +13,12 @@ RETVAL=0
 
 init() {
     echo -n $"Initializing FreeSentral: "
+    # database
+    /usr/libexec/freesentral/install.sh --no_defaults --quiet
+    # system
     /usr/libexec/freesentral/install.sh init_system
-    /usr/libexec/freesentral/install.sh generate_certificate
+    # certificates
+    DESTDIR=/etc/freesentral /usr/libexec/freesentral/install.sh --no_defaults generate_certificate
     case "X$?" in
 	X0)
 	    success
