@@ -236,7 +236,7 @@ EOF
 
 pkgname="freesentral"
 pkglong="FreeSentral"
-shortver="1.0"
+shortver="1.1"
 version="$pkglong v$shortver"
 interactive="yes"
 tarexclude="--exclude CVS --exclude .cvsignore --exclude .svn --exclude .xvpics --exclude packing/tarballs --exclude config.php"

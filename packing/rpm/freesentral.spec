@@ -1,6 +1,6 @@
 Summary:	FreeSentral
 Name:     	freesentral
-Version: 	1.0
+Version: 	1.1
 Release:	0
 License:	GPL
 Packager:	Paul Chitescu <paulc@voip.null.ro>
