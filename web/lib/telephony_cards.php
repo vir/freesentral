@@ -3,9 +3,11 @@ require_once("lib/lib.php");
 
 // list of supported Sangoma telephony cards
 $telephony_cards = array(
+/*
 	"AFT-A500D" => array("type"=>"BRI", "device_type"=>"WAN_AFT_ISDN_BRI", "echo_cancelling"=>true, "image"=>"images/pci_a500.jpg", "dtmf_detection"=>true),
 	"AFT-A500" => array("type"=>"BRI", "device_type"=>"WAN_AFT_ISDN_BRI", "image"=>"images/pci_a500.jpg"),
 	"AFT-B700" => array("type"=>"BRI", "device_type"=>"WAN_AFT_ISDN_BRI", "image"=>"images/flex_bri_2.jpg", "fax_detection"=>true, "dtmf_detection"=>true, "echo_cancelling"=>true),
+*/
 
 	"AFT-A101D" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "echo_cancelling"=>true, "image"=>"images/small_a101.jpg", "S514CPU"=>"function_get_S514CPU:PORT"),
 	"AFT-A102D" => array("type"=>"PRI", "device_type"=>"WAN_AFT_TE1", "echo_cancelling"=>true, "image"=>"images/small_a102.jpg", "S514CPU"=>"function_get_S514CPU:PORT"),
@@ -25,11 +27,12 @@ function verify_wanrouter_output($out)
 	return true;
 }
 
-function get_spans()
+function get_spans($out = null)
 {
 	global $telephony_cards;
 
-	$out = shell_command("wanrouter_hwprobe");
+	if(!$out)
+		$out = shell_command("server_hwprobe");
 	if(!verify_wanrouter_output($out)) {
 		errormess("No wanpipe cards present:".$out, "no");
 		return;

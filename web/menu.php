@@ -250,6 +250,9 @@ function submenu()
 	}
 
     foreach($struct["$dir"."_".$module] as $option) {
+		$res = submenu_check($dir,$module,$option);
+		if(!$res)
+			continue;
 		if($i % $max == 0 && $i){
 			print("<td class=\"fillfree\">&nbsp;</td>");
 			print '</tr><tr>';

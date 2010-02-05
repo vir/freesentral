@@ -482,7 +482,10 @@ function cards()
 {
 	global $module;
 
-	$out = shell_command("wanrouter_hwprobe");
+	if($_SESSION["pri_support"] != "yes" && $_SESSION["bri_support"] != "yes")
+		return;
+
+	$out = shell_command("server_hwprobe");
 
 	if(!verify_wanrouter_output($out)) {
 		errormess("No wanpipe cards present:".$out, "no");
@@ -534,6 +537,9 @@ function wizard_cards()
 	global $steps, $logo, $title, $method, $module, $telephony_cards;
 	$method = "wizard_cards";
 
+	if($_SESSION["pri_support"] != "yes" && $_SESSION["bri_support"] != "yes")
+		return;
+
 	$spans = get_spans();
 	$steps = get_span_steps($spans);
 
@@ -553,7 +559,10 @@ function wizard_cards_database()
 {
 	global $telephony_cards;
 
-	$out = shell_command("wanrouter_stop");
+	if($_SESSION["pri_support"] != "yes" && $_SESSION["bri_support"] != "yes")
+		return;
+
+	$out = shell_command("server_stop");
 	$mess = "Stopping wanrouter<br/>".str_replace("\n","<br/>",$out)."<br/>";
 
 	$spans = get_spans();
@@ -611,7 +620,7 @@ function wizard_cards_database()
 	$conf_file->sections["WAN_DEVICES"] = '"'.$interfaces.'"';
 	$conf_file->save();
 
-	$out = shell_command("wanrouter_start");
+	$out = shell_command("server_start");
 	$mess .= "Starting wanrouter<br/>".str_replace("\n","<br/>",$out);
 
 	return array(true,$mess);

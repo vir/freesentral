@@ -42,4 +42,14 @@ $struct["extension_PBX_features"] = array("digits", "call_transfer", "call_hold"
 // options to be disabled
 //$block["admin_settings"] = array("network"); 
 
+function submenu_check($dir,$module,$option)
+{
+	if($dir == "admin" && $module == "settings" && $option == "cards") {
+		if($_SESSION["pri_support"] == "yes" || $_SESSION["bri_support"] == "yes")
+			return true;
+		return false;
+	}
+	return true;
+}
+
 ?>

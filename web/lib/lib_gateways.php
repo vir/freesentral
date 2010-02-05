@@ -254,7 +254,11 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		unset($h323_fields["password"]["comment"]);
 		unset($iax_fields["password"]["comment"]);
 		$protocols = array("sip", "h323", "iax");
-		$allprotocols = array("sip", "h323", "iax", "pstn", "PRI", "BRI");
+		$allprotocols = array("sip", "h323", "iax", "pstn");//, "PRI", "BRI");
+		if($_SESSION["pri_support"] == "yes")
+			$allprotocols[] = "PRI";
+		if($_SESSION["bri_support"] == "yes")
+			$allprotocols[] = "BRI";
 
 		if($protocol && $gw_type == "Yes")
 		{
@@ -441,6 +445,14 @@ function edit_gateway_database()
 				break;
 			case "BRI":
 			case "PRI":
+				if($protocol == "BRI" && $_SESSION["bri_support"] != "yes") {
+					errormess("BRI protocol is not supported.");
+					return;
+				}
+				if($protocol == "PRI" && $_SESSION["pri_support"] != "yes") {
+					errormess("PRI protocol is not supported.");
+					return;
+				}
 				$socket = new SocketConn;
 				if($socket->error != "") {
 					errormess("I can't connect to yate.<br/> Note!! Check if you have all needed libraries: php_sockets, php_ssl and if yate is running.");

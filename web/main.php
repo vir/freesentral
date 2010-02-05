@@ -106,6 +106,27 @@ if($method == "manage")
 $_SESSION["main"] = "main.php";
 $iframe = getparam("iframe");
 
+// check to see if there are PRI/BRI cards
+if(!isset($_SESSION["pri_support"]) || !isset($_SESSION["bri_support"])) {
+	include("lib/telephony_cards.php");
+	$out = shell_command("server_hwprobe");
+	$res = verify_wanrouter_output($out);
+	if($res) {
+		$spans = get_spans($out);
+		for($i=0; $i<count($spans); $i++) {
+			$card = $telephony_cards[$spans[$i]["telephony_card"]];
+			if($card["type"] == "BRI")
+				$_SESSION["bri_support"] = "yes";
+			elseif($card["type"] == "PRI")
+				$_SESSION["pri_support"] = "yes";
+		}
+	}
+	if(!isset($_SESSION["pri_support"]))
+		$_SESSION["pri_support"] = "no";
+	if(!isset($_SESSION["bri_support"]))
+		$_SESSION["bri_support"] = "no";
+}
+
 ?>
 
 <html>
