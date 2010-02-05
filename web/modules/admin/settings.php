@@ -233,7 +233,7 @@ function network()
 		}
 	}
 
-	table($interfaces,$fields,"network interface","",array("&method=edit_network_interface"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>'), array("&method=edit_network_interface"=>"Add network interface"));
+	table($interfaces,$fields,"network interface","",array("&method=edit_network_interface"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>'));
 }
 
 function edit_network_interface($error = NULL)
@@ -257,8 +257,10 @@ function edit_network_interface($error = NULL)
 		$conf = new ConfFile($file);
 		$display = "fixed";
 	}else{
-		$conf = array();
-		$display = "text";
+		network();
+		return;
+	//	$conf = array();
+	//	$display = "text";
 	}
 	$fields = array("DEVICE"=>"network_interface", "BOOTPROTO"=>"protocol", "IPADDR"=>"ip_address", "NETMASK"=>"netmask", "GATEWAY"=>"gateway", "DNS1"=>"DNS1", "DNS2"=>"DNS2");
 
