@@ -968,12 +968,14 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
     unset PGPASSWORD
 fi
 
-if [ $webpage != "" ]; then
-	echo "Trying to update database"
-	cd "$DESTDIR$webpage"
-	chmod +x force_update.php
-	./force_update.php
-
+if [ -n "$webpage" ]; then
+	pushd "$DESTDIR$webpage" > /dev/null
 	mkdir upload
 	test X`id -u` = "X0" && chown $webuser upload/
+	if [ -z "$DESTDIR" ]; then
+	    echo "Trying to update database"
+	    chmod +x force_update.php
+	    ./force_update.php
+	fi
+	popd > /dev/null
 fi
