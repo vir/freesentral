@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/bash
 
 # install.sh
 # This file is part of the FreeSentral Project http://freesentral.com
@@ -63,7 +63,6 @@ showhelp()
     cat <<EOF
     $version usage:
 $0
-    [--init_first]
     [--no_defaults]
     [--config dir] [--scripts dir] [--prompts dir] [--webpage dir] [--upload_dir dir]
     [--psql executable]
@@ -74,7 +73,7 @@ $0
     [--timezone localtimezone]
     [--quiet]
         or one of the following unique parameters:
-    help version tarball tgz tbz
+    help version tarball tgz tbz rpm init_system generate_certificate
 EOF
 }
 
@@ -82,9 +81,10 @@ maketarball()
 {
     wd=`pwd|sed 's,^.*/,,'`
     mkdir -p packing/tarballs
-    cd ..
+    pushd .. > /dev/null
     excl=`find "${wd}" -name '*~' -o -name '.*.swp' | sed 's/^/--exclude /'`
     tar "c${1}f" "${wd}/packing/tarballs/${2}" $tarexclude $excl "${wd}"
+    popd > /dev/null
 }
 
 confdata()
@@ -150,57 +150,45 @@ answers_csr() {
 
 generate_certificate_now()
 {
-	if [ "x${generate_certificate}" = "xyes" ]; then
-		# generate SSL certificate that will be used when sending requests from web to yate(only if this installs config file for yate)
-		echo "Trying to generate SSL certificate"
-		cert_dir=$DESTDIR${configs}
-		if [ ! -d "${cert_dir}" ]; then
-			mkdir -p "${cert_dir}"
-		fi
+	# generate SSL certificate that will be used when sending requests from web to yate(only if this installs config file for yate)
+	echo "Trying to generate SSL certificate"
+	cert_dir=$DESTDIR${configs}
+	mkdir -p "${cert_dir}"
 
-		crt_dir=${cert_dir}
-		key_dir=${cert_dir}
-		csr_dir=${cert_dir}
-		if [ ! -d "${key_dir}" ]; then
-			mkdir -p "${key_dir}"
-		fi
-		if [ ! -d "${crt_dir}" ]; then
-			mkdir -p "${crt_dir}"
-		fi
-		key="${key_dir}/freesentral.key"
-		crt="${crt_dir}/freesentral.crt"
-		csr="${csr_dir}/freesentral.csr"
+	crt_dir=${cert_dir}
+	key_dir=${cert_dir}
+	csr_dir=${cert_dir}
+	mkdir -p "${key_dir}"
+	mkdir -p "${crt_dir}"
+	key="${key_dir}/freesentral.key"
+	crt="${crt_dir}/freesentral.crt"
+	csr="${csr_dir}/freesentral.csr"
 
-		# check if a new certificate should be generated
-		# generate if certificate is already expired or if it will expire today
-		replace=0
-		if [ -f "${crt}" ]; then
-			str=`openssl x509 -in ${crt} -enddate -noout`
-			len=${#str}
-			expr_date=`date -u -d"${str:9:len}"`
-			now=`date -u`
-			cmp_dates "${now}" "${expr_date}"
-			res=$?
-			if [ "${res}" != "0" ]; then
-				replace=1
-			fi
-		fi
-		if [ "${replace}" = 1 -o ! -f "${key}" ]; then
-			# generate key file
-			openssl genrsa -des3  -passout pass:freesentral -out "${key}" 1024  2> /dev/null
-			echo "Generating SSL key"
-			answers_csr | openssl req -new -passin pass:freesentral -key "${key}" -out "${csr}" 2> /dev/null
-			echo "Generating SSL csr"
-			cp "${key}" "${key}.orig"
-			openssl rsa -passin pass:freesentral -in "${key}.orig" -out "${key}" 2> /dev/null
-			openssl x509 -req -days 1825 -in "${csr}" -signkey "${key}" -out "${crt}" 2> /dev/null
-			rm -f "${key}.orig"
-			rm -f "${csr}"
-		fi
+	# check if a new certificate should be generated
+	# generate if certificate is already expired or if it will expire today
+	replace=1
+	if [ -f "${crt}" ]; then
+		str=`openssl x509 -in ${crt} -enddate -noout`
+		len=${#str}
+		expr_date=`date -u -d"${str:9:len}"`
+		now=`date -u`
+		cmp_dates "${now}" "${expr_date}" && replace=0
+	fi
+	if [ "${replace}" = 1 ]; then
+		# generate key file
+		openssl genrsa -des3  -passout pass:freesentral -out "${key}" 1024  2> /dev/null
+		echo "Generating SSL key"
+		answers_csr | openssl req -new -passin pass:freesentral -key "${key}" -out "${csr}" 2> /dev/null
+		echo "Generating SSL csr"
+		cp "${key}" "${key}.orig"
+		openssl rsa -passin pass:freesentral -in "${key}.orig" -out "${key}" 2> /dev/null
+		openssl x509 -req -days 1825 -in "${csr}" -signkey "${key}" -out "${crt}" 2> /dev/null
+		rm -f "${key}.orig"
+		rm -f "${csr}"
 	fi
 }
 
-init_first()
+init_system()
 {
     if [ X`id -u` != "X0" ]; then
 	echo "You need to be root for this action" >&2
@@ -266,10 +254,6 @@ case "x$1" in
     x--no_defaults)
 	shift
 	;;
-    x--init_first)
-	init_first
-	exit
-	;;
     *)
 	configs="`yate-config --config 2>/dev/null`"
 	scripts="`yate-config --scripts 2>/dev/null`"
@@ -329,6 +313,11 @@ if [ "$#" = "1" ]; then
 	    maketarball "" "$1"
 	    exit
 	    ;;
+	xrpm)
+	    maketarball z "$pkgname-$shortver.tar.gz" || exit $?
+	    rpmbuild -tb "packing/tarballs/$pkgname-$shortver.tar.gz"
+	    exit
+	    ;;
 	xhelp)
 	    showhelp
 	    exit
@@ -338,9 +327,13 @@ if [ "$#" = "1" ]; then
 	    exit
 	    ;;
 	xgenerate_certificate)
-		generate_certificate_now
-		exit
-		;;
+	    generate_certificate_now
+	    exit
+	    ;;
+	xinit_system)
+	    init_system
+	    exit
+	    ;;
     esac
 fi
 
@@ -932,7 +925,7 @@ verify=none
 	echo "; File created by $version
 $e" > "$fe"
     fi
-	generate_certificate_now
+    test "x${generate_certificate}" = "xyes" && generate_certificate_now
 fi
 
 if [ -n "$scripts" -a -d scripts ]; then
