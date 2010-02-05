@@ -13,12 +13,15 @@ RETVAL=0
 
 init() {
     echo -n $"Initializing FreeSentral: "
-    # database
-    /usr/libexec/freesentral/install.sh --no_defaults --quiet
     # system
     /usr/libexec/freesentral/install.sh init_system
-    # certificates
-    DESTDIR=/etc/freesentral /usr/libexec/freesentral/install.sh --no_defaults generate_certificate
+    if [ -n "$1" -o ! -f /etc/freesentral/initialized ]; then
+	touch /etc/freesentral/initialized
+	# database
+	/usr/libexec/freesentral/install.sh --no_defaults --quiet
+	# certificates
+	DESTDIR=/etc/freesentral /usr/libexec/freesentral/install.sh --no_defaults generate_certificate
+    fi
     case "X$?" in
 	X0)
 	    success
@@ -37,11 +40,10 @@ init() {
 # See how we were called.
 case "$1" in
     init)
-	init
+	init forced
 	;;
     start)
 	init
-	chkconfig freesentral-init off
 	;;
     stop)
 	;;
