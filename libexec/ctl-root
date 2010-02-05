@@ -28,6 +28,20 @@ case "X$cmd" in
 	Xserver_hwprobe)
 	    /usr/sbin/wanrouter hwprobe verbose
 	;;
+	Xnetwork_stop)
+		if [ -f "/etc/init.d/network" ]; then
+		/etc/init.d/network stop
+		else
+		echo "Don't know command to stop network"
+		fi
+	;;
+	Xnetwork_start)
+		if [ -f "/etc/init.d/network" ]; then
+		/etc/init.d/network restart
+		else
+		echo "Don't know command to restart network"
+		fi
+	;;
 	*)
 	    echo "Invalid command line: $*" >&2
 	    exit 1

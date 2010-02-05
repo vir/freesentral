@@ -54,10 +54,6 @@ cmp_dates() {
 	return 1
 }
 
-timezone="Europe/London"
-upload_dir="/var/tmp"
-enable_logging="on"
-
 showhelp()
 {
     cat <<EOF
@@ -116,7 +112,7 @@ cat << EOF
 \$upload_path = "${upload_dir}";     // path where file for importing extensions will be uploaded
 \$default_ip = "ssl://${ip_yate}";	//	ip address where yate runs
 \$default_port = "5039";	// port used to connect to
-\$block = array("admin_settings"=>array("network"));	// don't change this. This option is still being tested
+\$block = array("admin_settings"=>array("cards"));	// don't change this. This option is still being tested
 ?>
 EOF
 else
@@ -964,12 +960,20 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
     unset PGPASSWORD
 fi
 
-if [ ! $webpage=="" ]; then
+if [ $webpage != "" ]; then
 	echo "Trying to update database"
 	cd "$DESTDIR$webpage"
 	chmod +x force_update.php
 	./force_update.php
 
 	mkdir upload
-	test X`id -u` = "X0" && chown apache upload/
+	test X`id -u` = "X0" && chown $webuser upload/
+
+    ## Allow Apache to write to the network-scripts config directory
+    f="/etc/sysconfig/network-scripts"
+    if [ -d "$f" ]; then
+	if [ X`stat -c '%U' "$f" 2> /dev/null` != "Xapache" ]; then
+	    chown -R apache.root "$f"
+	fi
+    fi
 fi

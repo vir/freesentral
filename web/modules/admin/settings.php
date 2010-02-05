@@ -22,7 +22,7 @@
  */
 ?>
 <?
-global $module, $method, $path, $action, $page, $target_path, $telephony_cards;
+global $dir, $module, $method, $path, $action, $page, $target_path, $telephony_cards;
 
 require_once("lib/telephony_cards.php");
 require_once("lib/lib_wizard.php");
@@ -192,7 +192,16 @@ function edit_setting_database()
 
 function network()
 {
-	$fields = array("DEVICE"=>"network_interface", "BOOTPROTO"=>"protocol", "IPADDR"=>"ip_address", "NETMASK"=>"netmask", "GATEWAY"=>"gateway");
+	global $block, $dir, $module;
+
+	if(isset($block[$dir."_".$module]) && in_array("network",$block[$dir."_".$module]))
+		return;
+/*
+	if($_SERVER["HTTP_HOST"] != "localhost" && $_SERVER["HTTP_HOST"] != "127.0.0.1")
+		return;
+*/
+
+	$fields = array("DEVICE"=>"network_interface", "BOOTPROTO"=>"protocol", "IPADDR"=>"ip_address", "NETMASK"=>"netmask", "GATEWAY"=>"gateway", "DNS1"=>"DNS1", "DNS2"=>"DNS2");
 
 	$ninterfaces = array();
 	$dir = "/etc/sysconfig/network-scripts";
@@ -200,6 +209,8 @@ function network()
 	{
 		while (false !== ($file = readdir($handle)))
 		{
+			if ($file == "ifcfg-lo")
+				continue;
 			if (substr($file,0,6) != "ifcfg-")
 				continue;
 			$ninterfaces[] = str_replace('ifcfg-','',$file);
@@ -227,6 +238,14 @@ function network()
 
 function edit_network_interface($error = NULL)
 {
+	global $dir, $module, $block;
+
+	if(isset($block[$dir."_".$module]) && in_array("network",$block[$dir."_".$module]))
+		return;
+/*
+	if($_SERVER["HTTP_HOST"] != "localhost" && $_SERVER["HTTP_HOST"] != "127.0.0.1")
+		return;
+*/
 	if($error)
 		errornote($error);
 
@@ -241,7 +260,7 @@ function edit_network_interface($error = NULL)
 		$conf = array();
 		$display = "text";
 	}
-	$fields = array("DEVICE"=>"network_interface", "BOOTPROTO"=>"protocol", "IPADDR"=>"ip_address", "NETMASK"=>"netmask", "GATEWAY"=>"gateway");
+	$fields = array("DEVICE"=>"network_interface", "BOOTPROTO"=>"protocol", "IPADDR"=>"ip_address", "NETMASK"=>"netmask", "GATEWAY"=>"gateway", "DNS1"=>"DNS1", "DNS2"=>"DNS2");
 
 	foreach($fields as $name_in_conf=>$name_to_display)
 	{
@@ -251,14 +270,16 @@ function edit_network_interface($error = NULL)
 		$interface[$name_to_display] = (isset($conf->sections[$name_in_conf])) ? $conf->sections[$name_in_conf] : '';
 	}
 
-	$protocols = array("static", "dhcp", "none");
+	$protocols = array("static", "dhcp");
 	$protocols["selected"] = $interface["protocol"];
 	$interface = array(
 						"network_interface" => array("value"=>$interface["network_interface"], "display"=>"$display"),
-						"protocol" => array($protocols, "display"=>"select", "javascript"=>'onChange="dependant_fields();"'),
+						"protocol" => array($protocols, "display"=>"select", "javascript"=>'onChange="dependant_fields();"', "compulsory"=>true),
 						"ip_address" => array("value"=>$interface["ip_address"],"display"=>($protocols["selected"] == "dhcp") ? "dependant_field_noedit" : "dependant_field_edit"),
 						"netmask" => array("value"=>$interface["netmask"],"display"=>($protocols["selected"] == "dhcp") ? "dependant_field_noedit" : "dependant_field_edit"),
-						"gateway" => array("value"=>$interface["gateway"],"display"=>($protocols["selected"] == "dhcp") ? "dependant_field_noedit" : "dependant_field_edit")
+						"gateway" => array("value"=>$interface["gateway"],"display"=>($protocols["selected"] == "dhcp") ? "dependant_field_noedit" : "dependant_field_edit"),
+						"DNS1" => array("value"=>$interface["DNS1"], "comment"=>"If protocol is DHCP you can leave this field empty."),
+						"DNS2" => array("value"=>$interface["DNS2"])
 					);
 
 	start_form();
@@ -269,7 +290,15 @@ function edit_network_interface($error = NULL)
 
 function edit_network_interface_database()
 {
-	global $path;
+	global $dir, $module, $block, $path;
+
+	if(isset($block[$dir."_".$module]) && in_array("network",$block[$dir."_".$module]))
+		return;
+/*
+	if($_SERVER["HTTP_HOST"] != "localhost" && $_SERVER["HTTP_HOST"] != "127.0.0.1")
+		return;
+*/
+
 	$path .= "&method=network";
 
 	$dir = "/etc/sysconfig/network-scripts";
@@ -283,8 +312,7 @@ function edit_network_interface_database()
 	
 	$protocol = getparam("protocol");
 
-	if(!$protocol || $protocol == "Not selected")
-	{
+	if(!$protocol || $protocol == "Not selected"){
 		edit_network_interface("Please select a protocol when defining the interface.");
 		return;
 	}
@@ -293,7 +321,8 @@ function edit_network_interface_database()
 	$netmask = getparam("netmask");
 	$gateway = getparam("gateway");
 
-	$conf->structure["BOOTPROTO"] = $protocol;
+	if($protocol)
+		$conf->structure["BOOTPROTO"] = $protocol;
 	if($protocol == "static") {
 		if (!$ip_address) {
 			edit_network_interface("Field Ip Address is required when Protocol is static.");
@@ -310,28 +339,52 @@ function edit_network_interface_database()
 		$conf->structure["IPADDR"] = $ip_address;
 		$conf->structure["NETMASK"] = $netmask;
 		$conf->structure["GATEWAY"] = $gateway;
-	}else{
+	}elseif($protocol == "dinamic"){
 		$conf->structure["IPADDR"] = '';
 		$conf->structure["NETMASK"] = '';
 		$conf->structure["GATEWAY"] = '';
 	}
+	$conf->structure["DNS1"] = (getparam("DNS1")) ? getparam("DNS1") : '';
+	$conf->structure["DNS2"] = (getparam("DNS2")) ? getparam("DNS2") : '';
 
-	$conf->save();
+	$conf->initial_comment = 
+"#================================================
+# Interface $network_interface Configuration File
+#================================================
+#
+# Note: This file was generated automatically
+#       by Freesentral web interface
+#
+#       If you want to edit this file, it is
+#       recommended that you use the web interface
+#       to do so.
+#================================================";
+	$out = shell_command("network_stop");
+	$err = "Don't know command to stop network";
+	if(substr($out,0,strlen($err)) != $err) {
+		print str_replace("\n","<br/>",$out);
+		$conf->save(true);
+	}else{
+		notice("Could not configure network interface: ".$err, "network", false);
+		return;
+	}
 	exec("chmod +x ".$conf->filename);
-	exec("/etc/init.d/network restart");
+	$out = shell_command("network_start");
+	print str_replace("\n","<br/>",$out);
+
 //	message("Network interface was configured.",$path);
 	notice("Network interface was configured.", "network");
 }
 
 function dependant_field_edit($value, $name)
 {
-	print '<div id="div_'.$name.'" style="display:table-cell;"><input name="'.$name.'" type="'.$name.'" value="'.$value.'"/></div>';
+	print '<div id="div_'.$name.'" style="display:table-cell;"><input name="'.$name.'" type="'.$name.'" value="'.$value.'"/>&nbsp;</div>';
 	print '<div id="text_'.$name.'" style="display:none;">&nbsp;'.$value."</div>";
 }
 
 function dependant_field_noedit($value, $name)
 {
-	print '<div id="div_'.$name.'" style="display:none;"><input name="'.$name.'"  type="'.$name.'" value="'.$value.'"/></div>';
+	print '<div id="div_'.$name.'" style="display:none;"><input name="'.$name.'"  type="'.$name.'" value="'.$value.'"/>&nbsp;</div>';
 	print '<div id="text_'.$name.'" style="display:table-cell;">&nbsp;'.$value."</div>";
 }
 
@@ -480,9 +533,11 @@ function delete_user_database()
 
 function cards()
 {
-	global $module;
+	global $module, $block, $dir;
 
 	if($_SESSION["pri_support"] != "yes" && $_SESSION["bri_support"] != "yes")
+		return;
+	if(isset($block[$dir."_".$module]) && in_array("cards",$block[$dir."_".$module]))
 		return;
 
 	$out = shell_command("server_hwprobe");
@@ -534,11 +589,14 @@ function configuration_file()
 
 function wizard_cards()
 {
-	global $steps, $logo, $title, $method, $module, $telephony_cards;
+	global $steps, $logo, $title, $method, $module, $telephony_cards, $block, $dir;
 	$method = "wizard_cards";
 
 	if($_SESSION["pri_support"] != "yes" && $_SESSION["bri_support"] != "yes")
 		return;
+	if(isset($block[$dir."_".$module]) && in_array("cards",$block[$dir."_".$module]))
+		return;
+
 
 	$spans = get_spans();
 	$steps = get_span_steps($spans);
@@ -557,9 +615,11 @@ function wizard_cards()
 
 function wizard_cards_database()
 {
-	global $telephony_cards;
+	global $telephony_cards, $block, $dir, $module;
 
 	if($_SESSION["pri_support"] != "yes" && $_SESSION["bri_support"] != "yes")
+		return;
+	if(isset($block[$dir."_".$module]) && in_array("cards",$block[$dir."_".$module]))
 		return;
 
 	$out = shell_command("server_stop");

@@ -126,7 +126,6 @@ if(!isset($_SESSION["pri_support"]) || !isset($_SESSION["bri_support"])) {
 	if(!isset($_SESSION["bri_support"]))
 		$_SESSION["bri_support"] = "no";
 }
-
 ?>
 
 <html>

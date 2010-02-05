@@ -49,6 +49,13 @@ function submenu_check($dir,$module,$option)
 			return true;
 		return false;
 	}
+/*
+	if($dir == "admin" && $module == "settings" && $option == "network") {
+		if($_SERVER["HTTP_HOST"] == "localhost" || $_SERVER["HTTP_HOST"] == "127.0.0.1")
+			return true;
+		return false;
+	}
+*/
 	return true;
 }
 

@@ -407,40 +407,11 @@ TDMV_HWEC       = $hw_echo_canceller
 			return array(false, _("Could not save old file")." $filename. "."<br/>");
 	}
 
-	$res = write_interface_file($nr, 1);
-	if(!$res[0])
-		return array(false, $res[1]);
-	$res = write_interface_file($nr, 2);
-	if(!$res[0])
-		return array(false, $res[1]);
-
 	$fh = fopen($filename, "w");
 	$res = fwrite($fh, $file);
 	fclose($fh);
 	if(!$res)
 		return array(false, _("Could not write to")." $filename. "."<br/>");
-	return array(true, "");
-}
-
-function write_interface_file($dig1, $dig2)
-{
-	$f1 = "/etc/wanpipe/interfaces/w".$dig1."g".$dig2;
-	if(is_file($f1)) {
-		$boolres = rename($f1, $f1.".old");
-		if(!$boolres)
-			return array(false, _("Could not save old file")." $f1. "."<br/>");
-	}
-	$file1 = 
-"# Wanrouter interface configuration file
-DEVICE=w".$dig1."g$dig2
-IPADDR=
-NETMASK=255.255.255.255
-POINTOPOINT=
-ONBOOT=yes
-";
-	$fh = fopen($f1,"w");
-	$res = fwrite($fh, $file1);
-	fclose($fh);
 	return array(true, "");
 }
 

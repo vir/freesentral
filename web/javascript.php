@@ -381,7 +381,6 @@ function dependant_fields()
 	var prot = document.getElementById("protocol");
 	var sel_prot = prot.options[prot.selectedIndex].value;
 	var field, textf;
-
 	var fields = new Array("ip_address", "netmask", "gateway");
 	for(var i=0; i<fields.length; i++)
 	{
@@ -389,10 +388,10 @@ function dependant_fields()
 		textf = document.getElementById("text_"+fields[i]);
 		if(sel_prot == "static") {
 			field.style.display = "table-cell";
-			textf.display = "none";
-		}else if(sel_prot == "dhcp" || sel_prot == "none") {
+			textf.style.display = "none";
+		}else if(sel_prot == "dhcp" || sel_prot == "none" || sel_prot=="") {
 			field.style.display = "none";
-			textf.display = "table-cell";
+			textf.style.display = "table-cell";
 		}
 	}
 }

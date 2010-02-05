@@ -1831,6 +1831,8 @@ class ConfFile
 	public $sections = array();
 	public $filename;
 	public $structure = array();
+	public $chr_comment = array(";","#");
+	public $initial_comment = null;
 
 	function __construct($file_name)
 	{
@@ -1855,7 +1857,7 @@ class ConfFile
 				$this->structure[$last_section] = array();
 				continue;
 			}
-			if(substr($row,0,1) == ";") {
+			if(in_array(substr($row,0,1),$this->chr_comment)) {
 				if($last_section == "")
 					array_push($this->structure, $row);
 				else
@@ -1878,17 +1880,26 @@ class ConfFile
 		fclose($file);
 	}
 
-	function save()
+	function save($write_comments=false)
 	{
 		$file = fopen($this->filename,"w") or exit("Could not open ".$this->filename." for writing");
+		$wrote_something = false;
+		if($this->initial_comment)
+			fwrite($file, $this->initial_comment."\n");
 		foreach($this->structure as $name=>$value)
 		{
+			// make sure we don't write the initial comment over and over 
+			if($this->initial_comment && !$wrote_something && in_array(substr($value,0,1),$this->chr_comment) && $write_comments)
+				continue;
 			if(!is_array($value)) {
-				if(substr($value,0,1) == ";" && is_numeric($name)) {
+				if(in_array(substr($value,0,1),$this->chr_comment) && is_numeric($name)) {
+
 					//writing a comment
-					fwrite($file, $value."\n");
+					if ($write_comments)
+						fwrite($file, $value."\n");
 					continue;
 				}
+				$wrote_something = true;
 				fwrite($file, "$name=".ltrim($value)."\n");
 				continue;
 			}else
@@ -1897,10 +1908,12 @@ class ConfFile
 			foreach($section as $param=>$value)
 			{
 				//writing a comment
-				if(substr($value,0,1) == ";" && is_numeric($param)) {
-					fwrite($file, $value."\n");
+				if(in_array(substr($value,0,1),$this->chr_comment) && is_numeric($param)) {
+					if ($write_comments)
+						fwrite($file, $value."\n");
 					continue;
 				}
+				$wrote_something = true;
 				fwrite($file, "$param=".ltrim($value)."\n");
 			}
 			fwrite($file, "\n");
