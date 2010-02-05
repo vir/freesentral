@@ -223,6 +223,14 @@ EOF
 	    chown -R apache.root "$f"
 	fi
     fi
+
+    ## Allow Apache to write to the network-scripts config directory
+    f="/etc/sysconfig/network-scripts"
+    if [ -d "$f" ]; then
+	if [ X`stat -c '%U' "$f" 2> /dev/null` != "Xapache" ]; then
+	    chown -R apache.root "$f"
+	fi
+    fi
 }
 
 
@@ -968,12 +976,4 @@ if [ $webpage != "" ]; then
 
 	mkdir upload
 	test X`id -u` = "X0" && chown $webuser upload/
-
-    ## Allow Apache to write to the network-scripts config directory
-    f="/etc/sysconfig/network-scripts"
-    if [ -d "$f" ]; then
-	if [ X`stat -c '%U' "$f" 2> /dev/null` != "Xapache" ]; then
-	    chown -R apache.root "$f"
-	fi
-    fi
 fi
