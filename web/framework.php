@@ -2242,7 +2242,7 @@ class Model
 			if($str != "")
 				$str .= " ";
 			$name = ($prefix != '') ? $prefix.".".$var_name : $var_name;
-			$str .= "$name=".Model::escapeSpace($this->{$var_name});
+			$str .= "$name=".Model::$this->{$var_name};
 		}
 		return $str;
 	}
