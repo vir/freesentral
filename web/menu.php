@@ -145,9 +145,10 @@ function get_content()
 		<tr>
 			<td class="holdcontent">
 	<?
+	$load = ($module == "HOME") ? "home" : $module;
 	if($module) {
-			if(is_file("modules/$dir/$module.php"))
-				include("modules/$dir/$module.php"); 
+			if(is_file("modules/$dir/$load.php"))
+				include("modules/$dir/$load.php"); 
 	} ?>
 			</td>
 		</tr>
@@ -177,15 +178,15 @@ function files($level)
 				continue;
 			if (stripos($file,".php") === false)
 				continue;
-			if($file == "HOME.php" || $file == "PBX_features.php")
+			if($file == "home.php" || $file == "PBX_features.php")
 				continue;
 			$names[] = ereg_replace('.php','',$file);
 		}
 		closedir($handle);
 	}
 	sort($names);
-	if(is_file("modules/$level/HOME.php"))
-		$names = array_merge(array("HOME"), $names);
+	if(is_file("modules/$level/home.php"))
+		$names = array_merge(array("home"), $names);
 	if(is_file("modules/$level/PBX_features.php"))
 		$names = array_merge($names, array("PBX_features"));
 	$i = 0;
@@ -201,6 +202,8 @@ function files($level)
 			print '<div  class="linkselected" onclick="location.href=\'main.php?module='.$name.'\'">';
 			if($name == "dids")
 				$name = "DIDs";
+			elseif($name == "home")
+				$name = "HOME";
 			print str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$name))).'</div>';
 		} else {
 			print "<td class=\"firstmenu\">";

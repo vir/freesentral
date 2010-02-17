@@ -1,6 +1,6 @@
 <?
 /**
- * HOME.php
+ * home.php
  * This file is part of the FreeSentral Project http://freesentral.com
  *
  * FreeSentral - is a Web Graphical User Interface for easy configuration of the Yate PBX software

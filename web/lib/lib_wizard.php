@@ -48,7 +48,7 @@ class Wizard
 	 * @param $_logo Text, path and name of the image used as logo
 	 * @param $_title Text, title of the wizard, will be displayed on the same line as the logo, during all steps 
 	 * @param $function_for_finish Name of the function that should be called after Finish is pressed
-	 * @param $on_finish Where to go when the 'Close'(button after settings are done) is pressed. Ex: "main.php?module=HOME". This is also the default value of the field
+	 * @param $on_finish Where to go when the 'Close'(button after settings are done) is pressed. Ex: "main.php?module=home". This is also the default value of the field
 	 */
 	function __construct($_steps, $_logo, $_title, $function_for_finish, $on_finish=null, $mess_on_finish=null)
 	{

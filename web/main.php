@@ -53,8 +53,8 @@ if(getparam("method") == "impersonate") {
 		forbidden();
 	$_SESSION["user_id"] = $ext[0]->extension_id;
 	$_SESSION["level"] = "extension";
-	$module = "HOME";
-	$method = "HOME";
+	$module = "home";
+	$method = "home";
 }elseif(getparam("method") == "stop_impersonate"){
 	if(!isset($_SESSION["real_user"])) 
 		forbidden();
@@ -73,8 +73,8 @@ if(getparam("method") == "impersonate") {
 	if(isset($_GET["method"]))
 	$_GET["method"] = NULL;
 	unset($_SESSION["real_user"]);
-	$module = "HOME";
-	$method = "HOME";
+	$module = "home";
+	$method = "home";
 }
 
 $dir = $_SESSION['level'];
@@ -83,8 +83,8 @@ testpath($dir);
 
 $module = (!$module) ? getparam("module") : $module;
 if(!$module)
-	if(is_file("modules/$dir/HOME.php"))
-		$module = "HOME";
+	if(is_file("modules/$dir/home.php"))
+		$module = "home";
 testpath($module);
 
 $path = $module;

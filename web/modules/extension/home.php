@@ -1,6 +1,6 @@
 <?
 /**
- * HOME.php
+ * home.php
  * This file is part of the FreeSentral Project http://freesentral.com
  *
  * FreeSentral - is a Web Graphical User Interface for easy configuration of the Yate PBX software
@@ -36,10 +36,10 @@ if($action)
 else
 	$call = $method;
 
-if($call != "HOME")
+if($call != "home")
 	print '<div class="content wide">';
 $call();
-if($call != "HOME")
+if($call != "home")
 	print '</div>';
 
 function home()
