@@ -160,7 +160,20 @@ function home()
 			<div style="float:right;"> Today, '.date('h:i a').'
 			</div>Yate '.$status;
 	print '</div>';
-	print '<br/><br/>';
+	$admins = Model::selection("user", array("login_attempts"=>">=3"), "login_attempts DESC");
+	for($i=0; $i<count($admins); $i++) {
+		print '<div class="'.$err.'systemstatus borded"> '.'
+				Admin '.$admins[$i]->username.': '.$admins[$i]->login_attempts.' failed login attempts';
+		print '</div>';
+	}
+	$extensions = Model::selection("extension", array("login_attempts"=>">=3"), "login_attempts DESC");
+	for($i=0; $i<count($extensions); $i++) {
+		print '<div class="'.$err.'systemstatus borded"> '.'
+				Extension '.$extensions[$i]->extension.': '.$extensions[$i]->login_attempts.' failed login attempts';
+		print '</div>';
+	}
+	if(!count($extensions) && !count($admins))
+		print '<br/><br/>';
 	print '</td></tr></table>';
 }
 

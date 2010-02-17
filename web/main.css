@@ -655,6 +655,11 @@ div.error_systemstatus
 	background-color:#ff9797;
 }
 
+div.borded
+{
+	border-top:2px solid white;
+}
+
 div.message_wizard
 {
 	border:2px solid #0189D7;

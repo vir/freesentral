@@ -37,7 +37,8 @@ class User extends Model
 					"email" => new Variable("text"),
 					"description" => new Variable("text"),
 					"fax_number" => new Variable("text"),
-					"ident" => new Variable("text")
+					"ident" => new Variable("text"),
+					"login_attempts" => new Variable("int2","0")
 				);
 	}
 
@@ -50,17 +51,28 @@ class User extends Model
 	{
 		if (!$this->username || !$this->password)
 			return NULL;
-		$users = Model::selection("user", array("username"=>$this->username, "password"=>$this->password));
+		$users = Model::selection("user", array("username"=>$this->username));
 		if(count($users) == 1) 
 		{
-			foreach($users[0] as $key=>$value)
-			{
-				$this->{$key} = $users[0]->{$key};
+			if($users[0]->password == $this->password) {
+				foreach($users[0] as $key=>$value)
+				{
+					$this->{$key} = $users[0]->{$key};
+				}
+				if($users[0]->login_attempts > 0) {
+					$users[0]->login_attempts = 0;
+					$users[0]->fieldUpdate(array("user_id"=>$users[0]->user_id), array("login_attempts"));
+				}
+				self::writeLog("admin ".$this->username. " logged in");
+				return true;
+			}else{
+				$users[0]->login_attempts++;
+				$users[0]->fieldUpdate(array("user_id"=>$users[0]->user_id), array("login_attempts"));
+				self::writeLog("failled attempt to log in as admin: ".$this->username);
+				return false;
 			}
-			self::writeLog("admin ".$this->username. " logged in");
-			return true;
 		}else{
-			self::writeLog("failled attempt to log in as admin: ".$this->username);
+			self::writeLog("failled attempt to log in as unknown admin: ".$this->username);
 			return false;
 		}
 	}

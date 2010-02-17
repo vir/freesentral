@@ -42,6 +42,7 @@ class Extension extends Model
 					"used_minutes" => new Variable("interval","00:00:00"),
 					"inuse_count" => new Variable("int2"),
 					"inuse_last" => new Variable("timestamp"),
+					"login_attempts" => new Variable("int2","0")
 			/*		"mac_address" => new Variable("text"),
 					"equipment_id" => new Variable("serial",NULL,"equipments")*/
 				);
@@ -56,17 +57,28 @@ class Extension extends Model
 	{
 		if (!$this->extension || !$this->password)
 			return NULL;
-		$thiss = Model::selection("extension", array("extension"=>$this->extension, "password"=>$this->password));
+		$thiss = Model::selection("extension", array("extension"=>$this->extension));
 		if(count($thiss) == 1) 
 		{
-			foreach($thiss[0] as $var_name=>$var)
-			{
-				$this->{$var_name} = $thiss[0]->{$var_name};
+			if($thiss[0]->password == $this->password) {
+				foreach($thiss[0] as $var_name=>$var)
+				{
+					$this->{$var_name} = $thiss[0]->{$var_name};
+				}
+				if($thiss[0]->login_attempts>0){
+					$thiss[0]->login_attempts = 0;
+					$thiss[0]->fieldUpdate(array("extension_id"=>$thiss[0]->extension_id), array('login_attempts'));
+				}
+				self::writeLog("extension ".$this->extension." logged in");
+				return true;
+			} else {
+				$thiss[0]->login_attempts++;
+				$thiss[0]->fieldUpdate(array("extension_id"=>$thiss[0]->extension_id), array('login_attempts'));
+				self::writeLog("failed attempt to log in as extension: ".$this->extension);
+				return false;
 			}
-			self::writeLog("extension ".$this->extension." logged in");
-			return true;
 		} else {
-			self::writeLog("failed attempt to log in as extension:".$this->extension);
+			self::writeLog("failed attempt to log in as unknown extension: ".$this->extension);
 			return false;
 		}
 	}
