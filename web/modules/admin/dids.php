@@ -110,7 +110,7 @@ function dids()
 	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
 	$dids = $did->extendedSelect(array("destination"=>"__NOT LIKEconf/"),"number");
 
-	$formats = array("did","number","destination","function_get_default_destination:default_destination"=>"extension,group");
+	$formats = array("DID"=>"did", "number", "destination", "function_get_default_destination:default_destination"=>"extension,group");
 	tableOfObjects($dids, $formats, "DIDs", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>'),array("&method=add_did"=>"Add DID"));
 }
 

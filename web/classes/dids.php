@@ -24,7 +24,7 @@
 <?
 require_once("framework.php");
 
-class Did extends Model
+class DID extends Model
 {
 	public static function variables()
 	{

@@ -942,7 +942,7 @@ class Model
 			$variables .= "\"$var_name\""."=".$value."";
 			$update_log .= "$var_name='".$value."'"; 
 		}
-		$obj_name = strtolower(str_replace("_"," ",get_class($this)));
+		$obj_name = $this->getObjectName();
 		if($error != "")
 			return array(false,'Failed to update '.$obj_name.".".$error);
 		$table = $this->getTableName();
@@ -1017,13 +1017,14 @@ class Model
 			$update_log .= "$var_name='".$var->escape($value)."'";
 		}
 
+		$obj_name = $this->getObjectName();
 		$query = "UPDATE ".$this->getTableName()." SET $variables $where";
 		$res = Database::query($query);
 		if(!$res) 
-			return array(false,'Failed to update '.strtolower(str_replace("_"," ",get_class($this))),0);
+			return array(false,'Failed to update '.$obj_name,0);
 		else
 		{
-			$mess = 'Succesfully updated '.pg_affected_rows($res).' ' .strtolower(str_replace("_"," ",get_class($this)));
+			$mess = 'Succesfully updated '.pg_affected_rows($res).' ' .$obj_name;
 			if (pg_affected_rows($res) != 1)
 				$mess .= 's';
 			$update_log = "update ".$this->getNameInLogs().": $update_log $where";
@@ -2245,6 +2246,19 @@ class Model
 			$str .= "$name=".Model::$this->{$var_name};
 		}
 		return $str;
+	}
+
+	/**
+	 *	Get name of this object
+	 * @return String representing the name of the object. If all letters in class name are uppercase then they are returned the same, else all letters are lowercased
+	 */
+	public function getObjectName()
+	{
+		$class_name = get_class($this);
+		if(strtoupper($class_name) == $class_name)
+			return str_replace("_"," ",$class_name);
+		else
+			return strtolower(str_replace("_"," ",$class_name));
 	}
 
 	/**

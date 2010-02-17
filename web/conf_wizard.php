@@ -272,6 +272,7 @@ $steps = array(
 						"step_description" => "DID: Direct Inward Calling.<br/> Set a DID for your voicemail.",
 						"on_submit" => "verify_voicemail",
 						"did" => array(
+										"column_name" => "DID",
 										"value" => "voicemail",
 										"display" => "fixed",
 									),
@@ -296,6 +297,7 @@ $steps = array(
 											"display" => "message"
 										),
 						"did" => array(
+										"column_name" => "DID",
 										"value" => "auto attendant",
 										"display" => "fixed",
 									),
