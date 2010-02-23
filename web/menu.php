@@ -210,6 +210,8 @@ function files($level)
 			print '<div class="link" onclick="location.href=\'main.php?module='.$name.'\'">';
 			if($name == "dids")
 				$name = "DIDs";
+			elseif($name == "home")
+				$name = "HOME";
 			print str_replace(" ","&nbsp;",ucwords(str_replace("_"," ",$name))).'</div>';
 		}
 		print "</td>";
