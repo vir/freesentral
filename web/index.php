@@ -34,11 +34,15 @@ require_once("set_debug.php");
 
 //$_SESSION["warning_on"] = true;
 //$_SESSION["notice_on"] = true;
- 
-//session_start();
 
 if (isset($_SESSION['user']) && isset($_SESSION['level']))
 	header ("Location: main.php");
+
+if(!isset($_SERVER["HTTPS"]) || $_SERVER["HTTPS"]!="on") {
+	$server = $_SERVER["HTTP_HOST"];
+	if($server != "localhost" && $server != "127.0.0.1")
+		header ("Location: https://".$server.$_SERVER["PHP_SELF"]);
+}
 
 $username = getparam("username");
 $password = getparam("password");

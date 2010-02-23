@@ -53,12 +53,12 @@ function get_login_form()
 				<p align="right"><input type="submit" value="Send" class="submit"/></p>
 				<div align="center">
 		<?
-			$sigur = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'];
+		/*	$sigur = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'];
 		    $s1 = $sigur ? "Cripted SSL" : "Uncripted";
 		    $s2 = $sigur ? "deactivate" : "secure";
 		    $l = $sigur ? "http://" : "https://";
 		    $l .= $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
-		    print "<b>$s1</b> <a  class=\"signup\" href=\"$l\">$s2</a>";
+		    print "<b>$s1</b> <a  class=\"signup\" href=\"$l\">$s2</a>";*/
 		?>
 				</div>
 			</fieldset>
