@@ -287,7 +287,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 
 		$gw_types = array("Yes","No");
 		$gw_types["selected"] = $gw_type;
-		$step1 = array("gateway_with_registration"=>array($gw_types, "display"=>"radios", "javascript"=>'onChange="gateway_type();"', "comment"=>"A gateway with registration is a gateway for which you need an username and a password that will be used to autentify. If you wish to add a pstn/BRI/PRI gateway check 'No'."));
+		$step1 = array("gateway_with_registration"=>array($gw_types, "display"=>"radios", "javascript"=>'onClick="gateway_type();"', "comment"=>"A gateway with registration is a gateway for which you need an username and a password that will be used to autentify. If you wish to add a pstn/BRI/PRI gateway check 'No'."));
 
 		editObject($gateway,$step1,"Select type of gateway to add","no");
 

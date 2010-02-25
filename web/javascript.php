@@ -156,8 +156,8 @@ function show_hide(element)
 
 function form_for_gateway(gwtype)
 {
-	//var sprotocol = document.outbound.protocol.value;
-	var sprotocol = document['forms']['outbound'][gwtype+'protocol'].value;
+	var sprot = document["forms"]["outbound"][gwtype+"protocol"];
+	var sprotocol = sprot.options[sprot.selectedIndex].value;
 	var protocols = new Array("sip", "h323", "iax", "pstn", "BRI", "PRI");
 	var i;
 	var currentdiv;
