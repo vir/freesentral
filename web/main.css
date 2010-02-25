@@ -27,7 +27,8 @@ td.topvalign
 
 input, textarea, select,  input.checkbox
 {
-	border:1px solid #aaa;
+	/*border:1px solid #aaa;*/
+	border: expression(this.type!="radio"? '1px solid #aaa' : 'none');
 }
 
 td.holdlogo
