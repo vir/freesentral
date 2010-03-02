@@ -328,7 +328,7 @@ function wiz_period($value, $name)
 	$end = 0;
 
 	print 'From <select name="start_'.$name.'">';
-	print '<option>Not selected</option>';
+	print '<option> - </option>';
 	for($i=1; $i<25; $i++) {
 		print '<option';
 		if($start == $i)
@@ -337,7 +337,7 @@ function wiz_period($value, $name)
 	}
 	print '</select>';
 	print '&nbsp;&nbsp;To <select name="end_'.$name.'">';
-	print '<option>Not selected</option>';
+	print '<option> - </option>';
 	for($i=1; $i<25; $i++) {
 		print '<option';
 		if($end == $i)

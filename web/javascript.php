@@ -60,6 +60,21 @@
 
 <script type="text/javascript" language="JavaScript1.2">
 
+function getInternetExplorerVersion()
+// Returns the version of Internet Explorer or a -1
+// (indicating the use of another browser).
+{
+  var rv = -1; // Return value assumes failure.
+  if (navigator.appName == 'Microsoft Internet Explorer')
+  {
+    var ua = navigator.userAgent;
+    var re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+    if (re.exec(ua) != null)
+      rv = parseFloat( RegExp.$1 );
+  }
+  return rv;
+}
+
 function copacClick(lin,col,role)
 {
 //	alert(lin+" "+col+" "+role);
@@ -156,8 +171,9 @@ function show_hide(element)
 
 function form_for_gateway(gwtype)
 {
-	var sprot = document["forms"]["outbound"][gwtype+"protocol"];
-	var sprotocol = sprot.options[sprot.selectedIndex].value;
+	//var sprot = document["forms"]["outbound"][gwtype+"protocol"];
+	var sprot = document.getElementById(gwtype+"protocol");
+	var sprotocol = sprot.options[sprot.selectedIndex].value || sprot.options[sprot.selectedIndex].text;
 	var protocols = new Array("sip", "h323", "iax", "pstn", "BRI", "PRI");
 	var i;
 	var currentdiv;
@@ -286,6 +302,8 @@ function advanced(identifier)
 	var elem_name;
 	var elem;
 
+	var ie = getInternetExplorerVersion();
+
 	for(var i=0;i<elems.length;i++)
 	{
 		elem_name = elems[i].name;
@@ -297,9 +315,9 @@ function advanced(identifier)
 		if(elem.style.display == null)
 			continue;
 		if(elem.style.display == "none")
-			elem.style.display = "table-row";
+			elem.style.display = (ie > 1 && ie < 8) ? "block" : "table-row";
 		else
-			if(elem.style.display == "table-row")
+			if(elem.style.display != "none")
 				elem.style.display = "none";
 	}
 
@@ -321,6 +339,7 @@ function show_fields(nr)
 {
 	var elems = document.wizard.elements;
 	var tr_elem, tr_elem_id, elem_name;
+	var ie = getInternetExplorerVersion();
 
 	elem_name = "add"+(nr-1);
 	tr_elem_id = "tr_"+"add"+(nr-1);
@@ -348,7 +367,7 @@ function show_fields(nr)
 	/*	if(tr_elem.style.display == "table-row")
 			tr_elem.style.display = "none";
 		else*/
-		tr_elem.style.display = "table-row";
+		tr_elem.style.display = (ie > 1 && ie < 8) ? "block" : "table-row";
 	}
 
 	elem_name = "add"+nr;
@@ -361,7 +380,7 @@ function show_fields(nr)
 	if(tr_elem_id.substr(elem_name.length+2, tr_elem_id.length) != nr){
 		return;
 	}
-	tr_elem.style.display = "table-row";
+	tr_elem.style.display = (ie > 1 && ie < 8) ? "block" : "table-row";
 }
 
 function comute_destination(elem_type)
@@ -379,19 +398,21 @@ function comute_destination(elem_type)
 function dependant_fields()
 {
 	var prot = document.getElementById("protocol");
-	var sel_prot = prot.options[prot.selectedIndex].value;
+	var sel_prot = prot.options[prot.selectedIndex].value || prot.options[prot.selectedIndex].text;
 	var field, textf;
 	var fields = new Array("ip_address", "netmask", "gateway");
+	var ie = getInternetExplorerVersion();
+
 	for(var i=0; i<fields.length; i++)
 	{
 		field = document.getElementById("div_"+fields[i]);
 		textf = document.getElementById("text_"+fields[i]);
 		if(sel_prot == "static") {
-			field.style.display = "table-cell";
+			field.style.display = (ie>1 && ie<8) ? "block" : "table-cell";
 			textf.style.display = "none";
 		}else if(sel_prot == "dhcp" || sel_prot == "none" || sel_prot=="") {
 			field.style.display = "none";
-			textf.style.display = "table-cell";
+			textf.style.display = (ie>1 && ie<8) ? "block" : "table-cell";
 		}
 	}
 }
@@ -684,7 +705,7 @@ var t1_voice_chan = "1-23";
 function set_timeslots()
 {
 	var select_type = document.getElementById("connection_type");
-	var interface_type = select_type.options[select_type.selectedIndex].value;
+	var interface_type = select_type.options[select_type.selectedIndex].value || select_type.options[select_type.selectedIndex].text;
 
 	var sig_channels = document.getElementById("sig_channels");
 	var voice_channels = document.getElementById("voice_channels");
@@ -719,7 +740,7 @@ function set_timeslots()
 function set_format()
 {
 	var sel_port = document.getElementById("noreg_PRIport");
-	var name_port = sel_port.options[sel_port.selectedIndex].value;
+	var name_port = sel_port.options[sel_port.selectedIndex].value || sel_port.options[sel_port.selectedIndex].text;
 	var connection_type;
 	if(name_port.indexOf("(PRI-T1)") != -1)
 		connection_type = "T1";
@@ -731,7 +752,7 @@ function set_format()
 	var opts = document.outbound.noreg_PRIformat;
 	
 	for(i=0; i<opts.length; i++) {
-		if(opts[i].value == format && opts.checked != true)
+		if((opts[i].value == format || opts[i].text == format) && opts.checked != true)
 			opts[i].checked = true;
 	}
 
@@ -742,7 +763,7 @@ function set_format()
 function set_voice_channels()
 {
 	var select_type = document.getElementById("connection_type");
-	var interface_type = select_type.options[select_type.selectedIndex].value;
+	var interface_type = select_type.options[select_type.selectedIndex].value || select_type.options[select_type.selectedIndex].text;
 	var num;
 
 	var sig_chan = document.getElementById("sig_channels");
