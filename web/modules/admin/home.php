@@ -152,7 +152,7 @@ function home()
 		$status = strtolower($status[0]." ".$status[1]);
 		$err = "";
 	}else{
-		$status = ": Can't connect to yate";
+		$status = ": Can't connect to yate<br/>".$sock->error;
 		$err = "error_";
 	}
 	print '<div class="titlu">SYSTEM STATUS</div>';

@@ -24,7 +24,7 @@ class SocketConn
 		$errno = 0;
 		$socket = fsockopen($ip,$port,$errno,$errstr,30);
 		if(!$socket) {
-			$this->error = "Can't connect:[$errno]  ".$errstr;
+			$this->error = "Web page can't connect to ip=$ip, port=$port [$errno]  \"".$errstr."\"";
 			$this->socket = false;
 		}else{
 			$this->socket = $socket;
