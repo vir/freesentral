@@ -349,9 +349,9 @@ class Wizard
 					print '<input type="submit" name="submit" value="Next"/>&nbsp;&nbsp;';
 				else
 					print '<input type="submit" name="submit" value="Next" onClick="return on_submit(\''.$this->reserved_names["on_submit"].'\');">&nbsp;&nbsp;';
-				if($this->step_nr == 0)
-					print '<input type="button" name="submit" value="Skip" onClick="location.href=\'main.php\'">';
-				else
+			//	if($this->step_nr == 0)
+			//		print '<input type="button" name="submit" value="Skip" onClick="location.href=\'main.php\'">';
+			//	else
 					print '<input type="submit" name="submit" value="Skip"/>';
 			}else{
 				if($this->reserved_names["on_submit"] == '')
