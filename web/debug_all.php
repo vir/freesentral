@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * debug_all.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -27,7 +27,7 @@
 	<link type="text/css" rel="stylesheet" href="main.css" />
 </head>
 <body>
-<?
+<?php
 require_once "set_debug.php";
 require_once "lib/lib.php";
 
@@ -97,10 +97,10 @@ function debug()
 				);
 
 ?>	<br/><br/>
-	<form action="debug_all.php" method="post"><?
+	<form action="debug_all.php" method="post"><?php
 	addHidden("database");
 	editObject(NULL,$arr, "Setting debug levels", "Save");
-?></form><?
+?></form><?php
 }
 
 

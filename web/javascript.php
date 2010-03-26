@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * javascript.php
  * This file is part of the FreeSentral Project http://freesentral.com

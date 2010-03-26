@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * main.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 require_once("set_debug.php");
 require_once("config.php");
 require_once("lib/lib.php");
@@ -131,12 +131,12 @@ if(!isset($_SESSION["pri_support"]) || !isset($_SESSION["bri_support"])) {
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <title>FreeSentral</title>
-<?    include "javascript.php"; ?>
+<?php    include "javascript.php"; ?>
 <link type="text/css" rel="stylesheet" href="main.css"/>
 <link type="text/css" rel="stylesheet" href="wizard.css"/>
 </head>
 <!-- <body style="margin: 0 0 0 0;" background="images/sigla.png" bgproperties="fixed"> -->
 <body class="mainbody">
-	<? get_content();?>
+	<?php get_content();?>
 </body>
 </html>

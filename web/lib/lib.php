@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * lib.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 global $module, $method, $action, $vm_base, $limit, $db_true, $db_false, $limit, $page;
 
 function include_classes()
@@ -76,12 +76,12 @@ function start_form($action = NULL, $method = "post", $allow_upload = false, $fo
 			$action = "index.php";
 	}
 
-	?><form action="<?print $action;?>" name="<?print $form_name;?>" id="<?print $form_name;?>" method="<?print $method;?>" <?if($allow_upload) print 'enctype="multipart/form-data"';?>><?
+	?><form action="<?phpprint $action;?>" name="<?phpprint $form_name;?>" id="<?phpprint $form_name;?>" method="<?phpprint $method;?>" <?phpif($allow_upload) print 'enctype="multipart/form-data"';?>><?php
 }
 
 function end_form()
 {
-	?></form><?
+	?></form><?php
 }
 
 function note($note)
@@ -345,31 +345,31 @@ function navbuttons($params=array(),$class = "llink")
 	<table border="0" cellspacing="0" cellpadding="0">
 		<tr>
 			<td class="navbuttons">
-				<? $vl=$page-$step;
+				<?php $vl=$page-$step;
 				if ($vl>=0)
 				{ ?>
-					<font size="-1"><a class="<?print $class;?>" href="<?print ("$link"."page"."=$vl");?>">Previous</a>&nbsp;&nbsp;</font>
-				<? } ?>
+					<font size="-1"><a class="<?phpprint $class;?>" href="<?phpprint ("$link"."page"."=$vl");?>">Previous</a>&nbsp;&nbsp;</font>
+				<?php } ?>
 			</td>
 			<td class="navbuttons">
 				<font size="-3">
-				<?
+				<?php
 				$r=$page/$step+1;
  				print ("$r");
 				?>
 				</font>
 			</td>
 			<td class="navbuttons">
-			    <?
+			    <?php
 			    $vl=$page+$step;
 			    if ($vl<$total) { ?>
-				&nbsp;&nbsp;<font size="-1"><a class="<?print $class;?>" href="<?print ("$link"."page"."=$vl");?>">Next</a> </font><?
+				&nbsp;&nbsp;<font size="-1"><a class="<?phpprint $class;?>" href="<?phpprint ("$link"."page"."=$vl");?>">Next</a> </font><?php
 				} ?>
 			</td>
 		</tr>
 	</table>
 	</center>
-<?
+<?php
 }
 
 function check_valid_mail($mail)
@@ -1311,27 +1311,27 @@ function month_year($value=NULL,$identifier=NULL)
 	}
 	$year = date('Y');
 	?>
-	<select name="<?print $identifier;?>month">
-		<option <?if($month=="January" || $month=="1") print("SELECTED");?>> January </option>
-		<option <?if($month=="February" || $month=="2") print("SELECTED");?>> February </option>
-		<option <?if($month=="March" || $month=="3") print("SELECTED");?>> March </option>
-		<option <?if($month=="April" || $month=="4") print("SELECTED");?>> April </option>
-		<option <?if($month=="May" || $month=="5") print("SELECTED");?>> May </option>
-		<option <?if($month=="June" || $month=="6") print("SELECTED");?>> June </option>
-		<option <?if($month=="July" || $month=="7") print("SELECTED");?>> July </option>
-		<option <?if($month=="August" || $month=="8") print("SELECTED");?>> August </option>
-		<option <?if($month=="September" || $month=="9") print("SELECTED");?>> September </option>
-		<option <?if($month=="October" || $month=="10") print("SELECTED");?>> October </option>
-		<option <?if($month=="November" || $month=="11") print("SELECTED");?>> November </option>
-		<option <?if($month=="December" || $month=="12") print("SELECTED");?>> December </option>
-	</select><select name="<?print $identifier;?>year">
-		<?
+	<select name="<?phpprint $identifier;?>month">
+		<option <?phpif($month=="January" || $month=="1") print("SELECTED");?>> January </option>
+		<option <?phpif($month=="February" || $month=="2") print("SELECTED");?>> February </option>
+		<option <?phpif($month=="March" || $month=="3") print("SELECTED");?>> March </option>
+		<option <?phpif($month=="April" || $month=="4") print("SELECTED");?>> April </option>
+		<option <?phpif($month=="May" || $month=="5") print("SELECTED");?>> May </option>
+		<option <?phpif($month=="June" || $month=="6") print("SELECTED");?>> June </option>
+		<option <?phpif($month=="July" || $month=="7") print("SELECTED");?>> July </option>
+		<option <?phpif($month=="August" || $month=="8") print("SELECTED");?>> August </option>
+		<option <?phpif($month=="September" || $month=="9") print("SELECTED");?>> September </option>
+		<option <?phpif($month=="October" || $month=="10") print("SELECTED");?>> October </option>
+		<option <?phpif($month=="November" || $month=="11") print("SELECTED");?>> November </option>
+		<option <?phpif($month=="December" || $month=="12") print("SELECTED");?>> December </option>
+	</select><select name="<?phpprint $identifier;?>year">
+		<?php
 		for($i=$year; $i<($year+15);$i++) {
-			?><option <?if ($years == $i) print 'SELECTED';?>><? print $i; ?></option><?
+			?><option <?phpif ($years == $i) print 'SELECTED';?>><?php print $i; ?></option><?php
 		}
 		?>
 	</select>
-	<?		
+	<?php		
 }
 
 function month_day_year($date,$key='')
@@ -1355,26 +1355,26 @@ function month_day_year($date,$key='')
 	}
 
 	?>
-	<select name="<?print $key;?>month">
-		<option <?if($month=="January" || $month=="1" || $month == "01") print("SELECTED");?>> January </option>
-		<option <?if($month=="February" || $month=="2" || $month == '02') print("SELECTED");?>> February </option>
-		<option <?if($month=="March" || $month=="3" || $month == '03') print("SELECTED");?>> March </option>
-		<option <?if($month=="April" || $month=="4" || $month == '04') print("SELECTED");?>> April </option>
-		<option <?if($month=="May" || $month=="5" || $month == '05') print("SELECTED");?>> May </option>
-		<option <?if($month=="June" || $month=="6" || $month == '06') print("SELECTED");?>> June </option>
-		<option <?if($month=="July" || $month=="7" || $month == '07') print("SELECTED");?>> July </option>
-		<option <?if($month=="August" || $month=="8" || $month == '08') print("SELECTED");?>> August </option>
-		<option <?if($month=="September" || $month=="9" || $month == '09') print("SELECTED");?>> September </option>
-		<option <?if($month=="October" || $month=="10") print("SELECTED");?>> October </option>
-		<option <?if($month=="November" || $month=="11") print("SELECTED");?>> November </option>
-		<option <?if($month=="December" || $month=="12") print("SELECTED");?>> December </option>
-	</select><select name="<?print $key;?>day">
-		<?for ($i=1;$i<32;$i++) { ?>
-			<option <?if($day==$i) print("SELECTED");?>> <?print $i;?></option>
-		<? } ?>
+	<select name="<?phpprint $key;?>month">
+		<option <?phpif($month=="January" || $month=="1" || $month == "01") print("SELECTED");?>> January </option>
+		<option <?phpif($month=="February" || $month=="2" || $month == '02') print("SELECTED");?>> February </option>
+		<option <?phpif($month=="March" || $month=="3" || $month == '03') print("SELECTED");?>> March </option>
+		<option <?phpif($month=="April" || $month=="4" || $month == '04') print("SELECTED");?>> April </option>
+		<option <?phpif($month=="May" || $month=="5" || $month == '05') print("SELECTED");?>> May </option>
+		<option <?phpif($month=="June" || $month=="6" || $month == '06') print("SELECTED");?>> June </option>
+		<option <?phpif($month=="July" || $month=="7" || $month == '07') print("SELECTED");?>> July </option>
+		<option <?phpif($month=="August" || $month=="8" || $month == '08') print("SELECTED");?>> August </option>
+		<option <?phpif($month=="September" || $month=="9" || $month == '09') print("SELECTED");?>> September </option>
+		<option <?phpif($month=="October" || $month=="10") print("SELECTED");?>> October </option>
+		<option <?phpif($month=="November" || $month=="11") print("SELECTED");?>> November </option>
+		<option <?phpif($month=="December" || $month=="12") print("SELECTED");?>> December </option>
+	</select><select name="<?phpprint $key;?>day">
+		<?phpfor ($i=1;$i<32;$i++) { ?>
+			<option <?phpif($day==$i) print("SELECTED");?>> <?phpprint $i;?></option>
+		<?php } ?>
 	</select>
-	<input type="text" name="<?print $key;?>year" value="<?print $year;?>" size="4"/>
-	<?
+	<input type="text" name="<?phpprint $key;?>year" value="<?phpprint $year;?>" size="4"/>
+	<?php
 }
 
 function month_day_year_hour_end($val, $key = NULL)
@@ -1399,25 +1399,25 @@ function month_day_year_hour($val, $key = NULL, $begin=true)
 		$hour = ($begin) ? 0 : 23;	
 	}
 		?>
-	Month:&nbsp;<select name="<?print $key;?>month">
-		<option <?if($month=="January" || $month=="1") print("SELECTED");?>> January </option>
-		<option <?if($month=="February" || $month=="2") print("SELECTED");?>> February </option>
-		<option <?if($month=="March" || $month=="3") print("SELECTED");?>> March </option>
-		<option <?if($month=="April" || $month=="4") print("SELECTED");?>> April </option>
-		<option <?if($month=="May" || $month=="5") print("SELECTED");?>> May </option>
-		<option <?if($month=="June" || $month=="6") print("SELECTED");?>> June </option>
-		<option <?if($month=="July" || $month=="7") print("SELECTED");?>> July </option>
-		<option <?if($month=="August" || $month=="8") print("SELECTED");?>> August </option>
-		<option <?if($month=="September" || $month=="9") print("SELECTED");?>> September </option>
-		<option <?if($month=="October" || $month=="10") print("SELECTED");?>> October </option>
-		<option <?if($month=="November" || $month=="11") print("SELECTED");?>> November </option>
-		<option <?if($month=="December" || $month=="12") print("SELECTED");?>> December </option>
-	</select>&nbsp; Day:&nbsp;<select name="<?print $key;?>day">
-		<?for ($i=1;$i<32;$i++) { ?>
-			<option <?if($day==$i) print("SELECTED");?>> <?print $i;?></option>
-		<? } ?>
-	</select>&nbsp;Year:&nbsp;<input type="text" name="<?print $key;?>year" value="<?print $year;?>" size="4"/>&nbsp;Hour:&nbsp;<select name="<?print $key;?>hour">
-		<? for($i=0; $i<=23; $i++) {
+	Month:&nbsp;<select name="<?phpprint $key;?>month">
+		<option <?phpif($month=="January" || $month=="1") print("SELECTED");?>> January </option>
+		<option <?phpif($month=="February" || $month=="2") print("SELECTED");?>> February </option>
+		<option <?phpif($month=="March" || $month=="3") print("SELECTED");?>> March </option>
+		<option <?phpif($month=="April" || $month=="4") print("SELECTED");?>> April </option>
+		<option <?phpif($month=="May" || $month=="5") print("SELECTED");?>> May </option>
+		<option <?phpif($month=="June" || $month=="6") print("SELECTED");?>> June </option>
+		<option <?phpif($month=="July" || $month=="7") print("SELECTED");?>> July </option>
+		<option <?phpif($month=="August" || $month=="8") print("SELECTED");?>> August </option>
+		<option <?phpif($month=="September" || $month=="9") print("SELECTED");?>> September </option>
+		<option <?phpif($month=="October" || $month=="10") print("SELECTED");?>> October </option>
+		<option <?phpif($month=="November" || $month=="11") print("SELECTED");?>> November </option>
+		<option <?phpif($month=="December" || $month=="12") print("SELECTED");?>> December </option>
+	</select>&nbsp; Day:&nbsp;<select name="<?phpprint $key;?>day">
+		<?phpfor ($i=1;$i<32;$i++) { ?>
+			<option <?phpif($day==$i) print("SELECTED");?>> <?phpprint $i;?></option>
+		<?php } ?>
+	</select>&nbsp;Year:&nbsp;<input type="text" name="<?phpprint $key;?>year" value="<?phpprint $year;?>" size="4"/>&nbsp;Hour:&nbsp;<select name="<?phpprint $key;?>hour">
+		<?php for($i=0; $i<=23; $i++) {
 				print '<option ';
 				if($hour == $i) 
 					print 'SELECTED';
@@ -1425,7 +1425,7 @@ function month_day_year_hour($val, $key = NULL, $begin=true)
 			 }
 		?>
 	</select>
-	<?
+	<?php
 }
 
 function seconds_trunc($time)

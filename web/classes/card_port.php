@@ -1,4 +1,4 @@
-<?
+<?php
 require_once("framework.php");
 
 // this objects will match the hardware on the system

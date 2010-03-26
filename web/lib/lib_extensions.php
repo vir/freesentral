@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * lib_extensions.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 global  $module, $method, $path, $action, $page, $limit, $fields_for_extensions, $operations_for_extensions, $upload_path;
 
 if($_SESSION["level"] != "admin")

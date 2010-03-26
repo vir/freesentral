@@ -1,4 +1,4 @@
-<?
+<?php
 require_once("framework.php");
 
 class Card_conf extends Model

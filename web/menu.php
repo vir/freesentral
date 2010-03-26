@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * menu.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 include ("structure.php");
 
 $errorlogin = "Login invalid!";
@@ -41,7 +41,7 @@ function get_login_form()
 		<form action="index.php" method="post">
 			<fieldset class="login" border="1">
 				<legend class="login">Login</legend>
-				<? 
+				<?php 
 					if ($login) 
 						print $login;
 					else 
@@ -52,7 +52,7 @@ function get_login_form()
 				<p align="right"><label id="password">Password:&nbsp;</label><input type="password" name="password" id="password" size="19" /></p>
 				<p align="right"><input type="submit" value="Send" class="submit"/></p>
 				<div align="center">
-		<?
+		<?php
 		/*	$sigur = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'];
 		    $s1 = $sigur ? "Cripted SSL" : "Uncripted";
 		    $s2 = $sigur ? "deactivate" : "secure";
@@ -64,7 +64,7 @@ function get_login_form()
 			</fieldset>
 		</form>
 		</div>
-<?
+<?php
 }
 
 function title()
@@ -85,12 +85,12 @@ function get_content()
 						<tr>
 							<td class="upperbanner">
 								<div class="upperbanner">Welcome 
-								<? 
+								<?php 
 									if(isset($_SESSION["real_user"]))
 										print $_SESSION["real_user"]. ". You are currently logged in as ";
 									print $_SESSION["user"];
 								?>!&nbsp;&nbsp;<a class="uplink" href="index.php">Logout</a>&nbsp;&nbsp;
-								<?
+								<?php
 									if(isset($_SESSION["real_user"]))
 										print '<a class="uplink" href="main.php?method=stop_impersonate">Return&nbsp;to&nbsp;your&nbsp;account</a>';
 								?>
@@ -116,14 +116,14 @@ function get_content()
 			<td class="upperbanner">
 								<div class="upperbanner">Welcome
 								<font class="bluefont">
-								<? 
+								<?php 
 									if(isset($_SESSION["real_user"]))
 										print $_SESSION["real_user"]. ". You are currently logged in as ";
 									print $_SESSION["user"];
 								?>
 								</font>
 								!&nbsp;&nbsp;<a class="uplink" href="index.php">Logout</a>&nbsp;&nbsp;
-								<?
+								<?php
 									if(isset($_SESSION["real_user"]))
 										print '<a class="uplink" href="main.php?method=stop_impersonate">Return&nbsp;to&nbsp;your&nbsp;account</a>';
 								?>
@@ -135,16 +135,16 @@ function get_content()
 	<div class="position"> <br/> </div>
 	<table class="firstmenu" cellpadding="0" cellspacing="0">
 		<tr>
-			<? menu(); ?>
+			<?php menu(); ?>
 		</tr>
 	</table>
-	<? submenu();
+	<?php submenu();
 	}
 	?>
 	<table class="holdcontent" cellspacing="0" cellpadding="0">
 		<tr>
 			<td class="holdcontent">
-	<?
+	<?php
 	$load = ($module == "HOME") ? "home" : $module;
 	if($module) {
 			if(is_file("modules/$dir/$load.php"))
@@ -153,7 +153,7 @@ function get_content()
 			</td>
 		</tr>
 	</table>
-<?
+<?php
 }
 
 function menu()

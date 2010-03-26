@@ -1,4 +1,4 @@
-<?
+<?php
 require_once("lib/lib.php");
 
 // list of supported Sangoma telephony cards

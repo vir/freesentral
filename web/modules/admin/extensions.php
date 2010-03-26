@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * extensions.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -32,7 +32,7 @@ function groupsClick(lin,col,role)
     }
 }
 </script>
-<?
+<?php
 global $module, $method, $path, $action, $page, $limit, $fields_for_extensions, $operations_for_extensions, $upload_path;
 
 require_once("lib/lib_extensions.php");

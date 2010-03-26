@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * home.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 
 global $module, $method, $path, $action, $page, $target_path;
 

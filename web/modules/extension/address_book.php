@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * address_book.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -22,7 +22,7 @@
  */
 ?>
 <div class="content wide">
-<?
+<?php
 global $module, $method, $path, $action, $page, $limit, $fields_for_extensions, $operations_for_extensions, $upload_path;
 
 require_once("socketconn.php");

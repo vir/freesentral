@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * music_on_hold.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -32,7 +32,7 @@ function playlistClick(lin,col,role)
     }
 }
 </script>
-<?
+<?php
 global $module, $method, $path, $action, $page, $limit, $actions;
 
 if(!$method || $method == "manage")
@@ -240,12 +240,12 @@ function listen_music_on_hold()
 	?>
 	<center>
 	<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="450" height="40" id="home" align="center">
-		<param name="movie" value='flash_movie.php?size=160&nostart=true&mp3=<?print $filepath;?>' />
+		<param name="movie" value='flash_movie.php?size=160&nostart=true&mp3=<?phpprint $filepath;?>' />
 		<param name="quality" value="high" />
-		<embed src='flash_movie.php?size=160&nostart=true&mp3=<?print $filepath;?>' quality="high" width="450" height="40"  name="home" align="" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+		<embed src='flash_movie.php?size=160&nostart=true&mp3=<?phpprint $filepath;?>' quality="high" width="450" height="40"  name="home" align="" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
 	</object>
 	</center>
-	<?
+	<?php
 }
 
 function playlists()

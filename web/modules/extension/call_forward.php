@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * call_forward.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -22,7 +22,7 @@
  */
 ?>
 <div class="content wide">
-<?
+<?php
 global $module, $method, $action;
 
 $extension = $_SESSION["user"];
@@ -119,10 +119,10 @@ function makeupdate($param,$value,$oldtimeout,$extension_id)
 function insert_forward_options($value, $name)
 {
 	?>
-	<input type="radio" name="<?print $name?>" value="yes" <?if ($value != "" && $value != "vm") print ('CHECKED');?>>Yes
-&nbsp;&nbsp;<input type="radio" name="<?print $name;?>" value="no" <?if ($value == "") print ('CHECKED');?>>No
-&nbsp;&nbsp;<input type="radio" name="<?print $name;?>" value="vm" <?if ($value == "vm") print ('CHECKED');?>>Voicemail
-	<?
+	<input type="radio" name="<?phpprint $name?>" value="yes" <?phpif ($value != "" && $value != "vm") print ('CHECKED');?>>Yes
+&nbsp;&nbsp;<input type="radio" name="<?phpprint $name;?>" value="no" <?phpif ($value == "") print ('CHECKED');?>>No
+&nbsp;&nbsp;<input type="radio" name="<?phpprint $name;?>" value="vm" <?phpif ($value == "vm") print ('CHECKED');?>>Voicemail
+	<?php
 }
 
 function call_forward()

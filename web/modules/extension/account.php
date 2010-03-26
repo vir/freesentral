@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * account.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -22,7 +22,7 @@
  */
 ?>
 <div class="content wide">
-<?
+<?php
 
 global $module, $method, $path, $action, $page;
 

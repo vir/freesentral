@@ -1,5 +1,5 @@
 #! /usr/bin/php -q
-<?
+<?php
 /**
  * force_update.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 
 require_once ('lib/lib.php');
 require_once ('framework.php');

@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * lib_gateways.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 global  $module, $method, $path, $action, $page, $limit, $fields_for_extensions, $operations_for_extensions, $upload_path;
 
 function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
@@ -292,7 +292,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		editObject($gateway,$step1,"Select type of gateway to add","no");
 
 		//select protocol for gateway with registration
-		?><div id="div_Yes" style="display:<? if (getparam("gateway_with_registration") != "Yes") print "none;"; else print "block;";?>"><?
+		?><div id="div_Yes" style="display:<?php if (getparam("gateway_with_registration") != "Yes") print "none;"; else print "block;";?>"><?php
 		editObject(
 					$gateway,
 					array(
@@ -305,10 +305,10 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 					"Select protocol for new gateway",
 					"no",null,null,null,"reg"
 					);
-		?></div><?
+		?></div><?php
 
 		//select protocol for gateway without registration
-		?><div id="div_No" style="display:<? if (getparam("gateway_with_registration") != "No") print "none;"; else print "block;";?>"><?
+		?><div id="div_No" style="display:<?php if (getparam("gateway_with_registration") != "No") print "none;"; else print "block;";?>"><?php
 		editObject(
 					$gateway,
 					array(
@@ -319,7 +319,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 					"Select protocol for new gateway",
 					"no",null,null,null,"noreg"
 				);
-		?></div><?
+		?></div><?php
 
 		// display all the divs with fields for gateway with registration depending on the protocol
 		for($i=0; $i<count($protocols); $i++)
@@ -329,14 +329,14 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 			if(!isset(${$protocols[$i]."_fields"}))
 				continue;
 
-			?><div id="div_reg_<?print $protocols[$i]?>" style="display:<? if ($protocol == $protocols[$i] && $gw_type == "Yes") print "block;"; else print "none;";?>"><?
+			?><div id="div_reg_<?phpprint $protocols[$i]?>" style="display:<?php if ($protocol == $protocols[$i] && $gw_type == "Yes") print "block;"; else print "none;";?>"><?php
 			editObject(
 						$gateway,
 						${$protocols[$i]."_fields"}, 
 						"Define ".strtoupper($protocols[$i])." gateway", 
 						"Save",true,null,null,"reg_".$protocols[$i]
 					);
-			?></div><?
+			?></div><?php
 		}
 		// display all the div with fields for gateway without registration on the protocol
 		for($i=0; $i<count($allprotocols); $i++)
@@ -356,7 +356,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 							$gateway->port = '1720';
 							break;
 			}
-			?><div id="div_noreg_<?print $allprotocols[$i]?>" style="display:<? if ($protocol == $allprotocols[$i] && $gw_type == "No") print "block;"; else print "none;";?>"><?
+			?><div id="div_noreg_<?phpprint $allprotocols[$i]?>" style="display:<?php if ($protocol == $allprotocols[$i] && $gw_type == "No") print "block;"; else print "none;";?>"><?php
 			$hide_advanced = ($allprotocols[$i] == "BRI" || $allprotocols[$i] == "PRI") ? true : false;
 			editObject(
 						$gateway,
@@ -364,7 +364,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 						"Define ".strtoupper($allprotocols[$i])." gateway",
 						"Save",true,null,null,"noreg_".$allprotocols[$i],null, $hide_advanced
 					);
-			?></div><?
+			?></div><?php
 		}
 	}else{
 		$function = ($gateway->username) ? $gateway->protocol . "_fields" : $gateway->protocol;

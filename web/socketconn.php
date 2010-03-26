@@ -1,4 +1,4 @@
-<?
+<?php
 require_once("debug.php");
 
 // class used to open a socket, send and receive information from it

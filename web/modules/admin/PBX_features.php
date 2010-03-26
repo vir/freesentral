@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * PBX_features.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -22,7 +22,7 @@
  */
 ?>
 <div class="content wide">
-<?
+<?php
 global $module, $method, $path, $action, $page, $target_path, $iframe;
 
 if(substr($method,0,4) == "add_")
@@ -112,25 +112,25 @@ function digits()
 	);
 ?>
 <table class="features_table" cellspacing="0" cellpadding="0">
-<?foreach($arr as $name=>$combinations) {?>
+<?phpforeach($arr as $name=>$combinations) {?>
 <tr>
 	<th class="features_th" colspan="2">
-		<?print $name;?>
+		<?phpprint $name;?>
 	</th>
 </tr>
-<?for($i=0; $i<count($combinations); $i++) { ?>
+<?phpfor($i=0; $i<count($combinations); $i++) { ?>
 <tr>
 	<td class="features_td digit">
-		<?print $combinations[$i]["digits"];?>
+		<?phpprint $combinations[$i]["digits"];?>
 	</td>
 	<td class="features_td digit_description">
-		<?print $combinations[$i]["text"];?>
+		<?phpprint $combinations[$i]["text"];?>
 	</td>
 </tr>
-<? } ?>
-<? } ?>
+<?php } ?>
+<?php } ?>
 </table>
-<?
+<?php
 /*
 ?>
 *0 - put your party on hold
@@ -156,7 +156,7 @@ function digits()
 *** - disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company you called to.
 <br/><br/>
 ### - enable pbx features
-<?
+<?php
 */
 }
 
@@ -176,7 +176,7 @@ PBX features:
 <li class="retake"><a class="list_features" href="#call_hunt">Retake PBX features</a></li>
 </ul>
 </div>
-	<?
+	<?php
 	call_transfer();
 	call_hold();
 	conference();
@@ -195,7 +195,7 @@ Press *** do disable the pbx features. You need to use this feature when you wis
 <div class="features_notice">
 Press ### after pressing ***(do disable pbx features) to enable your pbx features during a call.
 </div>
-<?
+<?php
 }
 
 function call_transfer()
@@ -217,9 +217,9 @@ You transfer your party to another number after checking with the other party.
 This type of transfer is done in two steps: First press *2, then phone number, then *. This operation will put your party and hold and you will be connected to the inserted number(third party). After third party agrees to receive the call you press *4. This operation will connect the party you put on hold and the third party. 
 </ul>
 <br/><br/>
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=call_hold">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=call_hold">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function call_hold()
@@ -234,9 +234,9 @@ To return a party on hold you need to press *7.
 <br/><br/>
 After putting your party on hold you receive dial tone in order to perform another operation. 
 <br/><br/>
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=call_transfer"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=conference">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=call_transfer"><< Previous</a> | <a class="llink" href="main.php?module=<?phpprint $module;?>&method=conference">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function conference()
@@ -253,9 +253,9 @@ Just dial the number associated to the conference room. Look in the 'Conferences
 During a call press *3 in order to transfer you and your pear in to a conference. If you want to add another person to the conference press *9(this will return your dial tone) and you will be able to make a new call. Then press *6 to transfer yourself and your new pear to the existing conference. 
 </ul>
 <br/><br/>
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=call_hold"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=call_hunt">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=call_hold"><< Previous</a> | <a class="llink" href="main.php?module=<?phpprint $module;?>&method=call_hunt">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function call_hunt()
@@ -266,9 +266,9 @@ function call_hunt()
 <div class="features_notice">
 This feature is enabled by the use of groups. When a call comes for a certain group all the users in that group are called. 
 <br/><br/>
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=conference"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=call_pick_up">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=conference"><< Previous</a> | <a class="llink" href="main.php?module=<?phpprint $module;?>&method=call_pick_up">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function call_pick_up()
@@ -281,9 +281,9 @@ Call pick up is allowed between members of the same group.
 <br/><br/>
 If an extension in your group is called you can pickup that call pressing ** and then insert the extension that received the call. Another case is pickup a call to a group that you are a member of. 
 <br/><br/>
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=call_hunt"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=flush_digits">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=call_hunt"><< Previous</a> | <a class="llink" href="main.php?module=<?phpprint $module;?>&method=flush_digits">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function flush_digits()
@@ -294,9 +294,9 @@ function flush_digits()
 <div class="features_notice">
 Press # after a certain number of digits in order to delete the digits yor entered.
 <br/><br/> 
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=call_pick_up"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=passthrought">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=call_pick_up"><< Previous</a> | <a class="llink" href="main.php?module=<?phpprint $module;?>&method=passthrought">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function passthrought()
@@ -307,9 +307,9 @@ function passthrought()
 <div class="features_notice">
 Press *** do disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company you called to. 
 <br/><br/> 
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=flush_digits"><< Previous</a> | <a class="llink" href="main.php?module=<?print $module;?>&method=retake">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=flush_digits"><< Previous</a> | <a class="llink" href="main.php?module=<?phpprint $module;?>&method=retake">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function retake()
@@ -320,9 +320,9 @@ function retake()
 <div class="features_notice">
 Press ### after pressing ***(do disable pbx features) to enable your pbx features during a call.
 <br/><br/> 
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=passthrought"><< Previous</a>| <a class="llink" href="main.php?module=<?print $module;?>&method=Address_Book">Next >></a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=passthrought"><< Previous</a>| <a class="llink" href="main.php?module=<?phpprint $module;?>&method=Address_Book">Next >></a></center>
 </div>
-<?
+<?php
 }
 
 function Address_Book()
@@ -334,9 +334,9 @@ function Address_Book()
 <div class="features_notice">
 Press ** and then insert the name of the person you wish to call. This name coresponds to pressing the digits corresponding to each letter using the phone's keyboard.
 <br/><br/> 
-<center><a class="llink" href="main.php?module=<?print $module;?>&method=retake"><< Previous</a></center>
+<center><a class="llink" href="main.php?module=<?phpprint $module;?>&method=retake"><< Previous</a></center>
 </div>
-<?
+<?php
 }
 
 ?>
