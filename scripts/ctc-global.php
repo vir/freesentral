@@ -1,5 +1,5 @@
 #!/usr/bin/php -q
-<?
+<?php
 require_once("libyate.php");
 
 // Initiate a call once we know the target

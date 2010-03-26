@@ -1,5 +1,5 @@
 #!/usr/bin/php -q
-<?
+<?php
 /*
  * Callback system dialer - call leg A script
  */

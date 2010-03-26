@@ -1,5 +1,5 @@
 #!/usr/bin/php -q
-<?
+<?php
 require_once("libyate.php");
 require_once("lib_queries.php");
 

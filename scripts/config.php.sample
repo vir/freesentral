@@ -1,4 +1,4 @@
-<?
+<?php
 $db_host = "localhost";     /*  database server hostname   */
 $db_user = "postgres";      /*  database server username   */
 $db_database = "freesentral_v2";//"crm";   /*  database name   */

@@ -86,7 +86,7 @@ maketarball()
 confdata()
 {
 cat << EOF
-<?
+<?php
 /* File created by $version */
 
 /* Settings for connecting to the PostgreSQL database */
