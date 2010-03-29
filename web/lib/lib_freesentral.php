@@ -66,12 +66,12 @@ function include_formats($formats,$form_identifier)
 {
 	$formats = explode(',',$formats);
 	?>
-	<input type="checkbox" name="<?phpprint $form_identifier;?>alaw" <?php if (in_array("alaw",$formats)) print "CHECKED";?>>alaw
-	<input type="checkbox" name="<?phpprint $form_identifier;?>mulaw" <?php if (in_array("mulaw",$formats)) print "CHECKED";?>>mulaw
-	<input type="checkbox" name="<?phpprint $form_identifier;?>gsm" <?php if (in_array("gsm",$formats)) print "CHECKED";?>>gsm
-	<input type="checkbox" name="<?phpprint $form_identifier;?>g729"<?php if (in_array("g729",$formats)) print "CHECKED";?>>g729
-	<input type="checkbox" name="<?phpprint $form_identifier;?>g723"<?php if (in_array("g723",$formats)) print "CHECKED";?>>g723
-	<input type="checkbox" name="<?phpprint $form_identifier;?>ilbc"<?php if (in_array("ilbc",$formats)) print "CHECKED";?>>ilbc
+	<input type="checkbox" name="<?php print $form_identifier;?>alaw" <?php if (in_array("alaw",$formats)) print "CHECKED";?>>alaw
+	<input type="checkbox" name="<?php print $form_identifier;?>mulaw" <?php if (in_array("mulaw",$formats)) print "CHECKED";?>>mulaw
+	<input type="checkbox" name="<?php print $form_identifier;?>gsm" <?php if (in_array("gsm",$formats)) print "CHECKED";?>>gsm
+	<input type="checkbox" name="<?php print $form_identifier;?>g729"<?php if (in_array("g729",$formats)) print "CHECKED";?>>g729
+	<input type="checkbox" name="<?php print $form_identifier;?>g723"<?php if (in_array("g723",$formats)) print "CHECKED";?>>g723
+	<input type="checkbox" name="<?php print $form_identifier;?>ilbc"<?php if (in_array("ilbc",$formats)) print "CHECKED";?>>ilbc
 	<?php
 }
 
@@ -296,9 +296,9 @@ function listen_voicemail()
 ?>
 	<center>
 	<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" width="450" height="40" id="home" align="center">
-		<param name="movie" value='flash_movie.php?size=160&nostart=true&mp3=<?phpprint $mp3_file;?>' />
+		<param name="movie" value='flash_movie.php?size=160&nostart=true&mp3=<?php print $mp3_file;?>' />
 		<param name="quality" value="high" />
-		<embed src='flash_movie.php?size=160&nostart=true&mp3=<?phpprint $mp3_file;?>' quality="high" width="450" height="40"  name="home" align="" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+		<embed src='flash_movie.php?size=160&nostart=true&mp3=<?php print $mp3_file;?>' quality="high" width="450" height="40"  name="home" align="" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
 	</object>
 	</center>
 <?php

@@ -119,9 +119,9 @@ function makeupdate($param,$value,$oldtimeout,$extension_id)
 function insert_forward_options($value, $name)
 {
 	?>
-	<input type="radio" name="<?phpprint $name?>" value="yes" <?phpif ($value != "" && $value != "vm") print ('CHECKED');?>>Yes
-&nbsp;&nbsp;<input type="radio" name="<?phpprint $name;?>" value="no" <?phpif ($value == "") print ('CHECKED');?>>No
-&nbsp;&nbsp;<input type="radio" name="<?phpprint $name;?>" value="vm" <?phpif ($value == "vm") print ('CHECKED');?>>Voicemail
+	<input type="radio" name="<?php print $name?>" value="yes" <?php if ($value != "" && $value != "vm") print ('CHECKED');?>>Yes
+&nbsp;&nbsp;<input type="radio" name="<?php print $name;?>" value="no" <?php if ($value == "") print ('CHECKED');?>>No
+&nbsp;&nbsp;<input type="radio" name="<?php print $name;?>" value="vm" <?php if ($value == "vm") print ('CHECKED');?>>Voicemail
 	<?php
 }
 

@@ -329,7 +329,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 			if(!isset(${$protocols[$i]."_fields"}))
 				continue;
 
-			?><div id="div_reg_<?phpprint $protocols[$i]?>" style="display:<?php if ($protocol == $protocols[$i] && $gw_type == "Yes") print "block;"; else print "none;";?>"><?php
+			?><div id="div_reg_<?php print $protocols[$i]?>" style="display:<?php if ($protocol == $protocols[$i] && $gw_type == "Yes") print "block;"; else print "none;";?>"><?php
 			editObject(
 						$gateway,
 						${$protocols[$i]."_fields"}, 
@@ -356,7 +356,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 							$gateway->port = '1720';
 							break;
 			}
-			?><div id="div_noreg_<?phpprint $allprotocols[$i]?>" style="display:<?php if ($protocol == $allprotocols[$i] && $gw_type == "No") print "block;"; else print "none;";?>"><?php
+			?><div id="div_noreg_<?php print $allprotocols[$i]?>" style="display:<?php if ($protocol == $allprotocols[$i] && $gw_type == "No") print "block;"; else print "none;";?>"><?php
 			$hide_advanced = ($allprotocols[$i] == "BRI" || $allprotocols[$i] == "PRI") ? true : false;
 			editObject(
 						$gateway,
