@@ -100,7 +100,7 @@ cat << EOF
 /* Password for the database access */
 \$db_passwd = "$dbpass";
 
-date_default_timezone_set($timezone);
+date_default_timezone_set("$timezone");
 
 EOF
 if [ "x$1" = "xweb" ]; then
