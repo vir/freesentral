@@ -48,121 +48,108 @@ function activate($error = NULL)
 	global $method;
 
 	$method = "activate";
-
-//	print 'In order to activate the Auto Attendant you need to add a did(direct inward dialing) to it.';
 	$did = new Did;
 	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
 	$dids = $did->extendedSelect(array("destination"=>"external/nodata/auto_attendant.php"),"number");
 	if(count($dids))
 	{
-		set_step(4,"Activate DID for Auto Attendant","complete");
-
+		set_step(4,"DIDs for Auto Attendant","complete");
 		$formats = array("did", "number", "destination", "function_get_default_destination:default_destination"=>"extension,group");
-
-		$actions =  array("&module=dids&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&module=dids&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
-
-		tableOfObjects($dids, $formats, "did", $actions);
+		$actions =  array("&method=activate_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&module=dids&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
+		tableOfObjects($dids, $formats, "did", $actions, array("&method=activate_did"=>"Add DID for AutoAttendant"));
 	}else{
 		set_step(4,"Activate did for Auto Attendant","incomplete");
-		if($error)
-			errornote($error);
-
-		$did = new Did;
-		$did->did_id = getparam("did_id");
-		$did->select();
-	
-		if($error) {
-			$did->number = getparam("number");
-			$did->did = getparam("did");
-			$did->destination = getparam("destination");
-			$did->default_destination = getparam("default_destination");
-		}
-	
-		$extensions = Model::selection("extension", NULL, "extension");
-		$extensions = Model::objectsToArray($extensions,array("extension_id"=>"", "extension"=>""),true);
-		$groups = Model::selection("group", NULL, '"group"');
-		$groups = Model::objectsToArray($groups,array("group_id"=>"", "group"=>""),true);
-	
-		if($did->default_destination == "extension")
-			$extensions["selected"] = $did->extension_id;
-		if($did->default_destination == "group")
-			$groups["selected"] = $did->group_id;
-	
-		$options = array("extension", "group");
-		$options["selected"] = $did->default_destination;
-		$fields = array(
-						"did"=>array("value"=>"auto attendant","compulsory"=>true, "comment"=>"Name used for identifing the Auto Attendant"),
-						"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
-						"destination"=>array("value"=>"external/nodata/auto_attendant.php", "display"=>"fixed", "compulsory"=>true),
-						"default_destination"=>array($options, "display"=>"select", "comment"=>"Choose between an extension or a group. Use this field when 'Destination' is a script. If caller doesn't insert anything he will be sent to this default destination."),
-						"extension"=>array($extensions, "display"=>"select", "comment"=>"Select only when default destination is an extension"),
-						"group"=>array($groups,"display"=>"select", "comment"=>"Select only when default destination is a group"),
-						"description"=>array("display"=>"textarea")
-					);
-		start_form();
-		addHidden("database",array("did_id"=>$did->did_id));
-		if($did->did_id)
-			$title = "Edit Direct inward dialing";
-		else
-			$title = "Add Direct inward dialing";
-		editObject($did,$fields,$title,"Save",true);
-		end_form();
+		activate_did();
 	}
 }
 
-function activate_database()
+function activate_did($error=NULL)
 {
-	$default_destination = getparam("default_destination");
-
-	if(!getparam("did") || !getparam("number") || $default_destination == "Not selected") {
-		errormess("You didn't complete all the required fields", "no");
-		activate();
-		return;
-	}
-	$extension_id = NULL;
-	$group_id = NULL;
-	if($default_destination == "extension") {
-		$extension_id = getparam("extension");
-		if(!$extension_id || $extension_id == 'Not selected') {
-			errormess("Please select an extension.", "no");
-			activate();
-			return;
-		}
-	}elseif($default_destination == "group") {
-		$group_id = getparam("group");
-		if(!$group_id || $group_id == "Not selected") {
-			errormess("Please select a group.", "No");
-			activate();
-			return;
-		}
-	}
+	if($error)
+		errornote($error);
 
 	$did = new Did;
 	$did->did_id = getparam("did_id");
-	$did->number = getparam("number");
-	if($did->ObjectExists()) {
-		errormess("This 'Number' has already a destination defined.");
-		activate();
-		return;
-	}
-	$did2 = new Did;
-	$did2->did_id = getparam("did_id");
-	$did2->did = getparam("did");
-	if($did2->objectExists()) {
-		errormess("This 'Did' was already defined.", "no");
-		activate();
-		return;
-	}
-	$did->did = $did2->did;
-	$did->destination = "external/nodata/auto_attendant.php";
-	$did->default_destination = $default_destination;
-	$did->extension_id = $extension_id;
-	$did->group_id = $group_id;
-	$did->description = getparam("description");
+	$did->select();
 
-	$res = ($did->did_id) ? $did->update() : $did->insert();
-	
-	wizard();
+	if($error) {
+		$did->number = getparam("number");
+		$did->did = getparam("did");
+		$did->destination = getparam("destination");
+		$did->default_destination = getparam("default_destination");
+	}
+
+	$def = build_default_options($did);
+
+	if (!$did->did)
+		$did->did = "Auto Attendant";
+	$fields = array(
+		"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),
+		"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
+		"default_destination" => array($def, "display"=>"select", "comment"=>"Choose a group or an extension for the call to go to if no digit was pressed.", "compulsory"=>true),
+	);
+
+	$title = "DID for Auto Attendant";
+	start_form();
+	addHidden("database",array("method"=>"activate_did", "did_id"=>$did->did_id));
+	editObject($did,$fields,$title,"Save",true);
+	end_form();
+}
+
+function build_default_options($did)
+{
+	$extensions = Model::selection("extension", NULL, "extension");
+	$extensions = Model::objectsToArray($extensions, array("extension_id" => "function_build_extension_id:default_destination_id", "extension"=>"default_destination"),true);
+	$groups = Model::selection("group", NULL, '"group"');
+	$groups = Model::objectsToArray($groups,array("group_id" => "function_build_group_id:default_destination_id", "group"=>"default_destination"),true);
+
+	$def = array_merge(
+			array(array("default_destination_id"=>"__disabled", "default_destination"=>"--Groups--")),
+			$groups,
+			array(array("default_destination_id"=>"__disabled", "default_destination"=>"--Extensions--")),
+			$extensions
+	);
+
+	if ($did->extension_id)
+		$def["selected"] = "extension:".$did->extension_id;
+	elseif ($did->group_id)
+		$def["selected"] = "group:".$did->group_id;
+
+	return $def;
+}
+
+function build_extension_id($id)
+{
+	return "extension:$id";
+}
+
+function build_group_id($id)
+{
+	return "group:$id";
+}
+
+function activate_did_database()
+{
+	$did = new Did;
+	$did->did_id  = getparam("did_id");
+	$params = form_params(array("did", "number","description"));
+	$params["destination"] = "external/nodata/auto_attendant.php";
+	$def = explode(":",getparam("default_destination"));
+	if (count($def)==2) {
+		$params[$def[0]."_id"] = $def[1];
+		$oth = ($def[0] == "extension") ? "group" : "extension";
+		$params[$oth."_id"] = null;
+	} else {
+		activate_did("You must select a 'Default destination'.");
+		return;
+	}
+
+	$res = ($did->did_id) ? $did->edit($params) : $did->add($params);
+
+	if($res[0])
+		notice($res[1], "wizard", $res[0]);
+	else
+		activate_did($res[1]);
 }
 
 function keys($wizard = false)

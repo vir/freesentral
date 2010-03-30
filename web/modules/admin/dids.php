@@ -22,6 +22,7 @@
  */
 ?>
 <?php
+require_once("lib/lib_auto_attendant.php");
 global $module, $method, $path, $action, $page;
 
 if(!$method)
@@ -114,43 +115,27 @@ function dids()
 	tableOfObjects($dids, $formats, "DIDs", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>'),array("&method=add_did"=>"Add DID"));
 }
 
-function edit_did($error=NULL)
+function edit_did($error=NULL, $title=null)
 {
 	if($error)
 		errornote($error);
-
 	$did = new Did;
 	$did->did_id = getparam("did_id");
 	$did->select();
-
 	if($error) {
 		$did->number = getparam("number");
 		$did->did = getparam("did");
 		$did->destination = getparam("destination");
 		$did->default_destination = getparam("default_destination");
 	}
-
-	$extensions = Model::selection("extension", NULL, "extension");
-	$extensions = Model::objectsToArray($extensions,array("extension_id"=>"", "extension"=>""),true);
-	$groups = Model::selection("group", NULL, '"group"');
-	$groups = Model::objectsToArray($groups,array("group_id"=>"", "group"=>""),true);
-
-	if($did->default_destination == "extension")
-		$extensions["selected"] = $did->extension_id;
-	if($did->default_destination == "group")
-		$groups["selected"] = $did->group_id;
-
-	$options = array("extension", "group");
-	$options["selected"] = $did->default_destination;
+	$def = build_default_options($did);
 	$fields = array(
-					"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),
-					"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
-					"destination"=>array("compulsory"=>true, "comment"=>"Ex: external/nodata/voicemail.php(or any other script), external/nodata/auto_attendant.php, 090(extension), 01(group)"),
-					"default_destination"=>array($options, "display"=>"select", "comment"=>"Choose between an extension or a group. Use this field when 'Destination' is a script like Auto Attendant. If caller doesn't insert anything he will be sent to this default destination."),
-					"extension"=>array($extensions, "display"=>"select", "comment"=>"Select only when default destination is an extension"),
-					"group"=>array($groups,"display"=>"select", "comment"=>"Select only when default destination is a group"),
-					"description"=>array("display"=>"textarea")
-				);
+		"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),
+		"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
+		"destination"=>array("compulsory"=>true),
+		"default_destination" => array($def, "display"=>"select", "comment"=>"Choose a group or an extension for the call to go to if no digit was pressed."),
+		"description"=>array("display"=>"textarea")
+	);
 	start_form();
 	addHidden("database",array("did_id"=>$did->did_id));
 	if($did->did_id)
@@ -167,7 +152,16 @@ function edit_did_database()
 
 	$did = new Did;
 	$did->did_id  = getparam("did_id");
-	$params = form_params(array("did", "number", "destination", "default_destination", "extension", "group", "description"));
+	$params = form_params(array("did", "number", "destination", "description"));
+	if (($def=getparam("default_destination"))) {
+		$def = explode(":", $def);
+		$params[$def[0]."_id"] = $def[1];
+		$oth = ($def[0] == "extension") ? "group_id" : "extension_id";
+		$params[$oth] = null;
+	} else {
+		$params["extension_id"] = null;
+		$params["group_id"] = null;
+	}
 	$res = ($did->did_id) ? $did->edit($params) : $did->add($params);
 
 	if($res[0])

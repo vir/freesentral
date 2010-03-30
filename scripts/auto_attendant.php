@@ -107,9 +107,9 @@ function setState($newstate)
 			}
 			if($hold_keys == '')
 			{
-				$query = "SELECT (CASE WHEN default_destination='extension' THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number='$called'";
+				$query = "SELECT (CASE WHEN default_destination='extension' OR extension_id IS NOT NULL THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number='$called'";
 				$res = query_to_array($query);
-				if(!count($res)) {
+				if(!count($res) && strlen($res[0]["called"])) {
 					// this should never happen
 					setState("goodbye");
 					return;
