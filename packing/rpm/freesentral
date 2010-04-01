@@ -2,7 +2,7 @@
 #
 # freesentral:	Starts the Yate server for FreeSentral service
 #
-# chkconfig: 345 95 10
+# chkconfig: 345 94 09
 # description: Starts and stops Yate used as FreeSentral service
 #
 # processname: yate

@@ -55,6 +55,7 @@ configuration. It is based on the Yate telephony server.
 /sbin/chkconfig postgresql on
 /sbin/chkconfig freesentral on
 /sbin/chkconfig freesentral-init on
+/sbin/chkconfig --del yate
 
 
 %prep
