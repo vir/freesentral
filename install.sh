@@ -515,6 +515,43 @@ fi
 if [ -n "$configs" ]; then
     echo "Installing Yate configuration files"
 
+	# regexroute.conf
+    fe="$DESTDIR$configs/regexroute.conf";
+    e="
+[priorities]
+; Route here before register.php which is at priority 100
+route=95
+
+[default]
+\${address}^127\\.0\\.0\\.=goto localhost
+\${username}.=goto localhost
+
+[localhost]
+; The following are for testing purposes
+^99991001\$=tone/dial
+^99991002\$=tone/busy
+^99991003\$=tone/ring
+^99991004\$=tone/specdial
+^99991005\$=tone/congestion
+^99991006\$=tone/outoforder
+^99991007\$=tone/milliwatt
+^99991008\$=tone/info
+"
+
+    if [ -e "$fe" ]; then
+	if [ -z `readopt "Overwrite existing regexroute.conf ?" "yes"` ]; then
+	    echo "Please edit file $fe like follows:"
+	    echo "$e"
+	    fe=""
+	fi
+    fi
+    if [ -n "$fe" ]; then
+	echo "Creating regexroute configuration file"
+	mkdir -p "$DESTDIR$configs"
+	echo "; File created by $version
+$e" > "$fe"
+    fi
+
 	# extmodule.conf
     fe="$DESTDIR$configs/extmodule.conf";
     e="
