@@ -38,10 +38,11 @@ else
 	$call = $method;
 
 $explanation = array(
-	"default" => "Auto Attendant: Calls within the PBX are answered and directed to their desired destination by the auto attendant system.<br/><br/>The keys you define must match the prompts you uploaded (<font class=\"bold\">step 2</font>). If no key is pressed the call will be sent to the extension or group defined as the default destination when activating the DID for Auto Attendant (<font class=\"bold\">step 4</font>).<br/><br/>The Auto Attendant has two states: online and offline. Each of these states has its own prompt (<font class=\"bold\">step 1</font>).<br/><br/>If your online prompt says: Press 1 for Sales, then you must select type: online, key: 1, and insert group: Sales (you must have defined Sales in the Groups section). Same for offline state. <br/><br/>If you want to send a call directly to an extension or another number, you should insert the number in the 'Number(x)' field from Define Keys section (<font class=\"bold\">step 2</font>).", 
-	"keys" => "If your online prompt says: Press 1 for Sales, then you must select type: online, key: 1, and insert group: Sales (you must have defined Sales in the Groups section). Same for offline state. <br/><br/>If you want to send a call directly to an extension or another number, you should insert the number in the 'Number(x)' field from Define Keys section.", 
+	"default" => "Auto Attendant: Calls within the PBX are answered and directed to their desired destination by the auto attendant system.<br/><br/>The first step for setting it is to <font class=\"bold\">upload the two prompts</font> for online/offline mode. The prompts may vary depending on your company's business hours.<br/><br/>Then you need to <font class=\"bold\">define the keys</font> that can be pressed during each mode. Please note that the keys must match the  uploaded prompts exactly.Example: if your online prompt says \"Press 1 for Sales\", then you must select type: online, key: 1, and insert group: Sales (you must have Sales defined in the Groups section).<br/><br/>When <font class=\"bold\">scheduling</font> the Auto Attendant you set the time frames for each day during which ATT will be online. For periods not included in this time frames the offline mode will be used.<br/><br/>The last thing to get it working is to <font class=\"bold\">associate a DID</font> to it and set the default destination that will be reached when no digit was pressed.<br/>Note!! The system has a single Auto Attendant but depending on the DID, the default destination may be different.",
+	"keys" => "If your online prompt says: Press 1 for Sales, then you must select type: online, key: 1, and insert group: Sales (you must have Sales defined in the Groups section). Same for offline state. <br/><br/>If you want to send a call directly to an extension or another number, you should insert the number in the 'Number(x)' field from Define Keys section.", 
 	"prompts" => "The Auto Attendant has two states: online and offline. Each of these states has its own prompt.", 
-	"scheduling" => "Schedulling online Auto Attendant. The time frames when the online auto attendant is not schedulled, the offline one is used."
+	"scheduling" => "When <font class=\"bold\">scheduling</font> the Auto Attendant you set the time frames for each day during which ATT will be online. For periods not included in this time frames the offline mode will be used.",
+	"DID" => "Associate DIDs to the Auto Attendant. The DID is the number that one needs to call to reach it.<br/><br/>Note!! The system has a single Auto Attendant but depending on the DID, the default destination may be different."
 );
 
 explanations("images/auto-attendant.png", "", $explanation);
@@ -50,8 +51,15 @@ print '<div class="content">';
 $call();
 print '</div>';
 
+function auto_attendant()
+{
+	wizard();
+}
+
 function wizard($error = NULL)
 {
+	global $method;
+
 	if($error)
 		errornote($error);
 
@@ -61,6 +69,7 @@ function wizard($error = NULL)
 
 	scheduling(NULL,true);
 
+	$method = "wizard";
 	activate();
 }
 

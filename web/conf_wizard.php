@@ -271,19 +271,20 @@ $steps = array(
 						"step_name" => "Set voicemail",
 						"step_description" => "DID: Direct Inward Calling.<br/> Set a DID for your voicemail.",
 						"on_submit" => "verify_voicemail",
-						"did" => array(
+					/*	"did" => array(
 										"column_name" => "DID",
 										"value" => "voicemail",
 										"display" => "fixed",
-									),
+									),*/
 						"number" => array(
+										"column_name" => "DID",
 										"compulsory" => true,
-										"comment" => "Number for voicemail."
-									),
+										"comment" => "Number to call to listen to voicemail."
+									)/*,
 						"destination" => array(
 												"value" => "external/nodata/voicemaildb.php",
 												"display" => "fixed"
-											)
+											)*/
 					),
 				array(
 						// the form with allow uploading of files
@@ -293,26 +294,27 @@ $steps = array(
 						"step_description" => "Auto Attendant: Calls within the PBX are answered and directed to their desired destination by the auto attendant system.<br/><br/>The keys you define must match the prompts you uploaded. If your online prompt says something like this: Press 1 for Sales, then you must select type: online, key: 1, and insert group: Sales (you must have defined Sales in the Groups section in a previous step). Same for offline state. If you want to send a call directly to an extension or another number, you should insert the number in the 'Number(x)' field from Define Keys section.",
 						"on_submit" => "verify_auto_attendant",
 						"message" => array(
-											"value" => "If you don't wish to enable the Auto Attendant press 'Skip'.",
+											"value" => "If you don't wish to enable the Auto Attendant press 'Skip'.<br/>",
 											"display" => "message"
 										),
-						"did" => array(
+						/*"did" => array(
 										"column_name" => "DID",
 										"value" => "auto attendant",
 										"display" => "fixed",
-									),
+									),*/
 						"number" => array(
+											"column_name" => "DID",
 											"compulsory"=>true,
-											"comment"=>"Incoming phone number. When receiving a call for this number route call to Auto Attendant"
+											"comment"=>"Incoming phone number. When receiving a call for this number send call to Auto Attendant."
 										),
-						"destination" => array(
+					/*	"destination" => array(
 												"value" => "external/nodata/auto_attendant.php",
 												"display" => "fixed"
-											),
+											),*/
 						"extension" => array(
-													"compulsory"=>true,
-													"comment"=>"The default extension where call will be transfered if caller doesn't press any digit when reaching the Auto Attendant"
-												),
+											"compulsory"=>true,
+											"comment"=>"The default extension where call will be transfered if caller doesn't press any digit when reaching the Auto Attendant."
+									),
 						"explain" => array(
 											"value" => "The Auto Attendant has two states: online and offline. Each of these states has its own prompt.",
 											"display" => "message"

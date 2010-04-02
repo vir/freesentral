@@ -297,15 +297,7 @@ function set_voicemail($fields)
 	$did->number = $number;
 	if($did->objectExists())
 		return array(true, "Skipping setting voicemail. A did with number '$number' is already defined.");
-	$did->number = NULL;
-	$did->did = "voicemail";
-	while(true) {
-		if($did->objectExists())
-			$did->did .= "_";
-		else
-			break;
-	}
-		
+
 	$did->number = $number;
 	$did->destination = "external/nodata/voicemaildb.php";
 	$res = $did->insert();
@@ -335,15 +327,7 @@ function auto_attendant($fields)
 		return array(false, "Don't have default extension for auto attendant setted.");
 
 	$did = new Did;
-	$did->did = "auto attendant";
-	while(true) {
-		if($did->fieldSelect("count(*)", array("did"=>$did->did)))
-			$did->did .= "_";
-		else
-			break;
-	}
-	$params = array("number"=>$fields["number"], "did"=>$did->did, "destination"=>"external/nodata/auto_attendant.php", "default_destination"=>"extension", "extension"=>$extension_id);
-	$did->did = NULL;
+	$params = array("number"=>$fields["number"], "destination"=>"external/nodata/auto_attendant.php", "default_destination"=>"extension", "extension_id"=>$extension_id);
 	$res = $did->add($params);
 	if(!$res[0])
 		return array(false, "Could not create did for the auto attendant :".$res[1]);

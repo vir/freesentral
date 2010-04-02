@@ -423,11 +423,18 @@ function check_selected_destination()
 	var sel = dest.options[dest.selectedIndex].value || dest.options[dest.selectedIndex].text;
 	var ie = getInternetExplorerVersion();
 	var insert_destination = document.getElementById("tr_insert_destination");
+	var default_destination = document.getElementById("tr_default_destination");
 
 	if (sel == "custom") {
 		insert_destination.style.display = (ie>1 && ie<8) ? "block" : "table-row";
-	} else
+		default_destination.style.display = "none";
+	} else if (sel == "external/nodata/auto_attendant.php") {
+		default_destination.style.display = (ie>1 && ie<8) ? "block" : "table-row";
 		insert_destination.style.display = "none";
+	} else {
+		insert_destination.style.display = "none";
+		default_destination.style.display = "none";
+	}
 }
 
 function change_background(color)

@@ -109,9 +109,9 @@ function dids()
 
 	$did = new Did;
 	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
-	$dids = $did->extendedSelect(array("destination"=>array("__NOT LIKEconf/", "!=external/nodata/auto_attendant.php")),"number");
+	$dids = $did->extendedSelect(array("destination"=>"__NOT LIKEconf/"),"number");
 
-	$formats = array(/*"DID"=>"did", */"number", "function_verif_destination:destination"=>"destination"/*, "function_get_default_destination:default_destination"=>"extension,group"*/);
+	$formats = array("DID"=>"number", "function_verif_destination:destination"=>"destination"/*, "function_get_default_destination:default_destination"=>"extension,group"*/);
 	tableOfObjects($dids, $formats, "DIDs", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>'),array("&method=add_did"=>"Add DID"));
 }
 
@@ -119,6 +119,8 @@ function verif_destination($destination)
 {
 	if ($destination == "external/nodata/voicemaildb.php")
 		return "voicemail";
+	elseif ($destination == "external/nodata/auto_attendant.php")
+		return "auto attendant";
 	return $destination;
 }
 
@@ -131,7 +133,6 @@ function edit_did($error=NULL, $title=null)
 	$did->select();
 	if($error) {
 		$did->number = getparam("number");
-		$did->did = getparam("did");
 		$dest = getparam("destination");
 		$did->destination = ($dest && $dest!="custom") ? $dest : getparam("insert_destination");
 		$did->default_destination = getparam("default_destination");
@@ -145,6 +146,7 @@ function edit_did($error=NULL, $title=null)
 	$destinations = array_merge(
 			array(array("destination_id"=>"custom", "destination"=>"Custom destination >>")),
 			array(array("destination_id"=>"external/nodata/voicemaildb.php", "destination"=>"voicemail")),
+			array(array("destination_id"=>"external/nodata/auto_attendant.php", "destination"=>"auto attendant")),
 			array(array("destination_id"=>"__disabled", "destination"=>"--Groups--")),
 			$groups,
 			array(array("destination_id"=>"__disabled", "destination"=>"--Extensions--")),
@@ -163,17 +165,18 @@ function edit_did($error=NULL, $title=null)
 			$insert_destination = $did->destination;
 		}
 	}
-
+	$def = build_default_options($did);
 	$fields = array (
-	/*	"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),*/
-		"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
-		"destination"=>array($destinations, "display"=>"select","compulsory"=>true, "comment"=>"Select extension/group/voicemail or custom destination to send the call to.", "javascript"=>"onChange='check_selected_destination();'"),
+		"number"=>array("compulsory"=>true, "column_name"=>"DID", "comment"=>"Incoming phone number."),
+		"destination"=>array($destinations, "display"=>"select","compulsory"=>true, "comment"=>"Select extension/group/voicemail or custom destination to send the call coming to the number set in DID field.", "javascript"=>"onChange='check_selected_destination();'"),
 		"insert_destination"=>array("value"=>$insert_destination, "triggered_by"=>"custom", "comment"=>"Number or script: \"external/nodata/script_name.php\""),
-	/*	"default_destination" => array($def, "display"=>"select", "comment"=>"Choose a group or an extension for the call to go to if no digit was pressed. Set only when destination is voicemail."),*/
+		"default_destination" => array($def, "display"=>"select", "triggered_by"=>"auto attendant", "compulsory"=>true, "comment"=>"Choose a group or an extension for the call to go to if no digit was pressed. Set only when destination is voicemail."),
 		"description"=>array("display"=>"textarea")
 	);
 	if ($insert_destination != "")
 		unset($fields["insert_destination"]["triggered_by"]);
+	if ($destinations["selected"] == "external/nodata/auto_attendant.php")
+		unset($fields["default_destination"]["triggered_by"]);
 
 	start_form();
 	addHidden("database",array("did_id"=>$did->did_id));
@@ -191,7 +194,7 @@ function edit_did_database()
 
 	$did = new Did;
 	$did->did_id  = getparam("did_id");
-	$params = form_params(array("did", "number", "description"));
+	$params = form_params(array("number", "description"));
 	if (($def=getparam("default_destination"))) {
 		$def = explode(":", $def);
 		$params[$def[0]."_id"] = $def[1];
@@ -210,21 +213,6 @@ function edit_did_database()
 		notice($res[1], $module, $res[0]);
 	else
 		edit_did($res[1]);
-}
-
-function delete_did()
-{
-	ack_delete("did", getparam("did"), NULL, "did_id", getparam("did_id"));
-}
-
-function delete_did_database()
-{
-	global $module;
-
-	$did = new Did;
-	$did->did_id  = getparam("did_id");
-	$res = $did->objDelete();
-	notice($res[1], $module, $res[0]);
 }
 
 ?>
