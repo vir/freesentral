@@ -1026,7 +1026,9 @@ fi
 
 if [ -n "$webpage" ]; then
 	pushd "$DESTDIR$webpage" > /dev/null
-	mkdir upload
+	if [ ! -d upload ]; then
+		mkdir upload
+	fi
 	test X`id -u` = "X0" && chown $webuser upload/
 	if [ -z "$DESTDIR" ]; then
 	    echo "Trying to update database"
