@@ -42,22 +42,29 @@ function set_step($nr,$message,$img,$brs=2)
 	print "</div>";
 }
 
+function number()
+{
+	activate();
+}
 
 function activate($error = NULL)
 {
 	global $method;
 
-	$method = "activate";
 	$did = new Did;
 	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
 	$dids = $did->extendedSelect(array("destination"=>"external/nodata/auto_attendant.php"),"number");
 	if(count($dids))
 	{
-		set_step(4,"DIDs for Auto Attendant","complete");
-		$formats = array("did", "number", "destination", "function_get_default_destination:default_destination"=>"extension,group");
+		if ($method == "auto_attendant" || $method == "wizard")
+			set_step(4,"DIDs for Auto Attendant","complete");
+		
+		$method = "activate";
+		$formats = array("number", "function_get_default_destination:default_destination"=>"extension,group");
 		$actions =  array("&method=activate_did"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&module=dids&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>');
 		tableOfObjects($dids, $formats, "did", $actions, array("&method=activate_did"=>"Add DID for AutoAttendant"));
 	}else{
+		$method = "activate";
 		set_step(4,"Activate did for Auto Attendant","incomplete");
 		activate_did();
 	}
@@ -84,7 +91,7 @@ function activate_did($error=NULL)
 	if (!$did->did)
 		$did->did = "Auto Attendant";
 	$fields = array(
-		"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),
+	/*	"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),*/
 		"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
 		"default_destination" => array($def, "display"=>"select", "comment"=>"Choose a group or an extension for the call to go to if no digit was pressed.", "compulsory"=>true),
 	);
@@ -132,7 +139,7 @@ function activate_did_database()
 {
 	$did = new Did;
 	$did->did_id  = getparam("did_id");
-	$params = form_params(array("did", "number","description"));
+	$params = form_params(array("number","description"));
 	$params["destination"] = "external/nodata/auto_attendant.php";
 	$def = explode(":",getparam("default_destination"));
 	if (count($def)==2) {

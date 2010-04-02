@@ -30,7 +30,7 @@ class DID extends Model
 	{
 		return array(
 					"did_id" => new Variable("serial", "!null"),
-					"did" => new Variable("text", "!null"),
+					"did" => new Variable("text"),
 					"number" => new Variable("text", "!null"),
 					"destination" => new Variable("text", "!null"),
 					"description" => new Variable("text"),
@@ -48,15 +48,16 @@ class DID extends Model
 	function setObj($params)
 	{
 		$this->number = field_value("number",$params);
-		if (($msg = $this->objectExists()))
-			return array(false, (is_numeric($msg)) ? "A DID for this number already exists." : $msg);
 		if (Numerify($this->number) == "NULL")
 			return array(false,"Field 'Number' must be numeric.");
+		if (($msg = $this->objectExists()))
+			return array(false, (is_numeric($msg)) ? "A DID for this number already exists." : $msg);
 
-		$this->did = field_value("did",$params);
+/*		$this->did = field_value("did",$params);
 		$this->number = NULL;
 		if (($msg = $this->objectExists()))
 			return array(false,"A DID with this name already exists.");
+*/
 		if ($this->did_id)
 			$this->select();
 		$this->setParams($params);

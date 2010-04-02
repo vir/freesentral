@@ -417,6 +417,19 @@ function dependant_fields()
 	}
 }
 
+function check_selected_destination()
+{
+	var dest = document.getElementById("destination");
+	var sel = dest.options[dest.selectedIndex].value || dest.options[dest.selectedIndex].text;
+	var ie = getInternetExplorerVersion();
+	var insert_destination = document.getElementById("tr_insert_destination");
+
+	if (sel == "custom") {
+		insert_destination.style.display = (ie>1 && ie<8) ? "block" : "table-row";
+	} else
+		insert_destination.style.display = "none";
+}
+
 function change_background(color)
 {
 //alert(color);

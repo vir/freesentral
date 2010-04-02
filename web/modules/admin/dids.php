@@ -109,10 +109,17 @@ function dids()
 
 	$did = new Did;
 	$did->extend(array("extension"=>"extensions", "group"=>"groups"));
-	$dids = $did->extendedSelect(array("destination"=>"__NOT LIKEconf/"),"number");
+	$dids = $did->extendedSelect(array("destination"=>array("__NOT LIKEconf/", "!=external/nodata/auto_attendant.php")),"number");
 
-	$formats = array("DID"=>"did", "number", "destination", "function_get_default_destination:default_destination"=>"extension,group");
+	$formats = array(/*"DID"=>"did", */"number", "function_verif_destination:destination"=>"destination"/*, "function_get_default_destination:default_destination"=>"extension,group"*/);
 	tableOfObjects($dids, $formats, "DIDs", array("&method=edit_did"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>', "&method=delete_did"=>'<img src="images/delete.gif" title="Delete" alt="Delete"/>'),array("&method=add_did"=>"Add DID"));
+}
+
+function verif_destination($destination)
+{
+	if ($destination == "external/nodata/voicemaildb.php")
+		return "voicemail";
+	return $destination;
 }
 
 function edit_did($error=NULL, $title=null)
@@ -125,17 +132,49 @@ function edit_did($error=NULL, $title=null)
 	if($error) {
 		$did->number = getparam("number");
 		$did->did = getparam("did");
-		$did->destination = getparam("destination");
+		$dest = getparam("destination");
+		$did->destination = ($dest && $dest!="custom") ? $dest : getparam("insert_destination");
 		$did->default_destination = getparam("default_destination");
 	}
-	$def = build_default_options($did);
-	$fields = array(
-		"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),
+
+	$extensions = Model::selection("extension", null, "extension");
+	$extensions = Model::objectsToArray($extensions, array("extension"=>"destination_id", "2_extension"=>"destination"), true);
+	$groups = Model::selection("group", null, "\"group\"");
+	$groups = Model::objectsToArray($groups, array("extension"=>"destination_id", "group"=>"destination"),true);
+
+	$destinations = array_merge(
+			array(array("destination_id"=>"custom", "destination"=>"Custom destination >>")),
+			array(array("destination_id"=>"external/nodata/voicemaildb.php", "destination"=>"voicemail")),
+			array(array("destination_id"=>"__disabled", "destination"=>"--Groups--")),
+			$groups,
+			array(array("destination_id"=>"__disabled", "destination"=>"--Extensions--")),
+			$extensions
+	);
+	$insert_destination='';
+	if ($did->destination) {
+		for($i=0; $i<count($destinations); $i++) {
+			if($destinations[$i]["destination_id"] == $did->destination) {
+				$destinations["selected"] = $did->destination;
+				break;
+			}
+		}
+		if (!isset($destinations["selected"])) {
+			$destinations["selected"] = "custom";
+			$insert_destination = $did->destination;
+		}
+	}
+
+	$fields = array (
+	/*	"did"=>array("column_name"=>"DID", "compulsory"=>true, "comment"=>"Name used for identifing this DID"),*/
 		"number"=>array("compulsory"=>true, "comment"=>"Incoming phone number. When receiving a call for this number, send(route) it to the inserted 'Destination'"),
-		"destination"=>array("compulsory"=>true),
-		"default_destination" => array($def, "display"=>"select", "comment"=>"Choose a group or an extension for the call to go to if no digit was pressed."),
+		"destination"=>array($destinations, "display"=>"select","compulsory"=>true, "comment"=>"Select extension/group/voicemail or custom destination to send the call to.", "javascript"=>"onChange='check_selected_destination();'"),
+		"insert_destination"=>array("value"=>$insert_destination, "triggered_by"=>"custom", "comment"=>"Number or script: \"external/nodata/script_name.php\""),
+	/*	"default_destination" => array($def, "display"=>"select", "comment"=>"Choose a group or an extension for the call to go to if no digit was pressed. Set only when destination is voicemail."),*/
 		"description"=>array("display"=>"textarea")
 	);
+	if ($insert_destination != "")
+		unset($fields["insert_destination"]["triggered_by"]);
+
 	start_form();
 	addHidden("database",array("did_id"=>$did->did_id));
 	if($did->did_id)
@@ -152,7 +191,7 @@ function edit_did_database()
 
 	$did = new Did;
 	$did->did_id  = getparam("did_id");
-	$params = form_params(array("did", "number", "destination", "description"));
+	$params = form_params(array("did", "number", "description"));
 	if (($def=getparam("default_destination"))) {
 		$def = explode(":", $def);
 		$params[$def[0]."_id"] = $def[1];
@@ -162,6 +201,9 @@ function edit_did_database()
 		$params["extension_id"] = null;
 		$params["group_id"] = null;
 	}
+	$dest = getparam("destination");
+	$params["destination"] = ($dest && $dest != "custom") ? $dest : getparam("insert_destination");
+
 	$res = ($did->did_id) ? $did->edit($params) : $did->add($params);
 
 	if($res[0])
