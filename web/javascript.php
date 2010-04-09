@@ -312,12 +312,13 @@ function advanced(identifier)
 		var elem = document.getElementById("tr_"+elem_name); 
 		if(elem == null)
 			continue;
-		if(elem.style.display == null)
+		if(elem.style.display == null || elem.style.display == "")
 			continue;
 		if(elem.style.display == "none")
 			elem.style.display = (ie > 1 && ie < 8) ? "block" : "table-row";
 		else
-			if(elem.style.display != "none")
+			// specify the display property (the elements that are not advanced will have display="")
+			if(elem.style.display == "block" || elem.style.display == "table-row")
 				elem.style.display = "none";
 	}
 
