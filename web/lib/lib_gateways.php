@@ -24,7 +24,7 @@
 <?php
 global  $module, $method, $path, $action, $page, $limit, $fields_for_extensions, $operations_for_extensions, $upload_path;
 
-function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
+function edit_gateway($error=NULL, $protocol = "sip", $gw_type = 'reg')
 {
 	if($_SESSION["level"] != "admin") {
 		forbidden();
@@ -255,6 +255,9 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		unset($iax_fields["password"]["comment"]);
 		$protocols = array("sip", "h323", "iax");
 		$allprotocols = array("sip", "h323", "iax", "pstn");//, "PRI", "BRI");
+		$allprotocols["selected"] = $protocol;
+		$protocols["selected"] = $protocol;
+
 		if($_SESSION["pri_support"] == "yes")
 			$allprotocols[] = "PRI";
 		if($_SESSION["bri_support"] == "yes")
@@ -262,7 +265,6 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 
 		if($protocol && $gw_type == "Yes")
 		{
-			$protocols["selected"] = $protocol;
 			$fields = $protocol."_fields";
 			foreach(${$fields} as $fieldname=>$fieldformat)
 			{
@@ -273,7 +275,6 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 				$gateway->enabled = "t";
 			$gateway->formats = get_formats("reg_".$protocol."formats");
 		}elseif($protocol && $gw_type == "No"){
-			$allprotocols["selected"] = $protocol;
 			$fields = $protocol;
 			foreach(${$fields} as $fieldname=>$fieldformat)
 			{
@@ -292,7 +293,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		editObject($gateway,$step1,"Select type of gateway to add","no");
 
 		//select protocol for gateway with registration
-		?><div id="div_Yes" style="display:<?php if (getparam("gateway_with_registration") != "Yes") print "none;"; else print "block;";?>"><?php
+		?><div id="div_Yes" style="display:<?php if ($gw_type != "Yes") print "none;"; else print "block;";?>"><?php
 		editObject(
 					$gateway,
 					array(
@@ -308,7 +309,7 @@ function edit_gateway($error=NULL, $protocol = NULL, $gw_type = '')
 		?></div><?php
 
 		//select protocol for gateway without registration
-		?><div id="div_No" style="display:<?php if (getparam("gateway_with_registration") != "No") print "none;"; else print "block;";?>"><?php
+		?><div id="div_No" style="display:<?php if ($gw_type != "No") print "none;"; else print "block;";?>"><?php
 		editObject(
 					$gateway,
 					array(

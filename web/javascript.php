@@ -262,15 +262,17 @@ function gateway_type()
 	return;*/
 
 	var radio = document['forms']['outbound']['gateway_with_registration'];
+	var sel_gateway;
 	for(var i=0; i<radio.length; i++)
 	{
 		divname = radio[i].value;
 		div = document.getElementById('div_'+divname);
 		if (div == null)
 			continue;
-		if (radio[i].checked == true)
+		if (radio[i].checked == true) {
 			div.style.display = "block";
-		else
+			sel_gateway = (divname == "Yes") ? "reg" : "noreg";
+		} else
 			div.style.display = "none";
 	}
 
@@ -294,6 +296,8 @@ function gateway_type()
 		if(currentdiv.style.display == "block")
 			currentdiv.style.display = "none";
 	}
+	if (sel_gateway != null)
+		form_for_gateway(sel_gateway);
 }
 
 function advanced(identifier)
