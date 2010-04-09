@@ -1,4 +1,4 @@
-<?php
+<?
 /**
  * lib_wizard.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,9 +21,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?php
+<?
 global $trigger_name, $upload_path;
-
 /**
  *	Class that will be used to define a wizard
  */
@@ -39,6 +38,7 @@ class Wizard
 	public $finished_settings = false;
 	public $on_finish = "main.php";
 	public $ending_message;
+	public $have_description = true;
 
 	public $reserved_names = array("step_description"=>"", "step_image"=>"", "step_name"=>"", "upload_form"=>"", "on_submit"=>"");
 
@@ -48,9 +48,9 @@ class Wizard
 	 * @param $_logo Text, path and name of the image used as logo
 	 * @param $_title Text, title of the wizard, will be displayed on the same line as the logo, during all steps 
 	 * @param $function_for_finish Name of the function that should be called after Finish is pressed
-	 * @param $on_finish Where to go when the 'Close'(button after settings are done) is pressed. Ex: "main.php?module=home". This is also the default value of the field
+	 * @param $on_finish Where to go when the 'Close'(button after settings are done) is pressed. Ex: "main.php?module=HOME". This is also the default value of the field
 	 */
-	function __construct($_steps, $_logo, $_title, $function_for_finish, $on_finish=null, $mess_on_finish=null)
+	function __construct($_steps, $_logo, $_title, $function_for_finish, $on_finish=null, $mess_on_finish=null, $have_description=true)
 	{
 		$this->steps = $_steps;
 		$this->logo = $_logo;
@@ -58,6 +58,7 @@ class Wizard
 		if($on_finish)
 			$this->on_finish = $on_finish;
 		$this->ending_message = $mess_on_finish;
+		$this->have_description = $have_description;
 		
 		if(!isset($_SESSION["wizard_step_nr"]))
 			$_SESSION["wizard_step_nr"] = 0;
@@ -129,6 +130,11 @@ class Wizard
 						}
 						continue;
 					}
+					if($field_description["display"] == "mul_select") {
+						$saved_field_name = str_replace("[]","",$field_name);
+						$fields[$field_name][0]["selected"] = (isset($_SESSION["fields"][$this->step_nr][$saved_field_name])) ? $_SESSION["fields"][$this->step_nr][$saved_field_name] : '';
+						continue;
+					}
 				}
 
 				$fields[$field_name]["value"] = (isset($_SESSION["fields"][$this->step_nr][$field_name])) ? $_SESSION["fields"][$this->step_nr][$field_name] : '';
@@ -178,50 +184,50 @@ class Wizard
 			if(!isset($_SESSION["fields"]))
 				$_SESSION["fields"] = array();
 
+			if(substr($field_name,-2) == "[]" && $field_def["display"] == "mul_select")
+				$field_name = str_replace("[]","",$field_name);
+
 			$set = false;
 			$required = false;
-			if(isset($field_def["required"]))
-				if($field_def["required"] === true || $field_def["required"] == "true")
-					$required = true;
-			if(isset($field_def["compulsory"]))
-				if($field_def["compulsory"] === true || $field_def["compulsory"] == "true")
-					$required = true;
+			if(isset($field_def["required"]) && ($field_def["required"] === true || $field_def["required"] == "true"))
+				$required = true;
+			if(isset($field_def["compulsory"]) && ($field_def["compulsory"] === true || $field_def["compulsory"] == "true"))
+				$required = true;
 
-			if(isset($field_def["display"]))
-				if($field_def["display"] == "file" && $skip === false) {
-					if(!$upload_path) {
-						print "<br/>Upload directory is not set. Could not upload. ".$field_name."<br/>";
-						continue;
-					}
-
-					if(!$_FILES[$field_name]["name"] && isset($_SESSION["fields"][$this->step_nr][$field_name]["path"]))
-						continue;
-
-					if(!$_FILES[$field_name]['tmp_name'] && !$required)
-						continue;
-					elseif(!$_FILES[$field_name]['name']){
-						$this->error .= " Couldn't upload $field_name.";
-						continue;
-					}
-					$file = basename($_FILES[$field_name]['name']);
-					$new_filename = "$upload_path/$file";
-					if(is_file($new_filename)) {
-						$parts = explode(".", $new_filename);
-						$extension = strtolower($parts[count($parts) - 1]);
-						unset($parts[count($parts) - 1]);
-						$new_filename = implode(".",$parts);
-						$new_filename .= "_";
-						$new_filename .= ".".$extension;
-					}
-
-					if (!move_uploaded_file($_FILES[$field_name]['tmp_name'],$new_filename))
-						$this->error .= " Couldn't upload $field_name.";
-					else{
-						$_SESSION["fields"][$this->step_nr][$field_name]["orig_name"] = $file;
-						$_SESSION["fields"][$this->step_nr][$field_name]["path"] = $new_filename;
-					}
-					$set = true;
+			if(isset($field_def["display"]) && $field_def["display"] == "file" && $skip === false) {
+				if(!$upload_path) {
+					print "<br/>Upload directory is not set. Could not upload. ".$field_name."<br/>";
+					continue;
 				}
+
+				if(!$_FILES[$field_name]["name"] && isset($_SESSION["fields"][$this->step_nr][$field_name]["path"]))
+					continue;
+
+				if(!$_FILES[$field_name]['tmp_name'] && !$required)
+					continue;
+				elseif(!$_FILES[$field_name]['name']){
+					$this->error .= " Couldn't upload $field_name.";
+					continue;
+				}
+				$file = basename($_FILES[$field_name]['name']);
+				$new_filename = "$upload_path/$file";
+				if(is_file($new_filename)) {
+					$parts = explode(".", $new_filename);
+					$extension = strtolower($parts[count($parts) - 1]);
+					unset($parts[count($parts) - 1]);
+					$new_filename = implode(".",$parts);
+					$new_filename .= "_";
+					$new_filename .= ".".$extension;
+				}
+
+				if (!move_uploaded_file($_FILES[$field_name]['tmp_name'],$new_filename))
+					$this->error .= " Couldn't upload $field_name.";
+				else{
+					$_SESSION["fields"][$this->step_nr][$field_name]["orig_name"] = $file;
+					$_SESSION["fields"][$this->step_nr][$field_name]["path"] = $new_filename;
+				}
+				$set = true;
+			}
 			if(!$set)
 				$_SESSION["fields"][$this->step_nr][$field_name] = getparam($field_name);
 
@@ -282,11 +288,12 @@ class Wizard
 		if(!$fin) {
 			print '<table class="wizard" cellspacing="0" cellpadding="0">';
 			print '<tr>';
-			print '<td class="fillall" colspan="2">';
+			$colspan = ($this->have_description) ? 'colspan="2"' : "";
+			print '<td class="fillall" '.$colspan.'>';
 			print '<table class="fillall" cellspacing="0" cellpadding="0">';
 			print '<tr>';
 			print '<td class="logo_wizard">';
-			if(isset($this->logo))
+			if($this->logo)
 				print '<img src="'.$this->logo.'">';
 			print '</td>';
 			print '<td class="title_wizard">';
@@ -298,35 +305,41 @@ class Wizard
 			print '</td>';
 			print '</tr>';
 			print '<tr>';
-			print '<td class="wiz_description">';
-			if($this->reserved_names["step_image"] != '' || $this->reserved_names["step_description"] != '')
+			if ($this->have_description)
 			{
-				print '<table class="wizard_step_description" cellspacing="0" cellpadding="0">';
-				if($this->reserved_names["step_image"] != '')
+				print '<td class="wiz_description">';
+				if($this->reserved_names["step_image"] != '' || $this->reserved_names["step_description"] != '')
 				{
-					print '<tr><td class="step_image">';
-					print '<img src="'.$this->reserved_names["step_image"].'" />';
-					print '</td></tr>';
+					print '<table class="wizard_step_description" cellspacing="0" cellpadding="0">';
+					if($this->reserved_names["step_image"] != '')
+					{
+						print '<tr><td class="step_image">';
+						print '<img src="'.$this->reserved_names["step_image"].'" />';
+						print '</td></tr>';
+					}
+					if($this->reserved_names["step_description"] != '') 
+					{
+						print '<tr><td class="step_description">';
+						print $this->reserved_names["step_description"];
+						print '</td></tr>';
+					}
+					print '</table>';
 				}
-				if($this->reserved_names["step_description"] != '') 
-				{
-					print '<tr><td class="step_description">';
-					print $this->reserved_names["step_description"];
-					print '</td></tr>';
-				}
-				print '</table>';
+				print '</td>';
+				$css = "";
+			} else {
+				$css = "fillall";
 			}
-			print '</td>';
-			print '<td class="wizard_content">';
-			print '<table class="wizard_content" cellspacing="0" cellpadding="0">';
+			print '<td class="wizard_content '.$css.'">';
+			print '<table class="wizard_content '.$css.'" cellspacing="0" cellpadding="0">';
 			print '<tr>';
-			print '<th class="wizard_content" colspan="2">';
+			print '<th class="wizard_content" '.$colspan.'>';
 			print $this->reserved_names["step_name"];
 			print '</th>';
 			print '</tr>';
 			print '<tr>';
 			print '<td class="wizard_content">';
-			print '<table class="wizard_fields" cellspacing="0" cellpadding="0">';
+			print '<table class="wizard_fields '.$css.'" cellspacing="0" cellpadding="0">';
 
 			if($this->error != '') {
 				print '<tr>';
@@ -342,16 +355,18 @@ class Wizard
 			print '<table class="fillall wizard_submit" cellspacing="0" cellpadding="0">';
 			print '<tr>';
 			print '<td class="fillall wizard_submit">';
-			if($this->step_nr != 0)
+			if($this->step_nr != 0) {
+				print '<input type="submit" name="submit" value="Next" style="visibility:hidden; width:0px; height:0px; border:none;">&nbsp;&nbsp;';
 				print '<input type="submit" name="submit" value="Previous">&nbsp;&nbsp;';
+			}
 			if($this->step_nr < (count($this->steps)-1)) {
 				if($this->reserved_names["on_submit"] == '')
 					print '<input type="submit" name="submit" value="Next"/>&nbsp;&nbsp;';
 				else
 					print '<input type="submit" name="submit" value="Next" onClick="return on_submit(\''.$this->reserved_names["on_submit"].'\');">&nbsp;&nbsp;';
-			//	if($this->step_nr == 0)
-			//		print '<input type="button" name="submit" value="Skip" onClick="location.href=\'main.php\'">';
-			//	else
+		//		if($this->step_nr == 0)
+		//			print '<input type="button" name="submit" value="Skip" onClick="location.href=\'main.php\'">';
+		//		else
 					print '<input type="submit" name="submit" value="Skip"/>';
 			}else{
 				if($this->reserved_names["on_submit"] == '')
