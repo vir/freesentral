@@ -149,7 +149,15 @@ function home()
 		$uptime = $sock->command("uptime");
 		$status = $uptime;
 		$status = explode(" ",$status);
-		$status = strtolower($status[0]." ".$status[1]);
+		$time = explode(":",$status[1]);
+		$days = floor($time[0]/24);
+		$hours = $time[0]%24;
+
+		$text_status = strtolower($status[0]." ");
+		if (!$days)
+			$text_status.= $status[1];
+		else
+			$text_status.= $days.' days '.$hours.":".$time[1].":".$time[2]." ";
 		$err = "";
 	}else{
 		$status = ": Can't connect to yate<br/>".$sock->error;
@@ -158,7 +166,7 @@ function home()
 	print '<div class="titlu">SYSTEM STATUS</div>';
 	print '<div class="'.$err.'systemstatus"> '.'
 			<div style="float:right;"> Today, '.date('h:i a').'
-			</div>Yate '.$status;
+			</div>Yate '.$text_status;
 	print '</div>';
 	$admins = Model::selection("user", array("login_attempts"=>">=3"), "login_attempts DESC");
 	for($i=0; $i<count($admins); $i++) {
