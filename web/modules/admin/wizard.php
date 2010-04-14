@@ -75,7 +75,7 @@ function wizard_database()
 
 		if($errormess != '') {
 			Database::rollback();
-			return array(false, $errormess);
+			return array(false, $errormess, $index);
 		}
 	}
 

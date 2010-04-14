@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * lib_wizard.php
  * This file is part of the FreeSentral Project http://freesentral.com
@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<?
+<?php
 global $trigger_name, $upload_path;
 /**
  *	Class that will be used to define a wizard
@@ -423,6 +423,7 @@ class Wizard
 				print '<td class="fillall" colspan="2">';
 				print '<br/><br/>Couldn\'t finish configuring this system.<br/><br/>';
 				errormess($fin[1], "no");
+				$_SESSION["wizard_step_nr"] = $fin[2];
 				print '<br/><br/>';
 				print '</td>';
 				print '</tr>';
