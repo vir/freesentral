@@ -470,8 +470,8 @@ function edit_user($error = NULL)
 	$user->select();
 
 	$fields = array(
-						"username"=>array("display"=>"fixed", "compulsory"=>true), 
-						"password"=>array("display"=>"password", "comment"=>"Minimum 5 digits. Insert only if you wish to change."),
+						"username"=>array("display"=>"fixed", "compulsory"=>true, "autocomplete"=>"off"), 
+						"password"=>array("display"=>"password", "comment"=>"Minimum 5 digits. Insert only if you wish to change.", "autocomplete"=>"off"),
 						"email"=>array("compulsory"=>true),
 						"firstname"=>"",
 						"lastname"=>"",

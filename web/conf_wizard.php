@@ -95,11 +95,13 @@ $steps = array(
 													//  this field is marked as compulsory
 													"compulsory"=>true, 
 													//  explanation about the field
-													"comment"=>"At least 5 digits long."
+													"comment"=>"At least 5 digits long.",
+													"autocomplete"=>"off"
 											),
 						"retype_new_password" => array(
 														"display"=>"password", 
-														"compulsory"=>true
+														"compulsory"=>true,
+														"autocomplete"=>"off"
 													)
 					),
 				array(
@@ -240,15 +242,17 @@ $steps = array(
 											"compulsory"=>true
 										), 
 						"protocol" => array(
-											array("sip", "h323", "iax"), 
+											array("sip", "h323", "iax", "selected"=>"sip"), 
 											"display"=>"select", 
 											"compulsory"=>true
 										),
 						"username"=>array(
-											"comment"=>"Insert only when you need to register to another gateway in order to send calls."
+											"comment"=>"Insert only when you need to register to another gateway in order to send calls.",
+											"autocomplete"=>"off"
 										), 
 						"password"=>array(
-											"comment"=>"Insert only when you need to register to another gateway in order to send calls.", "display"=>"password"
+											"comment"=>"Insert only when you need to register to another gateway in order to send calls.", "display"=>"password",
+											"autocomplete"=>"off"
 										),
 						"server"=>array(
 											"compulsory"=>true, 

@@ -48,8 +48,8 @@ function edit_gateway($error=NULL, $protocol = "sip", $gw_type = 'reg')
 //fields for gateway with registration
 	$sip_fields = array(
 						"gateway"=>array("compulsory"=>true), 
-						"username"=>array("compulsory"=>true, "Username is normally used to authenticate to the other server. It is the user part of the SIP address of your server when talking to the gateway you are currently defining."), 
-						"password"=>array("comment"=>"Insert only when you wish to change", "display"=>"password"),
+						"username"=>array("compulsory"=>true, "Username is normally used to authenticate to the other server. It is the user part of the SIP address of your server when talking to the gateway you are currently defining.", "autocomplete"=>"off"), 
+						"password"=>array("comment"=>"Insert only when you wish to change", "display"=>"password", "autocomplete"=>"off"),
 						"server"=>array("compulsory"=>true, "comment"=>"Ex:10.5.5.5:5060 It is IP address of the gateway : port number used for sip on that machine."),
 						"description"=>array("display"=>"textarea"), 
 						"authname"=>array("advanced"=>true, "comment"=>"Authentication ID is an ID used strictly for authentication purpose when the phone attempts to contact the SIP server. This may or may not be the same as the above field username. Set only if it's different."), 
@@ -69,8 +69,8 @@ function edit_gateway($error=NULL, $protocol = "sip", $gw_type = 'reg')
 
 	$h323_fields = $iax_fields = array(
 						"gateway"=>array("compulsory"=>true),
-						"username"=>array("compulsory"=>true), 
-						"password"=>array("comment"=>"Insert only when you wish to change", "display"=>"password"),
+						"username"=>array("compulsory"=>true, "autocomplete"=>"off"), 
+						"password"=>array("comment"=>"Insert only when you wish to change", "display"=>"password", "autocomplete"=>"off"),
 						"server"=>array("compulsory"=>true, "comment"=>"Ex:10.5.5.5:1720 It is IP address of the gateway : port number used for H323 on that machine."),
 						"description"=>array("display"=>"textarea"), 
 						"interval"=>array("advanced"=>true, "comment"=>"Represents the interval in which the registration will expires. Default value is 600 seconds."), 

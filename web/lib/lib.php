@@ -707,6 +707,8 @@ function display_pair($field_name, $field_format, $object, $form_identifier, $cs
 					print $field_format["javascript"];
 				if($display == "text-nonedit")
 					print " readonly=''";
+				if(isset($field_format["autocomplete"]))
+					print " autocomplete=\"".$field_format["autocomplete"]."\"";
 				print '>';
 				break;
 			case "fixed":
