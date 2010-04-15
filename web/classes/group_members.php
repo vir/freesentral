@@ -39,6 +39,17 @@ class Group_Member extends Model
 	{
 		parent::__construct();
 	}
+
+	function setObj($params)
+	{
+		$this->group_id = field_value("group_id",$params);
+		$this->extension_id = field_value("extension_id",$params);
+		if ($this->objectExists())
+			return array(false, "Extension is already a member in selected group.");
+		if ($this->group_member_id)
+			$this->select();
+		return parent::setObj($params);
+	}
 }
 
 ?>

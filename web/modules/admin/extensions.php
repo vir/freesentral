@@ -141,7 +141,51 @@ function group_members()
 	$member->extend(array("extension"=>"extensions", "firstname"=>"extensions", "lastname"=>"extensions", "location"=>"extensions", "inuse_count"=>"extensions"));
 	$members = $member->extendedSelect(array("group_id"=>$group->group_id), "extension");
 	
-	tableOfObjects($members, $fields_for_extensions, "extension",  $operations_for_extensions, array("&method=add_extension"=>"Add extension"), "main.php?module=$module&group_id=".$group->group_id);
+	tableOfObjects($members, $fields_for_extensions, "extension",  $operations_for_extensions, array("&method=extension_to_group&group_id=".$group->group_id."&group=".$group->group=>"Add extension to group"), "main.php?module=$module&group_id=".$group->group_id);
+}
+
+function extension_to_group()
+{
+	global $module;
+
+	$group_id = getparam("group_id");
+	if (!$group_id) {
+		errormess("Don't have group id.");
+		return;
+	}
+	$group = Model::selection("group", array("group_id"=>$group_id));
+	if (!count($group)) {
+		errormess("Invalid group.");
+		return;
+	}
+	$group = $group[0]->group;
+	$extensions = Model::selection("extension", null, "extension", null, null, null, array("column"=>"extension_id", "inner_table"=>"group_members", "conditions"=>array("group_id"=>$group_id), "relation"=>"NOT IN"));
+	$extensions = Model::objectsToArray($extensions, array("extension_id"=>"", "extension"=>""), true);
+
+	$fields = array("extension"=>array($extensions, "display"=>"select", "comment"=>"Select extension to join group."));
+	start_form();
+	addHidden("database", array("group_id"=>$group_id, "group"=>$group));
+	editObject(null, $fields, "Join group ".$group, "Save");
+	end_form();
+}
+
+function extension_to_group_database()
+{
+	$extension_id = getparam("extension");
+	$group_id = getparam("group_id");
+
+	if (!$group_id)
+		return errormess("Don't have group id.");
+
+	if (!$extension_id) 
+		return notice ("Please select extension before submitting.", "extension_to_group", false);
+
+	$group_member = new Group_member;
+	$res = $group_member->add(array("extension_id"=>$extension_id, "group_id"=>$group_id));
+	if (!$res[0]) 
+		return notice ($res[1], "group_members", false);
+	else
+		return notice ("Selected extension joined group.", "group_members", true);
 }
 
 function edit_extension($error = NULL)
