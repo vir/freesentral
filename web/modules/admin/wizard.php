@@ -229,7 +229,7 @@ function define_groups($fields)
 function define_gateway($fields)
 {
 	// in case this step was skipped
-	if($fields["protocol"] == "")
+	if($fields["server"] == "")
 		return array(true, "");
 	$fields["type"] = ($fields["username"] != "") ? "reg" : "noreg";
 	if($fields["type"] == "noreg") {
