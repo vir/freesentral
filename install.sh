@@ -515,6 +515,29 @@ fi
 if [ -n "$configs" ]; then
     echo "Installing Yate configuration files"
 
+	# yate.conf
+    fe="$DESTDIR$configs/yate.conf";
+    e="
+[localsym]
+; pwlib does not clean up properly on Linux so we must disable global symbols
+;  unfortunately preventing all pwlib plugins from loading
+h323chan.yate=yes
+"
+
+    if [ -e "$fe" ]; then
+	if [ -z `readopt "Overwrite existing yate.conf ?" "yes"` ]; then
+	    echo "Please edit file $fe like follows:"
+	    echo "$e"
+	    fe=""
+	fi
+    fi
+    if [ -n "$fe" ]; then
+	echo "Creating yate configuration file"
+	mkdir -p "$DESTDIR$configs"
+	echo "; File created by $version
+$e" > "$fe"
+    fi
+
 	# regexroute.conf
     fe="$DESTDIR$configs/regexroute.conf";
     e="
