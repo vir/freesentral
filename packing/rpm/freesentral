@@ -8,6 +8,15 @@
 # processname: yate
 # pidfile: /var/run/yate.pid
 #
+### BEGIN INIT INFO
+# Provides: freesentral
+# Required-Start: $local_fs $network postgresql freesentral-init
+# Required-Stop:
+# Default-Start: 3 4 5
+# Default-Stop: 0 1 2 6
+# Short-Description: FreeSentral telephony service
+# Description: Starts and stops Yate used as FreeSentral service
+### END INIT INFO
 
 # Extra Yate command line options
 OPTS="-c /etc/freesentral -rs -vvv -l /var/log/yate"
