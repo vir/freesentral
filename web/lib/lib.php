@@ -2029,5 +2029,61 @@ function formTable($rows, $th=null, $title = null, $submit = null, $width=null, 
 	print "</table>\n";
 }
 
+function set_form_fields(&$fields, $error_fields, $field_prefix='')
+{
+	foreach ($fields as $name=>$def)
+	{
+		if (!isset($def["display"]))
+			$def["display"] = "text";
+		if ($def["display"] == "hidden" || $def["display"]=="message" || $def["display"]=="fixed")
+			continue;
+		if (in_array($name, $error_fields))
+			$fields[$name]["error"] = true;
+		if (substr($name,-2) == "[]" && $def["display"] == "mul_select")
+			$val = getparam($field_prefix.substr($name,0,strlen($name)-2));
+		else
+			$val = getparam($field_prefix.$name);
+		if ($val) {
+			if (isset($fields[$name][0]) && is_array($fields[$name][0]))
+				$fields[$name][0]["selected"] = $val;
+			elseif ($def["display"] == "checkbox")
+				$fields[$name]["value"] = ($val == "on") ? "t" : "f";
+			else
+				$fields[$name]["value"] = $val;
+		}
+	}
+}
+
+function set_error_fields($error, &$error_fields)
+{
+	// fields between '' are considered names
+	$field = '';
+	$start = false;
+	$error = strtolower($error);
+	for	($i=0; $i<strlen($error); $i++) {
+		if ($error[$i] != "'") {
+			if($start)
+				$field .= $error[$i];
+		} else {
+			if ($start) {
+				if(!in_array($field, $error_fields))
+					$error_fields[] = $field;
+				$field = '';
+				$start = false;
+			} else
+				$start = true;
+		}
+	}
+}
+
+function error_handle($error, &$fields, &$error_fields, $field_prefix='')
+{
+	if ($error) {
+		errormess($error,"no");
+		set_error_fields($error, $error_fields);
+		set_form_fields($fields, $error_fields, $field_prefix);
+	}
+}
+
 /* vi: set ts=8 sw=4 sts=4 noet: */
 ?>

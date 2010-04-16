@@ -84,7 +84,7 @@ function setState($newstate)
 			$m = new Yate("chan.attach");
 			$m->params["consumer"] = "wave/record/-";
 			$m->params["notify"] = $ourcallid;
-			$m->params["maxlen"] = $wait_time*1000;
+			$m->params["maxlen"] = $wait_time*10000;
 			$m->Dispatch();
 			break;
 		case "goodbye":
@@ -96,31 +96,34 @@ function setState($newstate)
 			$m->Dispatch();
 			break;
 		case "call.route":
-		//	$called = $hold_keys;
-			for($i=0; $i<count($keys); $i++)
-			{
-				if($keys[$i]["key"] == $hold_keys)
-				{
-					$called = $keys[$i]["destination"];
+			$to_call = null;
+			for($i=0; $i<count($keys); $i++) {
+				if($keys[$i]["key"] == $hold_keys) {
+					$to_call = $keys[$i]["destination"];
+					//$hold_keys = null;
 					break;
 				}
 			}
-			if($hold_keys == '')
-			{
-				$query = "SELECT (CASE WHEN default_destination='extension' OR extension_id IS NOT NULL THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number='$called'";
+			if($hold_keys == '') {
+				$query = "SELECT (CASE WHEN extension_id IS NOT NULL THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number='$called'";
 				$res = query_to_array($query);
-				if(!count($res) && strlen($res[0]["called"])) {
+				if(!count($res) || !strlen($res[0]["called"])) {
 					// this should never happen
 					setState("goodbye");
 					return;
 				}
-				$called = $res[0]["called"];
-			}
+				$to_call = $res[0]["called"];
+			} 
+			if (!$to_call)
+				$to_call = $hold_keys;
 			$m = new Yate("call.route");
 			$m->params["caller"] = $caller;
-			$m->params["called"] = $called;
+			$m->params["called"] = $to_call;
 			$m->params["id"] = $ourcallid;
+			$m->params["already-auth"] = "yes";
+			$m->params["call_type"] = "from outside";
 			$m->Dispatch();
+			break;
 		case "send_call":
 			$m = new Yate("chan.masquerade");
 			$m->params = $ev->params;
@@ -128,6 +131,7 @@ function setState($newstate)
 			$m->params["id"] = $partycallid;
 			$m->params["callto"] = $destination;
 			$m->Dispatch();
+			break;
 	}
 }
 
@@ -172,12 +176,19 @@ function gotNotify($reason)
 			break;
 		case "prolong_greeting":
 			setState("call.route");
-			
-	}	
+			break;
+		case "goodbye":
+			setState("");
+			break;
+	}
 }
 
 Yate::Init();
+Yate::Output(true);
 Yate::Debug(true);
+
+$query_on=true;
+
 /* Install filtered handlers for the wave end and dtmf notify messages */
 // chan.dtmf should have a greater priority than that of pbxassist(by default 15)
 Yate::Install("chan.dtmf",10,"targetid",$ourcallid);
@@ -246,10 +257,13 @@ while ($state != "") {
 		$ev->Acknowledge();
 	    break;
 	case "answer":
-	     Yate::Debug("PHP Answered: " . $ev->name . " id: " . $ev->id);
-	    if ($ev->name == "call.route") {
+		Yate::Debug("PHP Answered: " . $ev->name . " id: " . $ev->id);
+		if ($ev->name == "call.route") {
 			$destination = $ev->retval;
-			setState("send_call");
+			if ($destination)
+				setState("send_call");
+			else
+				setState("goodbye");
 		}
 	    break;
 	case "installed":

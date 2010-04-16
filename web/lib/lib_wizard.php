@@ -331,22 +331,26 @@ class Wizard
 				$css = "fillall";
 			}
 			print '<td class="wizard_content '.$css.'">';
-			print '<table class="wizard_content '.$css.'" cellspacing="0" cellpadding="0">';
+			print '<table class="wizard_content fillall" cellspacing="0" cellpadding="0">';
 			print '<tr>';
-			print '<th class="wizard_content" '.$colspan.'>';
+			print '<th class="wizard_content">';
 			print $this->reserved_names["step_name"];
 			print '</th>';
 			print '</tr>';
 			print '<tr>';
-			print '<td class="wizard_content">';
-			print '<table class="wizard_fields '.$css.'" cellspacing="0" cellpadding="0">';
+			print '<td class="wizard_content fillall">';
+			print '<table class="wizard_fields fillall" cellspacing="0" cellpadding="0">';
 
 			if($this->error != '') {
 				print '<tr>';
 				print '<td colspan="2" class="wizard_error">';
 				errormess($this->error, 'no');
+				$errors = array();
+				set_error_fields($this->error, $errors);
 				print '</td>';
 				print '</tr>';
+				for ($i=0; $i<count($errors); $i++)
+					$fields[$errors[$i]]["error"] = true;
 			}
 			foreach($fields as $field_name=>$field_format)
 				display_pair($field_name, $field_format, null, null, 'wizedit', false, NULL, NULL);
