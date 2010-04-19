@@ -300,7 +300,7 @@ function makePickUp($called,$caller)
  */
 function routeToExtension($called)
 {
-	global $no_pbx, $ev, $voicemail, $system_prefix;
+	global $no_pbx, $ev, $voicemail, $system_prefix, $query_on, $debug_on;
 
 //	debug("entered routeToExtension('$called')");
 	if (strlen($called) < 3)
@@ -357,6 +357,8 @@ function routeToExtension($called)
 	// if no destination found, try sending call to voicemail(it might be set or not)
 	if(!$destination)
 		$destination = $voicemail;
+	$ev->params["query_on"] = ($query_on) ? "yes" : "no";
+	$ev->params["debug_on"] = ($debug_on) ? "yes" : "no";
 	set_retval($destination, "offline");
 	return true;
 }
@@ -370,6 +372,9 @@ function routeToExtension($called)
 function routeToDid(&$called)
 {
 	global $system_prefix;
+	global $query_on;
+	global $debug_on;
+	global $ev;
 
 	debug("entered routeToDid('$called')");
 	// default route is a did 
@@ -380,6 +385,8 @@ function routeToDid(&$called)
 			// just translate the called number
 			$called = $res[0]["destination"];
 		else{
+			$ev->params["query_on"] = ($query_on) ? "yes" : "no";
+			$ev->params["debug_on"] = ($debug_on) ? "yes" : "no";
 			// route to a script
 			set_retval($res[0]["destination"]);
 			return true;
@@ -660,10 +667,10 @@ for (;;) {
 	$ev=Yate::GetEvent();
 	// If Yate disconnected us then exit cleanly 
 	if ($ev === false)
-	break;
+	    break;
 	// No need to handle empty events in this application 
 	if ($ev === true)
-	continue;
+	    continue;
 	// If we reached here we should have a valid object 
 	switch ($ev->type) {
 	case "incoming":
@@ -673,15 +680,17 @@ for (;;) {
 				if($module != "freesentral")
 					break;
 				$line = $ev->GetValue("line");
-				if($line == "on") {
+				if ($line == "on") {
+					$debug_on = true;
 					Yate::Output(true);
 					Yate::Debug(true);
 					Yate::Output("Enabling debug on FreeSentral routing");
-				}elseif($line == "off"){
+				} elseif($line == "off") {
+					$debug_on = false;
 					Yate::Output("Disabling debug on FreeSentral routing");
 					Yate::Output(false);
 					Yate::Debug(false);
-				}else
+				} else
 					break;
 				$ev->handled = true;
 				break;
@@ -825,8 +834,8 @@ for (;;) {
 						$query = "UPDATE call_logs SET address='".$ev->GetValue("address")."', direction='".$ev->GetValue("direction")."', billid='".$ev->GetValue("billid")."', caller='".$ev->GetValue("caller")."', called='".$ev->GetValue("called")."', duration=INTERVAL '".$ev->GetValue("duration")." s', billtime=INTERVAL '".$ev->GetValue("billtime")." s', ringtime=INTERVAL '".$ev->GetValue("ringtime")." s', status='".$ev->GetValue("status")."', reason='$reason', ended='t' WHERE chan='".$ev->GetValue("chan")."' AND time=TIMESTAMP 'EPOCH' + INTERVAL '".$ev->GetValue("time")." s';UPDATE extensions SET inuse_count=(CASE WHEN inuse_count>0 THEN inuse_count-1 ELSE 0 END), inuse_last=now() WHERE extension='".$ev->GetValue("external")."'";
 						$res = query_nores($query);
 						break;
-					}
-					break;
+				}
+				break;
 		}
 		// This is extremely important.
 		//	We MUST let messages return, handled or not 

@@ -5,17 +5,17 @@ require_once("libyate.php");
 // Initiate a call once we know the target
 function callInitiate($target,$ev)
 {
-	Yate::Debug("Initiating dialout call to '$target'");
-	$m = new Yate("call.execute");
-	$m->params = $ev->params;
-	$m->id = "";
-	$m->SetParam("callto","external/nodata/ctc-dialer.php");
-	$m->SetParam("direct",$target);
-	$m->SetParam("caller",$ev->GetValue("real_called"));
-	$m->SetParam("callername",$ev->GetValue("callername"));
-	$m->SetParam("called",$ev->GetValue("real_caller"));
-	$m->SetParam("cdrtrack","false");
-	$m->Dispatch();
+    Yate::Debug("Initiating dialout call to '$target'");
+    $m = new Yate("call.execute");
+    $m->params = $ev->params;
+    $m->id = "";
+    $m->SetParam("callto","external/nodata/ctc-dialer.php");
+    $m->SetParam("direct",$target);
+    $m->SetParam("caller",$ev->GetValue("real_called"));
+    $m->SetParam("callername",$ev->GetValue("callername"));
+    $m->SetParam("called",$ev->GetValue("real_caller"));
+    $m->SetParam("cdrtrack","false");
+    $m->Dispatch();
 }
 
 // Routing failed, the number may be invalid
@@ -40,32 +40,32 @@ for (;;) {
 	continue;
     switch ($ev->type) {
 	case "incoming":
-		// We are sure it's the timer message
-		$ev->Acknowledge();
+	    // We are sure it's the timer message
+	    $ev->Acknowledge();
 	    if($ev->name == "engine.command") {
-			$line = $ev->GetValue("line");
-			if(substr($line,0,14) == "click_to_call ") {
-				$cmd = substr($line,14,strlen($line));
-				$cmd = explode(" ",$cmd);
-				$caller = $cmd[0];
-				$called = $cmd[1];
-				$m = new Yate("call.route");
-				$m->params["caller"] = "ctc"; //$caller;
-				$m->params["called"] = $caller; //$called;
-				$m->params["real_caller"] = $caller;
-				$m->params["real_called"] = $called;
-				$m->params["already-auth"] = "yes";
-				$m->Dispatch();
-			}
+		$line = $ev->GetValue("line");
+		if(substr($line,0,14) == "click_to_call ") {
+		    $cmd = substr($line,14,strlen($line));
+		    $cmd = explode(" ",$cmd);
+		    $caller = $cmd[0];
+		    $called = $cmd[1];
+		    $m = new Yate("call.route");
+		    $m->params["caller"] = "ctc"; //$caller;
+		    $m->params["called"] = $caller; //$called;
+		    $m->params["real_caller"] = $caller;
+		    $m->params["real_called"] = $called;
+		    $m->params["already-auth"] = "yes";
+		    $m->Dispatch();
 		}
+	    }
 	    break;
 	case "answer":
-		// Use the return of the routing message
-		if ($ev->name == "call.route") {
-			if ($ev->handled && ($ev->retval != "") && ($ev->retval != "-") && ($ev->retval != "error"))
-				callInitiate($ev->retval,$ev);
-			else
-				routeFailure($ev->GetValue("error"),$ev);
+	    // Use the return of the routing message
+	    if ($ev->name == "call.route") {
+		if ($ev->handled && ($ev->retval != "") && ($ev->retval != "-") && ($ev->retval != "error"))
+		    callInitiate($ev->retval,$ev);
+		else
+		    routeFailure($ev->GetValue("error"),$ev);
 	    }
 	    break;
 	default:

@@ -52,6 +52,11 @@ $current = 0;
 
 $vm_func_for_dir = "getCustomVoicemailDir";
 
+function debug($mess)
+{
+    Yate::Debug("voicemaildb.php: ".$mess);
+}
+
 /* Ask the user to enter number */
 function promptUser()
 {
@@ -88,9 +93,9 @@ function setState($newstate)
 
     // are we exiting?
     if ($state == "")
-		return;
+	return;
 
-    Yate::Debug("setState('$newstate') state: $state");
+    debug("setState('$newstate') state: $state");
 
     // always obey a return to prompt
     switch ($newstate) {
@@ -110,7 +115,7 @@ function setState($newstate)
 	    if (vmSetMessageRead($mailbox,$files[$current])) {
 		$mp3file = str_replace(".slin",".mp3",$files[$current]);
 		if(is_file("$dir/n".$mp3file))
-			rename("$dir/n".$mp3file, "$dir/$mp3file"); 
+		    rename("$dir/n".$mp3file, "$dir/$mp3file"); 
 		$m = new Yate("user.update");
 		$m->id = "";
 		$m->params["user"] = $mailbox;
@@ -160,9 +165,9 @@ function setState($newstate)
 	case "play":
 	    $m = new Yate("chan.attach");
 	    if (is_file("$dir/greeting.au"))
-			$m->params["source"] = "wave/play/$dir/greeting.au";
+		$m->params["source"] = "wave/play/$dir/greeting.au";
 	    else
-			$m->params["source"] = "wave/play/$vm_base/nogreeting.au";
+		$m->params["source"] = "wave/play/$vm_base/nogreeting.au";
 	    $m->params["consumer"] = "wave/record/-";
 	    $m->params["maxlen"] = 100000;
 	    $m->params["notify"] = $ourcallid;
@@ -193,9 +198,9 @@ function initUser()
 	$files = array();
 	for($i=0; $i<count($all_files); $i++)
 	if(substr($all_files[$i],-5) == ".slin")
-		$files[] = $all_files[$i];
+	    $files[] = $all_files[$i];
     $dir = vmGetVoicemailDir($mailbox);
-    Yate::Output("found " . count($files) . " file entries for mailbox $mailbox");
+    debug("found " . count($files) . " file entries for mailbox $mailbox");
     setState("prompt");
 }
 
@@ -204,9 +209,9 @@ function checkUser()
 {
     global $collect_user;
     if ($collect_user == "")
-		setState("goodbye");
+	setState("goodbye");
     else
-		setState("pass");
+	setState("pass");
 }
 
 /* Transition to authentication state if password is not empty else exit */
@@ -215,12 +220,12 @@ function checkPass()
     global $collect_user;
     global $collect_pass;
     if ($collect_pass == "")
-		setState("goodbye");
+	setState("goodbye");
     else {
-		setState("auth");
-		$m = new Yate("user.auth");
-		$m->params["username"] = $collect_user;
-		$m->Dispatch();
+	setState("auth");
+	$m = new Yate("user.auth");
+	$m->params["username"] = $collect_user;
+	$m->Dispatch();
     }
 }
 
@@ -232,10 +237,10 @@ function checkAuth($pass)
     global $mailbox;
 //    Yate::Debug("checking passwd if '$collect_pass' == '$pass'");
     if ($collect_pass == $pass) {
-		$mailbox = $collect_user;
-		initUser();
-    }else
-		setState("goodbye");
+	$mailbox = $collect_user;
+	initUser();
+    } else
+	setState("goodbye");
     $collect_pass = "";
 }
 
@@ -246,7 +251,7 @@ function gotNotify($reason)
     global $partycallid;
     global $state;
 
-    Yate::Debug("gotNotify('$reason') state: $state");
+    debug("gotNotify('$reason') state: $state");
     if ($reason == "replaced")
 	return;
 
@@ -278,7 +283,7 @@ function listenTo($n)
     global $current;
 
     if (($n < 0) || ($n >= count($files)))
-		return;
+	return;
     $current = $n;
     setState("listen");
 }
@@ -325,35 +330,35 @@ function gotDTMF($text)
     global $collect_user;
     global $collect_pass;
 
-    Yate::Debug("gotDTMF('$text') state: $state");
+    debug("gotDTMF('$text') state: $state");
 
     switch ($state) {
 	case "user":
 	    if ($text == "*") {
-			promptUser();
-			return;
+		promptUser();
+		return;
 	    }
 	    if ($text == "#")
-			checkUser();
+		checkUser();
 	    else
-			$collect_user .= $text;
+		$collect_user .= $text;
 	    return;
 	case "pass":
 	    if ($text == "*") {
-			promptPass();
-			return;
+		promptPass();
+		return;
 	    }
 	    if ($text == "#")
-			checkPass();
+		checkPass();
 	    else
-			$collect_pass .= $text;
+		$collect_pass .= $text;
 	    return;
 	case "record":
-		setState("prompt");
-		return;
+	    setState("prompt");
+	    return;
     }
     if ($mailbox == "")
-		return;
+	return;
 
     navigate($text);
 }
@@ -378,8 +383,16 @@ while ($state != "") {
 		case "call.execute":
 		    $mailbox = $ev->GetValue("user");
 		    $partycallid = $ev->GetValue("id");
+			if ($ev->GetValue("debug_on") == "yes") {
+			    Yate::Output(true);
+			    Yate::Debug(true);
+			}
+			if ($ev->GetValue("query_on") == "yes") {
+			    $query_on = true;
+			}
 		    $ev->params["targetid"] = $ourcallid;
 		    $ev->handled = true;
+
 		    /* We must ACK this message before dispatching a call.answered */
 		    $ev->Acknowledge();
 		    /* Prevent a warning if trying to ACK this message again */

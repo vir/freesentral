@@ -41,7 +41,11 @@ $user = "";
 $file = "";
 
 $vm_func_for_dir = "getCustomVoicemailDir";
-Yate::Debug(true);
+
+function debug($mess)
+{
+    Yate::Debug("leavemaildb.php: ".$mess);
+}
 
 /* Check if the user exists and prepare a filename if so */
 function checkUser($called,$caller)
@@ -50,14 +54,14 @@ function checkUser($called,$caller)
     global $user;
     global $file;
 
-	$query = "SELECT count(*) as count FROM extensions WHERE extension='$called'";
-	$res = query_to_array($query);
-	if(!$res[0]["count"])
-		return false;
+    $query = "SELECT count(*) as count FROM extensions WHERE extension='$called'";
+    $res = query_to_array($query);
+    if(!$res[0]["count"])
+	return false;
 
     $user = vmGetVoicemailDir($called);
     if (!is_dir($user))
-		mkdir($user);
+	mkdir($user);
 
     $mailbox = $called;
     $file = vmBuildNewFilename($caller);
@@ -78,7 +82,7 @@ function setState($newstate)
     if ($state == "")
 	return;
 
-    Yate::Debug("setState('$newstate') state: $state");
+    debug("setState('$newstate') state: $state");
 
     if ($newstate == $state)
 	return;
@@ -93,9 +97,9 @@ function setState($newstate)
 	case "greeting":
 	    $m = new Yate("chan.attach");
 	    if (is_file("$user/greeting.au"))
-			$m->params["source"] = "wave/play/$user/greeting.au";
+		$m->params["source"] = "wave/play/$user/greeting.au";
 	    else
-			$m->params["source"] = "wave/play/$vm_base/nogreeting.au";
+		$m->params["source"] = "wave/play/$vm_base/nogreeting.au";
 	    $m->params["notify"] = $ourcallid;
 	    $m->Dispatch();
 	    break;
@@ -134,7 +138,7 @@ function gotNotify($reason)
 {
     global $state;
 
-    Yate::Debug("gotNotify('$reason') state: $state");
+    debug("gotNotify('$reason') state: $state");
     if ($reason == "replaced")
 	return;
 
@@ -173,10 +177,16 @@ while ($state != "") {
 		case "call.execute":
 		    $partycallid = $ev->GetValue("id");
 		    $ev->params["targetid"] = $ourcallid;
+		    if ($ev->GetValue("debug_on") == "yes") {
+			Yate::Output(true);
+			Yate::Debug(true);
+		    }
+		    if ($ev->GetValue("query_on") == "yes") {
+			$query_on = true;
+		    }
 		    $ev->handled = true;
 		    /* We must ACK this message before dispatching a call.answered */
 		    $ev->Acknowledge();
-
 		    /* Check if the mailbox exists, answer only if that's the case */
 		    if (checkUser($ev->GetValue("called"),$ev->GetValue("caller"))) {
 			$m = new Yate("call.answered");
@@ -226,7 +236,7 @@ if(is_file("$user/$file"))
 		passthru("share/scripts/mp3ize.sh $mp3path $filename");
 	}else{
 		passthru("/usr/local/share/yate/scripts/mp3ize.sh $mp3path $filename");	
-	}	
+	}
 }
 
 Yate::Output("PHP leavemaildb : bye!");

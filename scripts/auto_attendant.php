@@ -34,160 +34,159 @@ $hold_keys = '';
 $count = false; //start to count seconds since a digit has been pressed
 $state = "enter";
 
+function debug($mess)
+{
+    Yate::Debug("auto_attendant.php: ".$mess);
+}
+
 /* Perform machine status transitions */
 function setState($newstate)
 {
     global $ourcallid;
     global $partycallid;
     global $state;
-	global $uploaded_prompts;
-	global $keys;
-	global $wait_time;
-	global $caller;
-	global $hold_keys;
-	global $destination;
-	global $called;
-	global $ev;
+    global $uploaded_prompts;
+    global $keys;
+    global $wait_time;
+    global $caller;
+    global $hold_keys;
+    global $destination;
+    global $called;
+    global $ev;
 
     // are we exiting?
     if ($state == "")
 	return;
 
-    Yate::Debug("setState('$newstate') state: $state");
+    debug("setState('$newstate') state: $state");
 
-	$state = $newstate;
+    $state = $newstate;
     // always obey a return to prompt
     switch ($newstate) {
-		case "greeting":
-			// check what prompt to use for this time of day
-			$state = $newstate;
-			$query = "select prompts.prompt_id, prompts.file as prompt from time_frames, prompts where numeric_day=extract(dow from now()) and cast(start_hour as integer)<=extract(HOUR FROM now()) AND cast(end_hour as integer)>extract(HOUR FROM now()) and time_frames.prompt_id=prompts.prompt_id UNION select prompt_id,  file as prompt from prompts where status='offline'";
-			$res = query_to_array($query);
-			if(!count($res))
-			{
-				Yate::Output("Auto-Attendant is not configured!!");
-				setState("goodbye");
-				return;
-			}
-			$prompt_id = $res[0]["prompt_id"];
-			$prompt =  $res[0]["prompt"];
-			// here we must have ".au"
-			$prompt = str_ireplace(".mp3", ".slin", $prompt);
-			$query = "SELECT key, destination FROM keys WHERE prompt_id=$prompt_id";
-			$keys = query_to_array($query);
-			$m = new Yate("chan.attach" );
-			$m->params["source"] = "wave/play/$uploaded_prompts/auto_attendant/$prompt";
-			$m->params["notify"] = $ourcallid;
-			$m->Dispatch();
-			break;
-		case "prolong_greeting":
-			$m = new Yate("chan.attach");
-			$m->params["consumer"] = "wave/record/-";
-			$m->params["notify"] = $ourcallid;
-			$m->params["maxlen"] = $wait_time*10000;
-			$m->Dispatch();
-			break;
-		case "goodbye":
-			$m = new Yate("chan.attach");
-			$m->params["source"] = "tone/congestion";
-			$m->params["consumer"] = "wave/record/-";
-			$m->params["maxlen"] = 32000;
-			$m->params["notify"] = $ourcallid;
-			$m->Dispatch();
-			break;
-		case "call.route":
-			$to_call = null;
-			for($i=0; $i<count($keys); $i++) {
-				if($keys[$i]["key"] == $hold_keys) {
-					$to_call = $keys[$i]["destination"];
-					//$hold_keys = null;
-					break;
-				}
-			}
-			if($hold_keys == '') {
-				$query = "SELECT (CASE WHEN extension_id IS NOT NULL THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number='$called'";
-				$res = query_to_array($query);
-				if(!count($res) || !strlen($res[0]["called"])) {
-					// this should never happen
-					setState("goodbye");
-					return;
-				}
-				$to_call = $res[0]["called"];
-			} 
-			if (!$to_call)
-				$to_call = $hold_keys;
-			$m = new Yate("call.route");
-			$m->params["caller"] = $caller;
-			$m->params["called"] = $to_call;
-			$m->params["id"] = $ourcallid;
-			$m->params["already-auth"] = "yes";
-			$m->params["call_type"] = "from outside";
-			$m->Dispatch();
-			break;
-		case "send_call":
-			$m = new Yate("chan.masquerade");
-			$m->params = $ev->params;
-			$m->params["message"] = "call.execute";
-			$m->params["id"] = $partycallid;
-			$m->params["callto"] = $destination;
-			$m->Dispatch();
-			break;
-	}
+	case "greeting":
+	    // check what prompt to use for this time of day
+	    $query = "select prompts.prompt_id, prompts.file as prompt from time_frames, prompts where numeric_day=extract(dow from now()) and cast(start_hour as integer)<=extract(HOUR FROM now()) AND cast(end_hour as integer)>extract(HOUR FROM now()) and time_frames.prompt_id=prompts.prompt_id UNION select prompt_id,  file as prompt from prompts where status='offline'";
+	    $res = query_to_array($query);
+	    if(!count($res))
+	    {
+		debug("Auto-Attendant is not configured!!");
+		setState("goodbye");
+		return;
+	    }
+	    $prompt_id = $res[0]["prompt_id"];
+	    $prompt =  $res[0]["prompt"];
+	    // here we must have ".au"
+	    $prompt = str_ireplace(".mp3", ".slin", $prompt);
+	    $query = "SELECT key, destination FROM keys WHERE prompt_id=$prompt_id";
+	    $keys = query_to_array($query);
+	    $m = new Yate("chan.attach" );
+	    $m->params["source"] = "wave/play/$uploaded_prompts/auto_attendant/$prompt";
+	    $m->params["notify"] = $ourcallid;
+	    $m->Dispatch();
+	    break;
+	case "prolong_greeting":
+	    $m = new Yate("chan.attach");
+	    $m->params["consumer"] = "wave/record/-";
+	    $m->params["notify"] = $ourcallid;
+	    $m->params["maxlen"] = $wait_time*10000;
+	    $m->Dispatch();
+	    break;
+	case "goodbye":
+	    $m = new Yate("chan.attach");
+	    $m->params["source"] = "tone/congestion";
+	    $m->params["consumer"] = "wave/record/-";
+	    $m->params["maxlen"] = 32000;
+	    $m->params["notify"] = $ourcallid;
+	    $m->Dispatch();
+	    break;
+	case "call.route":
+	    $to_call = null;
+	    for($i=0; $i<count($keys); $i++) {
+		if($keys[$i]["key"] == $hold_keys) {
+		    $to_call = $keys[$i]["destination"];
+		    //$hold_keys = null;
+		    break;
+		}
+	    }
+	    if($hold_keys == '') {
+		$query = "SELECT (CASE WHEN extension_id IS NOT NULL THEN (SELECT extension FROM extensions WHERE extensions.extension_id=dids.extension_id) ELSE (SELECT extension FROM groups WHERE groups.group_id=dids.group_id) END) as called FROM dids WHERE number='$called'";
+		$res = query_to_array($query);
+		if(!count($res) || !strlen($res[0]["called"])) {
+		    // this should never happen
+		    setState("goodbye");
+		    return;
+		}
+		$to_call = $res[0]["called"];
+	    } 
+	    if (!$to_call)
+		$to_call = $hold_keys;
+	    $m = new Yate("call.route");
+	    $m->params["caller"] = $caller;
+	    $m->params["called"] = $to_call;
+	    $m->params["id"] = $ourcallid;
+	    $m->params["already-auth"] = "yes";
+	    $m->params["call_type"] = "from outside";
+	    $m->Dispatch();
+	    break;
+	case "send_call":
+	    $m = new Yate("chan.masquerade");
+	    $m->params = $ev->params;
+	    $m->params["message"] = "call.execute";
+	    $m->params["id"] = $partycallid;
+	    $m->params["callto"] = $destination;
+	    $m->Dispatch();
+	    break;
+     }
 }
 
 /* Handle all DTMFs here */
 function gotDTMF($text)
 {
-	global $state;
-	global $keys;
-	global $destination;
-	global $hold_keys;
-	global $count;
+    global $state;
+    global $keys;
+    global $destination;
+    global $hold_keys;
+    global $count;
 
-	Yate::Debug("gotDTMF('$text') state: $state");
+    debug("gotDTMF('$text') state: $state");
 
-	$count = true;
-	switch ($state) {
+    $count = true;
+    switch ($state) {
 	case "greeting":
 	case "prolong_greeting":
-		if($text != "#" && $text != "*")
-			$hold_keys .= $text;
-		else {
-			//i will consider that this are accelerating keys
-			setState("call.route");
-			break;
-		}
-		return;
-	}
+	    if($text != "#" && $text != "*")
+		$hold_keys .= $text;
+	    else {
+		//i will consider that this are accelerating keys
+		setState("call.route");
+		break;
+	    }
+	    return;
+    }
 }
 
 function gotNotify($reason)
 {
-	global $state;
+    global $state;
 
-	Yate::Debug("gotNotify('$reason') state: $state");
-	if ($reason == "replaced")
-		return;
+    debug("gotNotify('$reason') state: $state");
+    if ($reason == "replaced")
+	return;
 
-	switch($state)
-	{
-		case "greeting":
-			setState("prolong_greeting");
-			break;
-		case "prolong_greeting":
-			setState("call.route");
-			break;
-		case "goodbye":
-			setState("");
-			break;
-	}
+    switch($state) {
+	case "greeting":
+	    setState("prolong_greeting");
+	    break;
+	case "prolong_greeting":
+	    setState("call.route");
+	    break;
+	case "goodbye":
+	    setState("");
+	    break;
+    }
 }
 
 Yate::Init();
-Yate::Output(true);
-Yate::Debug(true);
-
-$query_on=true;
 
 /* Install filtered handlers for the wave end and dtmf notify messages */
 // chan.dtmf should have a greater priority than that of pbxassist(by default 15)
@@ -210,8 +209,15 @@ while ($state != "") {
 	    switch ($ev->name) {
 		case "call.execute":
 		    $partycallid = $ev->GetValue("id");
-			$caller = $ev->GetValue("caller");
-			$called = $ev->GetValue("called");
+		    $caller = $ev->GetValue("caller");
+		    $called = $ev->GetValue("called");
+		    if ($ev->GetValue("debug_on") == "yes") {
+			Yate::Output(true);
+			Yate::Debug(true);
+		    }
+		    if ($ev->GetValue("query_on") == "yes") {
+			$query_on = true;
+		    }
 		    $ev->params["targetid"] = $ourcallid;
 		    $ev->handled = true;
 		    /* We must ACK this message before dispatching a call.answered */
@@ -225,7 +231,7 @@ while ($state != "") {
 		    $m->params["targetid"] = $partycallid;
 		    $m->Dispatch();
 
-			setState("greeting");
+		    setState("greeting");
 		    break;
 
 		case "chan.notify":
@@ -241,15 +247,15 @@ while ($state != "") {
 		    break;
 
 		case "engine.timer":
-			if(!$count)
-				break;
-			if($count === true)
-				$count = 1;
-			else
-				$count++;
-			if($count == $wait_time)
-				setState("call.route");
+		    if(!$count)
 			break;
+		    if($count === true)
+			$count = 1;
+		    else
+			$count++;
+		    if($count == $wait_time)
+			setState("call.route");
+		    break;
 	    }
 	    /* This is extremely important.
 	       We MUST let messages return, handled or not */
@@ -257,14 +263,14 @@ while ($state != "") {
 		$ev->Acknowledge();
 	    break;
 	case "answer":
-		Yate::Debug("PHP Answered: " . $ev->name . " id: " . $ev->id);
-		if ($ev->name == "call.route") {
-			$destination = $ev->retval;
-			if ($destination)
-				setState("send_call");
-			else
-				setState("goodbye");
-		}
+	    //Yate::Debug("PHP Answered: " . $ev->name . " id: " . $ev->id);
+	    if ($ev->name == "call.route") {
+		$destination = $ev->retval;
+		if ($destination)
+		    setState("send_call");
+		else
+		    setState("goodbye");
+	    }
 	    break;
 	case "installed":
 	    // Yate::Debug("PHP Installed: " . $ev->name);
