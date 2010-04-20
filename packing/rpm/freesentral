@@ -28,6 +28,8 @@ RETVAL=0
 
 start() {
     echo -n $"Starting FreeSentral: "
+    # Have to bring up now the loopback so a local route exists
+    /sbin/ifconfig lo up
     daemon yate -d -p /var/run/yate.pid $OPTS
     RETVAL=$?
     echo

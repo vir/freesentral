@@ -25,6 +25,7 @@ Requires:	php-ming
 Requires:	sudo
 Requires:	madplay
 Requires:	/sbin/chkconfig
+Requires:	/sbin/ifconfig
 
 %define prefix  /usr
 %define __find_requires /bin/true
