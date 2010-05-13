@@ -43,6 +43,8 @@ if (!function_exists("stripos")) {
 	}
 }
 
+escape_page_params();
+
 function testpath($path)
 {
 	if (ereg("[^A-Za-z0-9_]",$path)) 
@@ -129,6 +131,27 @@ function notify($res)
 		errormess($res[1],$path);
 }
 
+function escape_page_params()
+{
+	foreach ($_POST as $param=>$value)
+		$_POST[$param] =  escape_page_param($value);
+	foreach ($_GET as $param=>$value)
+		$_GET[$param] = escape_page_param($value);
+	foreach ($_REQUEST as $param=>$value)
+		$_REQUEST[$param] = escape_page_param($value);
+}
+
+function escape_page_param($value)
+{
+	if (!is_array($value))
+		return htmlentities($value);
+	else  {
+		foreach ($value as $index=>$val)
+			$value[$index] = htmlentities($value);
+		return $value;
+	}
+}
+
 function getparam($param,$escape = true)
 {
 	$ret = NULL;
@@ -138,11 +161,8 @@ function getparam($param,$escape = true)
 		$ret = $_GET[$param];
 	else
 		return NULL;
-	if ($escape && !is_array($ret))
-		$ret = addslashes($ret);
-	elseif(is_array($ret)) {
+	if(is_array($ret)) {
 		foreach($ret as $index=>$value) {
-			$ret[$index] = addslashes($value);
 			if (substr($ret[$index],0,6) == "__sql_")
 				$ret[$index] = NULL; 
 			if ($ret[$index] == "__empty")

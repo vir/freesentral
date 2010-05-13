@@ -103,7 +103,7 @@ class Variable
 					break;
 				}
 			default:
-				return "'" . addslashes($value) . "'";
+				return "'" . Database::escape($value) . "'";
 		}
 	}
 
@@ -402,6 +402,16 @@ class Database
 		}
 		return $no_error;
 	}
+
+	public static function escape($value)
+	{
+		return pg_escape_string(self::connect(), $value);
+	}
+
+	public static function unescape($value)
+	{
+		return $value;
+	}
 }
 
 // general model for defining an object that will be mapped to an sql table 
@@ -536,7 +546,7 @@ class Model
 		{
 			$array[$i] = array();
 			for($j=0; $j<pg_num_fields($res); $j++)
-				$array[$i][pg_field_name($res,$j)] = htmlentities(stripslashes(pg_fetch_result($res,$i,$j)));
+				$array[$i][pg_field_name($res,$j)] = htmlentities(Database::unescape(pg_fetch_result($res,$i,$j)));
 		}
 		return $array; 
 	}
@@ -764,7 +774,7 @@ class Model
 	{
 		if(!$this->_setted)
 			$this->setParams($params);
-		return array(true, '');
+		return array(true, '', array());
 	}
 
 	/**
@@ -772,11 +782,14 @@ class Model
 	 * @param $params Array of param_name=>param_value used for setting the variables of this object
 	 * @param $retrieve_id Bool value, true if you want the id of the inserted object to be retrived or not
 	 * @param $keep_log Bool value, true when you wish to insert a log entry for that action
-	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user
+	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user, array[2] is array with fields there was an error with
 	 */
 	public function add($params=NULL, $retrieve_id=true, $keep_log=true)
 	{
 		if($params) {
+			$res = $this->verifyRequiredFields($params);
+			if(!$res[0])
+				return $res;
 			$res = $this->setObj($params);
 			if(!$res[0])
 				return $res;
@@ -789,11 +802,14 @@ class Model
 	 * @param $params Array of param_name=>param_value used for setting the variables of this object
 	 * @param $conditons Array of conditions after which to do the update. Default is NULL(update after object id)
 	 * @param $verifications Array with conditions trying to specify if this object can be modified or not
-	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user
+	 * @return Array, array[0] is true/false, true when inserting was succesfull, array[1] default message to could be printed to the user, array[2] is array with fields there was an error with
 	 */
 	public function edit($params, $conditions = NULL, $verifications = array())
 	{
 		if($params) {
+			$res = $this->verifyRequiredFields($params);
+			if(!$res[0])
+				return $res;
 			$res = $this->setObj($params);
 			if(!$res[0])
 				return $res;
@@ -827,6 +843,7 @@ class Model
 		$serials = array();
 		$insert_log = "";
 		$error = "";
+		$error_fields = array();
 		foreach ($this->_model as $var_name => $var)
 		{
 			$value = $this->$var_name;
@@ -853,6 +870,7 @@ class Model
 				continue;
 			if (!strlen($value) && $var->isRequired()) {
 				$error .= " Required field '".$var_name."' not set.";
+				$error_fields[] = $var_name;
 				// gather other errors as well
 				continue;
 			}
@@ -864,37 +882,66 @@ class Model
 			}
 			$columns .= "\"$var_name\"";
 			$values .= $var->escape($value);
-			$insert_log .= "$var_name='".$var->escape($value)."'";
+			$insert_log .= "$var_name=".$value;
 		}
 		if ($columns == "")
 			return;
 		$table = $this->getTableName();
 
 		if($error != "")
-			return array(false, "Failed to insert into $table.".$error);
+			return array(false, "Failed to insert into $table.".$error, $error_fields);
 
 		$query = "INSERT INTO \"$table\"($columns) VALUES($values)";
 		$res = Database::query($query);
 		if (!$res)
-			return array(false,"Failed to insert into $table.");
+			return array(false,"Failed to insert into $table.",$error_fields);
 		if($retrieve_id)
 			if (count($serials))
 			{
 				$oid = pg_last_oid($res);
 				if ($oid === false)
-					return array(false,"There are no OIDs on table $table");
+					return array(false,"There are no OIDs on table $table",array());
 				$columns = implode(",",array_keys($serials));
 				$query_oid = "SELECT $columns FROM $table WHERE oid=$oid";
 				$res = Database::query($query_oid);
 				if (!$res)
-					return array(false,"Failed to select serials");
+					return array(false,"Failed to select serials",array());
 				foreach (array_keys($serials) as $var_name)
 					$this->$var_name = pg_fetch_result($res,0,$var_name);
 			}
 		$log = "inserted ".$this->getNameInLogs().": $insert_log";
 		if($keep_log === true)
 			self::writeLog($log,$query);
-		return array(true,"Succesfully inserted into ".ucwords(str_replace("_"," ",$table)));
+		return array(true,"Succesfully inserted into ".ucwords(str_replace("_"," ",$table)),array());
+	}
+
+	/**
+	 * Build insert query for this $object
+	 * @return Text representing the query
+	 */
+	public function buildInsertQuery()
+	{
+		$columns = "";
+		$values = "";
+		foreach ($this->_model as $var_name => $var)
+		{
+			$value = $this->$var_name;
+			if (!$value)
+				continue;
+			if ($columns != "")
+			{
+				$columns .= ",";
+				$values .= ",";
+			}
+			$columns .= "\"$var_name\"";
+			$values .= $var->escape($value);
+		}
+		if ($columns == "")
+			return;
+		$table = $this->getTableName();
+
+		$query = "INSERT INTO \"$table\"($columns) VALUES($values)";
+		return $query;
 	}
 	
 	/**
@@ -902,7 +949,7 @@ class Model
 	 * @param $conditions Array of conditions for making an update
 	 * if no parameter is sent when method is called it will try to update based on the numeric id od the object, unless is was invalidated
 	 * @param $verifications Array with conditions trying to specify if this object can be modified or not
-	 * @return Array(BOOL value, String, Int), boolean markes whether the update succeeded or not, String is a default message that might be printed, Int shows the number of affected rows
+	 * @return Array(BOOL value, String, Array, Int), boolean markes whether the update succeeded or not, String is a default message that might be printed, Array with name of fields there was a problem with, Int shows the number of affected rows
 	 */
 	public function update($conditions = array(), $verifications = array())
 	{
@@ -910,12 +957,13 @@ class Model
 		$variables = "";
 		$update_log = "";
 		$error = "";
+		$error_fields = array();
 		if (!count($conditions))  {
 			if($this->isInvalid())
-				return array(false, "Update was not made. Object was invalidated previously.",0);
+				return array(false, "Update was not made. Object was invalidated previously.",$error_fields, 0);
 			$id = $this->getIdName();
 			if(!$id || !$this->{$id})
-				return array(false, "Don't have conditions to perform update.");
+				return array(false, "Don't have conditions to perform update.",$error_fields,0);
 			$conditions = array($id=>$this->{$id});
 		}
 		// add the received verifications to the conditions
@@ -935,29 +983,30 @@ class Model
 
 			if(!strlen($this->{$var_name}) && $var->isRequired()) {
 				$error .= " Required field '".$var_name."' not set.";
+				$error_fields[] = $var_name;
 				continue;
 			}
 
 			$value = $var->escape($this->{$var_name});
 			$variables .= "\"$var_name\""."=".$value."";
-			$update_log .= "$var_name='".$value."'"; 
+			$update_log .= "$var_name=".$this->{$var_name}.""; 
 		}
 		$obj_name = $this->getObjectName();
 		if($error != "")
-			return array(false,'Failed to update '.$obj_name.".".$error);
+			return array(false,'Failed to update '.$obj_name.".".$error, $error_fields,0);
 		$table = $this->getTableName();
 		$query = "UPDATE \"$table\" SET $variables $where";
 		//print "query-update:$query";
 		$res = Database::query($query);
 		if(!$res) 
-			return array(false,'Failed to update '.$obj_name.".",0);
+			return array(false,'Failed to update '.$obj_name.".",array(),0);
 		else{
 			$message = 'Succesfully updated '.pg_affected_rows($res).' ' .$obj_name;
 			if (pg_affected_rows($res) != 1)
 				$message .= 's';
 			$update_log = "updated ".$this->getNameInLogs().": $update_log $where";
 			self::writeLog($update_log,$query);
-			return array(true,$message,pg_affected_rows($res));
+			return array(true,$message,array(),pg_affected_rows($res));
 		}
 	}
 
@@ -966,8 +1015,8 @@ class Model
 	 * @param $conditions NULL for using the id / Array on pairs $key=>$value
 	 * @param $fields Array($field1, $field2 ..)
 	 * @param $verifications Array with conditions trying to specify if this object can be modified or not
-	 * @return Array(Bool,String,Int) Bool whether the update succeeded or not, String is a default message to print, 
-	 * Int is the number of affected rows 
+	 * @return Array(Bool,String,Array,Int) Bool whether the update succeeded or not, String is a default message to print, 
+	 * Array with name of fields there was a problem with -always empty for this method, Int is the number of affected rows 
 	 */
 	public function fieldUpdate($conditions = array(), $fields = array(), $verifications = array())
 	{
@@ -977,10 +1026,10 @@ class Model
 
 		if(!count($conditions)) {
 			if($this->isInvalid())
-				return array(false, "Update was not made. Object was invalidated previously.",0);
+				return array(false, "Update was not made. Object was invalidated previously.",array(),0);
 			$id = $this->getIdName();
 			if(!$id || !$this->{$id})
-				return array(false, "Don't have conditions to perform update.");
+				return array(false, "Don't have conditions to perform update.", array(),0);
 			$conditions = array($id=>$this->{$id});
 		}
 		if($verifications)
@@ -989,7 +1038,7 @@ class Model
 		$where = $this->makeWhereClause($conditions, true);
 		$vars = self::getVariables(get_class($this));
 		if (!count($fields))
-			return array(false,"Update was not made. No fields were specified.",0);
+			return array(false,"Update was not made. No fields were specified.",array(),0);
 		foreach($vars as $var_name=>$var) 
 		{
 			if(!in_array($var_name,$fields))
@@ -1014,14 +1063,14 @@ class Model
 			}else{
 				$variables .= "\"$var_name\""."=".$var->escape($value)."";
 			}
-			$update_log .= "$var_name='".$var->escape($value)."'";
+			$update_log .= "$var_name=$value";
 		}
 
 		$obj_name = $this->getObjectName();
 		$query = "UPDATE ".$this->getTableName()." SET $variables $where";
 		$res = Database::query($query);
 		if(!$res) 
-			return array(false,'Failed to update '.$obj_name,0);
+			return array(false,'Failed to update '.$obj_name,array(),0);
 		else
 		{
 			$mess = 'Succesfully updated '.pg_affected_rows($res).' ' .$obj_name;
@@ -1029,8 +1078,36 @@ class Model
 				$mess .= 's';
 			$update_log = "update ".$this->getNameInLogs().": $update_log $where";
 			self::writeLog($update_log,$query);
-			return array(true,$mess,pg_affected_rows($res));
+			return array(true,$mess,array(),pg_affected_rows($res));
 		}
+	}
+
+	/**
+	 *	Verify if the required fields for this object will be set.
+	 * @param $params Array of type $param=>$value. Only the required fields appearing in this array will be verified
+	 * @return Array(Bool, Text, Array) Bool true if all required fields in $params are set, Text with the error message, Array with the name of the fields that were not set
+	 */
+	public function verifyRequiredFields($params)
+	{
+		$error_fields = array();
+		$error = "";
+		$class = get_class($this);
+		foreach ($params as $param_name => $param_value) {
+			$var = Model::getVariable($class, $param_name);
+			if (!$var)
+				continue;
+			if ($var->_required === true && (!strlen($param_value) || $param_value =='')) {
+				if ($error != "")
+					$error .= ", ";
+				$error .= "Field '".str_replace("_"," ",$param_name)."' is required";
+				$error_fields[] = $param_name;
+			}
+		}
+		if ($error != "") {
+			$error .= ".";
+			return array(false, $error, $error_fields);
+		} else
+			return array(true, "", array());
 	}
 	
 	 /**
@@ -1049,9 +1126,9 @@ class Model
 
 		$value_id = pg_escape_string($value_id);
 		if ($value_id)
-			$query = "SELECT $id FROM $table WHERE \"$param\"='".addslashes($value)."' AND $id!='$value_id' $additional";
+			$query = "SELECT $id FROM $table WHERE \"$param\"='".Database::escape($value)."' AND $id!='$value_id' $additional";
 		else
-			$query = "SELECT $id FROM $table WHERE \"$param\"='".addslashes($value)."' $additional";
+			$query = "SELECT $id FROM $table WHERE \"$param\"='".Database::escape($value)."' $additional";
 		$res = Database::query($query);
 		if(!$res)
 			exit("Could not do: $query");
@@ -1087,6 +1164,7 @@ class Model
 		//get an object of the same class as $this
 		$clone = new $class;
 
+		$conditions = array();
 		foreach($vars as $var_name=>$var) 
 		{
 			// ignoring fields that have a default value and the numeric id of the object
@@ -1094,21 +1172,17 @@ class Model
 			{
 				if($clone->{$var_name} != '')
 					continue;
-				if ($fields != '')
-					$fields .= ' AND ';
-				$fields .= "\"$var_name\""."=".$var->escape($this->{$var_name})."";
+				$conditions[$var_name] = $this->{$var_name};
 			}
-		}
-		if($fields == '') {
-			//print ("Don't have setted variables for this object. This verification must be made after you set the value that you need to be unique.");
-
-			// the above message would be more appropriate. This message will appear when verifing that an unset required field is unique => i will use the below one since it's directed to the user and not the developer.
-			return "Please set all required fields before submitting the page. Missing: ".$fields;
 		}
 
 		$var = $this->variable($id_name);
 		$value_id = $var->escape($this->{$id_name});
 		$where = ($value_id && $value_id != "NULL") ? "WHERE $fields AND \"$id_name\"!='$value_id'" : "WHERE $fields";
+
+		if($value_id && $value_id != "NULL")
+			$conditions[$id_name] = "!=".$value_id;
+		$where = $this->makeWhereClause($conditions,true);
 		$query = self::buildSelect($id_name,$table,$where);
 		$res = Database::query($query);
 
@@ -1129,82 +1203,71 @@ class Model
 	 * this one with _critical=true, the other ones having _critical=false with the associated column set to NULL
 	 * @param $conditions Array of conditions for deleting (if count=0 then we look for the id of the object) 
 	 * @param $seen Array of classes from were we deleted
+	 * @param $recursive Bool default true. Whether to delete/clean objects pointing to this one 
 	 * @return array(true/false,message) if the object(s) were deleted or not
 	 */
-	public function objDelete($conditions=array(), $seen=array())
+	public function objDelete($conditions=array(), $seen=array(), $recursive=true)
 	{
 		$vars = self::getVariables(get_class($this));
-		if(!$vars)
+		if (!$vars)
 			return null;
 
 		$orig_cond = $conditions;
 		$table = $this->getTableName();
-		if(!count($conditions)) 
-		{
-			if($this->isInvalid())
+		if (!count($conditions)) {
+			if ($this->isInvalid())
 				return array(false, "Could not delete object of class ".get_class($this).". Object was previously invalidated.");
 			
-			if(($id_name = $this->GetIdName()))
-			{
+			if (($id_name = $this->GetIdName())) {
 				$var = $this->variable($id_name);
 				$id_value = $var->escape($this->{$id_name});
-				if(!$id_value || $id_value == "NULL")
+				if (!$id_value || $id_value == "NULL")
 					$where = '';
 				else {
 					$where = " where \"$id_name\"=$id_value";
 					$conditions[$id_name] = $id_value;
 				}
-			}else
+			} else
 				$where = '';
-		}else
+		} else
 			$where = $this->makeWhereClause($conditions, true);
 	//	Debug::output("entered objDelete ".get_class($this)." with conditions ".$where);
 
-		if($where == '') 
-			return array(false, "Don't have any condition for deleting.");
-
-		//if(!$this->_retrieved && !count($orig_cond))
-			//check if this object was already retrieved from the database (only when no condition was passed when calling this function)
-		//	$objs = array($this->select($conditions));
-		//else
-		$objs = Model::selection(get_class($this),$conditions);
+		if ($where == '') 
+			return array(false, "Don't have any condition for deleting for object ".get_class($this));
 
 		// array of pairs object_name=>array(array(var_name=>var_value),array(var_name2=>var_value2)) in which we have to check for deleting on cascade
 		$to_delete = array();
-		for($i=0; $i<count($objs); $i++) 
-		{
-			foreach($vars as $var_name=>$var)
-			{
-				$value = $objs[$i]->{$var_name};
-				if (!$value)
-					continue;
-				//search inside the other objects if there are column that reference $var_name column
-				foreach(self::$_models as $class_name=>$class_vars)
-				{
-					foreach($class_vars as $class_var_name=>$class_var)
-					{
-						if (!($class_var->_key == $table && ($class_var_name == $var_name || $class_var->_matchkey == $var_name)))
-							continue;
 
-						$obj = new $class_name;
-						$obj->{$class_var_name} = $value;
-						if ($class_var->_critical)
-						{
-							// if relation is critical equivalent to delete on cascade, add $class_name to array of classes on which same method will be applied 
-							if(!isset($to_delete[$class_name]))
-								$to_delete[$class_name] = array(array($class_var_name=>$value));
-							else
-								$to_delete[$class_name][] = array($class_var_name=>$value);
-						}
-						else
-						{
-							// relation is not critical. we just need to set to NULL the fields pointing to this one
-							$nr = $obj->fieldSelect('count(*)',array($class_var_name=>$value));
-							if($nr)
-							{
-								//set column $class_var_name to NULL in all rows that have the value $value 
-								$obj->{$class_var_name} = NULL;
-								$obj->fieldUpdate(array($class_var_name=>$value),array($class_var_name));
+		if ($recursive) {
+			$objs = Model::selection(get_class($this),$conditions);
+			for ($i=0; $i<count($objs); $i++) {
+				foreach ($vars as $var_name=>$var) {
+					$value = $objs[$i]->{$var_name};
+					if (!$value)
+						continue;
+					//search inside the other objects if there are column that reference $var_name column
+					foreach (self::$_models as $class_name=>$class_vars) {
+						foreach ($class_vars as $class_var_name=>$class_var) {
+							if (!($class_var->_key == $table && ($class_var_name == $var_name || $class_var->_matchkey == $var_name)))
+								continue;
+
+							$obj = new $class_name;
+							$obj->{$class_var_name} = $value;
+							if ($class_var->_critical) {
+								// if relation is critical equivalent to delete on cascade, add $class_name to array of classes on which same method will be applied 
+								if (!isset($to_delete[$class_name]))
+									$to_delete[$class_name] = array(array($class_var_name=>$value));
+								else
+									$to_delete[$class_name][] = array($class_var_name=>$value);
+							} else {
+								// relation is not critical. we just need to set to NULL the fields pointing to this one
+								$nr = $obj->fieldSelect('count(*)',array($class_var_name=>$value));
+								if($nr) {
+									//set column $class_var_name to NULL in all rows that have the value $value 
+									$obj->{$class_var_name} = NULL;
+									$obj->fieldUpdate(array($class_var_name=>$value),array($class_var_name));
+								}
 							}
 						}
 					}
@@ -1216,30 +1279,128 @@ class Model
 		$cnt = count($seen);
 		array_push($seen,strtolower(get_class($this)));
 
-		foreach($to_delete as $object_name=>$conditions)
-		{
+		foreach ($to_delete as $object_name=>$conditions) {
 			$obj = new $object_name;
-			for($i=0;$i<count($conditions);$i++)
+			for ($i=0;$i<count($conditions);$i++)
 				$obj->objDelete($conditions[$i],$seen);
 		}
-		if($res)
-			if ($cnt) 
-			{
+		if ($res) {
+			if ($cnt) {
 				self::writeLog("deleted ".$this->getNameInLogs()." $where","$query");
-			/*	print "<br/>\nSuccesfully deleted ".pg_affected_rows($res)." object";
-				if(pg_affected_rows($res) != 1)
-					print "s";
-				print " of type ".get_class($this).'<br/>'."\n";*/
-			}
-			else
+			} else
 				return array(true, "Succesfully deleted ".pg_affected_rows($res)." object(s) of type ".get_class($this));
-		else
+		} else {
 			if ($cnt)
-//				print "<br/>\nCould not delete object of class ".get_class($this).'<br/>'."\n";
 				Debug::output("Could not delete object of class ".get_class($this));
 			else
 				return array(false, "Could not delete object of class ".get_class($this));
+		}
 		return;
+	}
+
+	/**
+	 * Get objects depending on the specified conditions from $dump_field from $table
+	 * @param $objects_to_dump Array - Variable passed by reference where objects containing all found objects
+		Ex: Array("extenion:2"=>The extension object with id 2, "group:3"=>The group object with id 3)
+	 * @param $field_name Text - name of the field to use as condition
+	 * @param $field_value Value of $field_name
+	 * @param $table Text - name of the table where objects would point to
+	 * @param $exceptions Array containing class names to skip 
+	 * @param $depth_in_search Int default 0. The name of objects when this variable is 0 will added in returned array
+	 * @return Array with pairs: class_name=>"name of the (first level) objects that will be dumped separated by ,"
+	 */
+	static function getObjectsToDump(&$objects_to_dump,$field_name, $field_value, $table, $exceptions=array(), $depth_in_search=0)
+	{
+		if (!self::$_models)
+			self::init();
+		if (!self::$_models)
+			exit("Don't have modeles after init() was called.");
+
+		$dump_description = array();
+
+		// look at all the models in the system
+		foreach (self::$_models as $class_name=>$model)
+		{
+			if (in_array($class_name, $exceptions))
+				continue;
+			if (!($use_dump_fields = self::matchesDumpConditions($model, $field_name, $field_value, $table)))
+				continue;
+			// get the objects in current class_name that match the dump_fields
+			$objs = Model::selection($class_name, $use_dump_fields);
+			$dump_desc = "";
+			// for all found objects
+			for ($i=0; $i<count($objs); $i++)
+			{
+				$obj = $objs[$i];
+				$id_name = $obj->getIdName();
+				if (!$id_name)
+					continue;
+				$id_value = $obj->{$id_name};
+
+				$index = "$class_name:$id_value";
+
+				// make sure we don't add the same object twice
+				if (isset($objects_to_dump[$index]))
+					continue;
+				$objects_to_dump[$index] = $obj;
+				if ($depth_in_search === 0) 
+				{
+					$name_var = '';
+					if ($obj->variable($class_name))
+						$name_var = $class_name;
+					elseif ($obj->variable("name"))
+						$name_var = "name";
+					else
+						$name_var = $id_name;
+					if ($dump_desc != "")
+						$dump_desc .= ", ";
+//print "$name_var=". $obj->{$name_var}."<br/>";
+					$dump_desc .= $obj->{$name_var};
+//print $dump_desc."<br/>";
+				}
+//print "class=$class_name; $id_name=$id_value"."<br/>";
+				self::getObjectsToDump($objects_to_dump, $id_name, $id_value, $obj->getTableName(), array_merge($exceptions,array($class_name)), $depth_in_search+1);
+			}
+			if ($dump_desc != "")
+				$dump_description[self::getClassTableName($class_name)] = $dump_desc;
+		}
+		return $dump_description;
+	}
+
+	/**
+	 * Verify if there are variables in provided $model that match $field_name from $table
+	 * if yes then build conditions array for specied $model
+	 * @param $model Array containing the variables of an object
+	 * @param $field_name Text representing the name of the field where the variables from $model might point
+	 * @param $field_value Value of $field_name. Will be used when building the return value
+	 * @param $table Name of table from where $field_name is 
+	 * @return false if no match Array defining the conditions to select objects
+	 */
+	static function matchesDumpConditions($model, $field_name, $field_value, $table)
+	{
+		$dump_fields = array();
+		// or some other field might point to it (more than one field in the same object)
+		foreach ($model as $var_name=>$var) 
+		{
+			if ($var->_key == $table && ($var_name==$field_name || $var->_matchkey==$field_name)) {
+				if (!count($dump_fields))
+					$dump_fields[$var_name] = $field_value;
+				elseif (count($dump_fields)==1 && !isset($dump_fields[0])) {
+					// if more than one field point to $field_name then build an OR condition between there fields
+					$dump_fields = array(
+						array_merge(
+							array("__sql_relation"=>"OR",$var_name=>$field_value), 
+							$dump_fields
+						)
+					);
+				} else
+					$dump_fields[0][$var_name] = $field_value;
+				continue;
+			}
+		}
+		if (!count($dump_fields))
+			return false;
+		return $dump_fields;
 	}
 
 	/**
@@ -1611,7 +1772,7 @@ class Model
 			foreach(self::$_models as $class => $vars) {
 				$object = new $class;
 				if(method_exists($object, "defaultObject"))
-					$res = call_user_func(array($class,"defaultObject"));
+					$res = call_user_func(array($object,"defaultObject"));
 			}
 		return true;
 	}
@@ -1844,22 +2005,36 @@ class Model
 				$clause = $this->makeCondition($key, $value, $obj_table, $only_one_table, $without_table);
 */
 
-			if(is_array($value)) {
-				// this is an OR or an AND
-				$sql_rel = (isset($value["__sql_relation"])) ? $value["__sql_relation"] : "AND";
-				if($sql_rel == "AND")
-					$clause = $this->buildAND($key, $value, $obj_table, $only_one_table, $without_table);
-				else
-					$clause = $this->buildOR($key, $value, $obj_table, $only_one_table, $without_table);
-			}else
+			if (is_array($value))
+				$clause = $this->buildAND_OR($key, $value, $obj_table, $only_one_table, $without_table);
+			else
 				$clause = $this->makeCondition($key, $value, $obj_table, $only_one_table, $without_table);
-
 
 			$where .= $clause;
 		}
 		if($where == " WHERE ")
 			return '';
 		return $where;
+	}
+
+	/**
+	 *	Builds AND/OR subcondition
+	 * @param $key name of the column on which the conditions are set
+	 * @param $value Array with the allowed values for the $key field
+	 * @param $obj_table Name of the table associated to the object on which method is called
+	 * @param $only_one_table Bool value specifing if inside the query only one table is referred
+	 * Value is true when method is called from within a method that never returns extended objects.
+	 * @param $without_table The name of the tables won't be specified in the query: Ex: we won't have table_name.column, just column
+	 */
+	protected function buildAND_OR($key, $value, $obj_table, $only_one_table, $without_table)
+	{
+		// this is an OR or an AND
+		$sql_rel = (isset($value["__sql_relation"])) ? $value["__sql_relation"] : "AND";
+		if($sql_rel == "AND")
+			$clause = "(".$this->buildAND($key, $value, $obj_table, $only_one_table, $without_table).")";
+		else
+			$clause = $this->buildOR($key, $value, $obj_table, $only_one_table, $without_table);
+		return $clause;
 	}
 
 	/**
@@ -1886,13 +2061,19 @@ class Model
 		{
 			if($var_name === "__sql_relation")
 				continue;
-			if(is_numeric($var_name))
+
+			if($clause != "")
+				$clause .= " AND "; 
+
+			if(is_array($var_value)) {
+				$clause .= $this->buildAND_OR($var_name, $var_value, $obj_table, $only_one_table, $without_table);
+				continue;
+			}
+			elseif(is_numeric($var_name))
 				$t_k = $this->getColumnName($key, $obj_table, $only_one_table, $without_table);
 			else
 				$t_k = $this->getColumnName($var_name, $obj_table, $only_one_table, $without_table);
 
-			if($clause != "")
-				$clause .= " AND "; 
 			$clause .= $this->makeCondition($t_k, $var_value, $obj_table, $only_one_table, true);
 		}
 		return $clause;
@@ -1915,6 +2096,10 @@ class Model
 				continue;
 			if($clause != "")
 				$clause .= " OR "; 
+			if(is_array($value)) {
+				$clause .= $this->buildAND_OR($column_name, $value, $obj_table, $only_one_table, $without_table);
+				continue;
+			}
 			if(is_numeric($column_name))
 				$t_k = $this->getColumnName($key, $obj_table, $only_one_table, $without_table);
 			else
@@ -2024,7 +2209,7 @@ class Model
 				$value = substr($value, 6, strlen($value));
 				$clause .= " $t_k" . $first_two . "$value ";
 			}else{
-				$value = addslashes($value);
+				$value = Database::escape($value);
 				$clause .= " $t_k" . $first_two . "'$value' ";
 			}
 		}elseif (in_array($first_one, $one_dig_operators)) {
@@ -2034,17 +2219,17 @@ class Model
 				$value = substr($value, 6, strlen($value));
 				$clause .= " $t_k" . $first_one . "$value ";
 			}else{
-				$value = addslashes($value);
+				$value = Database::escape($value);
 				$clause .= " $t_k" . $first_one . "'$value' ";
 			}
 		}elseif (substr($value,0,6) == "__LIKE") {
-			$value = addslashes(substr($value,6,strlen($value)));
+			$value = Database::escape(substr($value,6,strlen($value)));
 			if (substr($value,0,1) != '%' && substr($value,-1) != '%')
 				$clause .= " $t_k ILIKE '$value%' ";
 			else
 				$clause .= " $t_k ILIKE '$value' ";
 		}elseif (substr($value,0,10) == "__NOT LIKE") {
-			$value = addslashes(substr($value,10,strlen($value)));
+			$value = Database::escape(substr($value,10,strlen($value)));
 			if (substr($value,0,1) != '%' && substr($value,-1) != '%')
 				$clause .= " $t_k NOT ILIKE '$value%' ";
 			else
@@ -2054,7 +2239,7 @@ class Model
 			$clause .= " $t_k=$value";
 		}else{
 			if ($value != '' && strlen($value))
-				$clause .= " $t_k='".addslashes($value)."'";
+				$clause .= " $t_k='".Database::escape($value)."'";
 			else
 				// it should never get here
 				// if verification for NULL is needed set $value = '__empty' 
@@ -2130,14 +2315,12 @@ class Model
 		else
 			$where .= ' AND ';
 
-
 		if (isset($inner_query['table']))
 			$table = $inner_query['table'];
 		$column = $inner_query["column"];
 		$relation = $inner_query["relation"];
 		$outer_column = $this->getColumnName($column,$table,false,false);
 		if (!isset($inner_query["options"])) {
-
 			if (!isset($inner_query["other_table"]) && !isset($inner_query["inner_table"]))
 				exit("You must either insert 'other_table' or 'inner_table'");
 
@@ -2180,7 +2363,7 @@ class Model
 		$this->_retrieved = true;
 		$allow_html  = $this->allowHTML();
 		foreach(pg_fetch_array($result,0) as $var_name=>$value) {
-			$this->{$var_name} = stripslashes($value);
+			$this->{$var_name} = Database::unescape($value);
 			if(!in_array($var_name, $allow_html))
 				$this->{$var_name} = htmlentities($this->{$var_name});
 		}
@@ -2206,7 +2389,7 @@ class Model
 			$clone = new $class_name;
 			$clone->_model = $this->_model;
 			foreach(pg_fetch_array($result,$i) as $var_name=>$value) {
-				$clone->{$var_name} = stripslashes($value);
+				$clone->{$var_name} = Database::unescape($value);
 				if(!in_array($var_name, $allow_html))
 					$clone->{$var_name} = htmlentities($clone->{$var_name});
 			}
@@ -2276,6 +2459,7 @@ class Model
 	 * Write a log entry in the database coresponding to a certain operation
 	 * Note!! Only insert, delete, update queries are logged
 	 * Other operations should be implemented in the classes or directly in the code
+	 * The actual log writting is implemented in class ActionLog. If this class is not present logs are not written
 	 */
 	static function writeLog($log, $query = NULL)
 	{
@@ -2283,42 +2467,15 @@ class Model
 
 		if($enable_logging !== true && $enable_logging != "yes" && $enable_logging != "on")
 			return;
-		// it's important that the next line is placed here
-		// in case no object was created then self::$_performers won't be setted
-		// self::$_performers is set when the first object derived from model is created
-		$actionlog = new ActionLog;
-		$performers = self::$_performers;
-		$object = '';
-		$performer_id = '';
-		$performer = '';
-		foreach($performers as $object_name=>$performing_columns)
-		{
-			// check that the necessary fields were defined correctly 
-			if(!isset($performing_columns["performer"]) || !isset($performing_columns["performer_id"]))
-				continue;
-			if($object != '')
-				$object .= ",";
-			$object .= $object_name;
-			$perf_id = (isset($_SESSION[$performing_columns["performer_id"]])) ? $_SESSION[$performing_columns["performer_id"]] : '';
-			$perf = (isset($_SESSION[$performing_columns["performer"]])) ? $_SESSION[$performing_columns["performer"]] : '';
-			if($performer_id != '')
-				$performer_id .= ',';
-			$performer_id .= $perf_id;
-			if($performer != '')
-				$performer .= ',';
-			$performer .= $perf;
-			$real_performer_id = (isset($_SESSION[$performing_columns["real_performer_id"]])) ? $_SESSION[$performing_columns["real_performer_id"]] : "";
-		}
-		$actionlog->date = "now()";
-		$actionlog->log = $log;
-		$actionlog->performer_id = $performer_id;
-		$actionlog->performer = $performer;
-		$actionlog->real_performer_id = $real_performer_id;
-		$actionlog->object = $object;
-		$actionlog->query = $query;
-		// insert  the log entry whitout trying to retrive the id and without going into a loop of inserting log for log
-		$actionlog->insert(false,false);
+
+		if(!self::getVariables("actionlog"))
+			return;
+
+		// if class ActionLog is present trying writting log
+		ActionLog::writeLog($log, $query);
 	}
+
+	
 
 	/**
 	 * Verify if an object is a performer or not
