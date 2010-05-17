@@ -147,7 +147,7 @@ function escape_page_param($value)
 		return htmlentities($value);
 	else  {
 		foreach ($value as $index=>$val)
-			$value[$index] = htmlentities($value);
+			$value[$index] = htmlentities($val);
 		return $value;
 	}
 }
