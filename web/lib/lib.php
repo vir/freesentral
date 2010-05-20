@@ -1066,7 +1066,10 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 			{
 				if($link_no)
 					print '&nbsp;&nbsp;';
-				print '<a class="'.$css.'" href="'.$base.$methd.'">'.$methd_name.'</a>';
+				if (is_numeric($methd))
+						print $methd_name;
+				else
+						print '<a class="'.$css.'" href="'.$base.$methd.'">'.$methd_name.'</a>';
 				$link_no++;
 			}
 			print '</td>';
@@ -1083,8 +1086,11 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 		foreach($general_actions as $methd=>$methd_name)
 		{
 			if($link_no)
-				print '&nbsp;&nbsp;';
-			print '<a class="'.$css.'" href="'.$base.$methd.'">'.$methd_name.'</a>';
+					print '&nbsp;&nbsp;';
+			if (is_numeric($methd))
+					print $methd_name;
+			else
+					print '<a class="'.$css.'" href="'.$base.$methd.'">'.$methd_name.'</a>';
 			$link_no++;
 		}
 		print '</td>';
