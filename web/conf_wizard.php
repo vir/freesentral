@@ -86,7 +86,7 @@ $steps = array(
 						// name of the javascript function that should be called to verify inserted content after pressing Next button
 						"on_submit" => "verify_password",
 						"message" => array(
-											"value"=> "You neeed to change the password for the default admin of this system. If you already changed this password press 'Skip', if not please insert the new password.",
+											"value"=> "You need to change the password for the default admin of this system. If you already changed this password press 'Skip', if not please insert the new password.",
 											"display"=>"message"
 									),
 						"new_password" => array(
