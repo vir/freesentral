@@ -148,14 +148,20 @@ function home()
 	if($sock->socket) {
 		$uptime = $sock->command("uptime");
 		$status = $uptime;
-		$status = explode(" ",$status);
-		$time = explode(":",$status[1]);
+		$pos1 = strpos($uptime,"(");
+		$pos2 = strpos($uptime,")");
+		$time = substr($uptime, $pos1+1, $pos2-$pos1-1);
+		$user = new User;
+		$time = $user->fieldSelect("$time*'1 sec'::interval as interval");
+		$time = $time[0]["interval"];
+		$s_time = $time;
+		$time = explode(":",$time);
 		$days = floor($time[0]/24);
 		$hours = $time[0]%24;
 
-		$text_status = strtolower($status[0]." ");
+		$text_status = "uptime: ";
 		if (!$days)
-			$text_status.= $status[1];
+			$text_status.= $s_time;
 		else
 			$text_status.= $days.' days '.$hours.":".$time[1].":".$time[2]." ";
 		$err = "";
