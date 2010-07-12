@@ -76,7 +76,7 @@ $steps = array(
 						"step_description" => "",
 						// name of field => definition (value => value of this field(in case there is a default one), "display" => how should this field be displayed: in this case display=>"message" will print a message and name of field is going to be ignored)
 						"message" => array(
-											"value"=> "You can use this wizard to configure your telephony server. If you are an experienced user you can skip this steps, else we recomend that you go throught this simple steps.",
+											"value"=> "You can use this wizard to configure your telephony server. If you are an experienced user you can skip this steps, else we recommend that you go throught this simple steps.",
 											"display"=>"message"
 									)
 					),
