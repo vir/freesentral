@@ -76,7 +76,7 @@ $steps = array(
 						"step_description" => "",
 						// name of field => definition (value => value of this field(in case there is a default one), "display" => how should this field be displayed: in this case display=>"message" will print a message and name of field is going to be ignored)
 						"message" => array(
-											"value"=> "You can use this wizard to configure your telephony server. If you are an experienced user you can skip this steps, else we recommend that you go throught this simple steps.",
+											"value"=> "You can use this wizard to configure your telephony server. If you are an experienced user you can skip these steps, else we recommend that you go throught these simple steps.",
 											"display"=>"message"
 									)
 					),
@@ -234,7 +234,7 @@ $steps = array(
 						"step_name" => "Outbound: Gateway and default Dial Plan",
 						"step_description" => "Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. <br/><br/>
 						Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the option to direct calls of your choice to go to a specified gateway. <br/><br/>
-						The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then this will be used.",
+						The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then System CallerID and System Callername will be used.",
 						"on_submit" => "verify_gateway",
 						"gateway" => array(
 											"value"=>"default gateway", 
@@ -256,7 +256,7 @@ $steps = array(
 										),
 						"server"=>array(
 											"compulsory"=>true, 
-											"comment"=>"Ip address of the server. The ports used are the default one. To change them you can use the Outbound tab."
+											"comment"=>"Ip address of the server. The ports used are the default ones. To change them you can use the Outbound tab."
 										),
 						"default_dial_plan"=>array(
 													"display"=>"checkbox", 
