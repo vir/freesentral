@@ -120,11 +120,10 @@ cat << EOF
 \$conn  = pg_connect("host='\$db_host' dbname='\$db_database' user='\$db_user' password='\$db_passwd'")
     or die("Could not connect to the postgresql database");
 
-\$vm_base = "$prompts";
+\$vm_base = "$prompts$existing_prompts";
 \$no_groups = false;
 \$no_pbx = false;
-\$uploaded_prompts = "$prompts";
-\$vm_base = "$prompts";
+\$uploaded_prompts = "$prompts$existing_prompts";
 \$query_on = false;
 \$max_resets_conn = 5;
 ?>
@@ -435,8 +434,11 @@ if [ "x$interactive" != "xno" ]; then
     scripts=`readopt "Install Yate scripts in" "$scripts"`
     prompts=`readopt "Install IVR prompts in" "$prompts"`
     webpage=`readopt "Install Web pages in" "$webpage"`
-	ip_yate=`readopt "Ip address for yate server" "$ip_yate"`
-	webuser=`readopt "Web user " "$webuser"`
+    if [ "x$prompts" = "x" ]; then
+	existing_prompts=`readopt "Path where IVR prompts are found(necesarry for config,scripts and web pages)" "$prompts"`
+    fi
+    ip_yate=`readopt "Ip address for yate server" "$ip_yate"`
+    webuser=`readopt "Web user " "$webuser"`
     dbhost=`readopt "Database host" "$dbhost"`
     if [ -n "$dbhost" ]; then
 	dbname=`readopt "Database name" "$dbname"`
@@ -601,6 +603,7 @@ $e" > "$fe"
     fe="$DESTDIR$configs/moh.conf";
     e="
 [mohs]
+default=while true; do madplay -q --no-tty-control -m -R 8000 -o raw:- -z $prompts$existing_prompts/moh/*.mp3; done
 madplay=while true; do madplay -q --no-tty-control -m -R 8000 -o raw:- -z \${mohlist}; done
 "
 
