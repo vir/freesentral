@@ -4,6 +4,7 @@ require_once("libyate.php");
 require_once("lib_queries.php");
 
 $s_fallbacks = array();
+$s_params_assistant_outgoing = array();
 $s_statusaccounts = array();
 $s_moh = array();
 $stoperror = array("busy", "noanswer", "looping", "Request Terminated","Routing loop detected");
@@ -333,10 +334,6 @@ function routeToExtension($called)
 		$div_busy = $res[0]["div_busy"];
 		$div_noanswer = $res[0]["div_noanswer"];
 		$noans_timeout = $res[0]["noans_timeout"];
-
-		// make sure that if we forward any calls the maxcall param will be copied 
-		$ev->params["pbxassist"] = "maxcall";
-		$ev->params["pbxparams"] = "maxcall";
  
 		if ($div==$called || !$div)  {
 			// set the additional divert params
@@ -491,17 +488,33 @@ function return_route($called,$caller,$no_forward=false)
 	$call_type = $ev->GetValue("call_type");
 	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason', trusted='$trusted_auth', call_type='$call_type')");
 
+	$params_to_copy = "maxcall,call_type,already-auth,trusted-auth";
+	// make sure that if we forward any calls and for calls from pbxassist are accepted
+	$ev->params["copyparams"] = $params_to_copy;
+	$ev->params["pbxparams"] = "$params_to_copy,copyparams";
+
 	if($already_auth != "yes" && $reason!="divert_busy" && $reason != "divert_noanswer") {
 		// check to see if user is allowed to make this call
 		$query = "SELECT value FROM settings WHERE param='annonymous_calls'";
 		$res = query_to_array($query);
 		$anonim = $res[0]["value"];
-		if(strtolower($anonim) != "yes")
+		if(strtolower($anonim) != "yes" || $username)
 			// if annonymous calls are not allowed the call has to be from a known extension or from a known ip
-			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways LEFT OUTER JOIN sig_trunks ON gateways.sig_trunk_id=sig_trunks.sig_trunk_id WHERE server='$address' OR server LIKE '$address:%' OR sig_trunk='$sig_trunk'";
+			$query = "SELECT extension_id,true as trusted,'from inside' as call_type FROM extensions WHERE extension='$username' UNION SELECT incoming_gateway_id, trusted, 'from outside' as call_type FROM incoming_gateways,gateways WHERE gateways.gateway_id=incoming_gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted, 'from outside' as call_type FROM gateways LEFT OUTER JOIN sig_trunks ON gateways.sig_trunk_id=sig_trunks.sig_trunk_id WHERE server='$address' OR server LIKE '$address:%' OR sig_trunk='$sig_trunk'";
 		else {
+			// if $called is the same as one of our extensions try and autentify it -> in order to have pbx rights
+			if (!$username) {
+			    $query = "SELECT * FROM extensions WHERE extension='$caller'";
+			    $res = query_to_array($query);
+			    if (count($res)) {
+				    debug("could not auth call but '$caller' seems to be in extensions");
+				    set_retval(NULL, "noauth");
+				    return;
+			    }
+			}  
+
 			// if annonymous calls are allowed call to be for a inner group or extension  or from a known ip
-			$query = "SELECT extension_id,true as trusted FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called' UNION SELECT did_id, 't' as trusted FROM dids WHERE number='$called' OR '$system_prefix' || number='$called' UNION SELECT incoming_gateway_id, trusted FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted FROM gateways LEFT OUTER JOIN sig_trunks ON gateways.sig_trunk_id=sig_trunks.sig_trunk_id WHERE server='$address' OR server LIKE '$address:%' OR sig_trunk='$sig_trunk'";
+			$query = "SELECT incoming_gateway_id, trusted, 'from outside' as call_type FROM incoming_gateways, gateways WHERE incoming_gateways.gateway_id=gateways.gateway_id AND incoming_gateways.ip='$address' UNION SELECT gateway_id, trusted, 'from outside' as call_type FROM gateways LEFT OUTER JOIN sig_trunks ON gateways.sig_trunk_id=sig_trunks.sig_trunk_id WHERE server='$address' OR server LIKE '$address:%' OR sig_trunk='$sig_trunk' UNION SELECT extension_id,true as trusted,'to inside' as call_type FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called' OR extension='$username' UNION SELECT group_id, 't' as trusted,'to inside' as call_type  FROM groups WHERE extension='$called' OR '$system_prefix' || extension='$called' UNION SELECT did_id, 't' as trusted,'to inside' as call_type  FROM dids WHERE number='$called' OR '$system_prefix' || number='$called'";
 		}
 		$res = query_to_array($query);
 		if (!count($res)) {
@@ -510,7 +523,7 @@ function return_route($called,$caller,$no_forward=false)
 			return;
 		}
 		$trusted_auth = ($res[0]["trusted"] == "t") ? "yes" : "no";
-		$call_type = ($username) ? "from inside" : "from outside";  // from inside/outside of freesentral
+		$call_type = $res[0]["call_type"];//($username) ? "from inside" : "from outside";  // from inside/outside of freesentral
 	}
 
 	debug("classified call as being '$call_type'");
@@ -518,6 +531,9 @@ function return_route($called,$caller,$no_forward=false)
 	$ev->params["already-auth"] = "yes";
 	$ev->params["trusted-auth"] = $trusted_auth;
 	$ev->params["call_type"] = $call_type;
+
+	if ($call_type != "from inside")
+		$ev->params["pbxguest"] = true;
 
 	routeToAddressBook($called, $username);
 
@@ -545,11 +561,11 @@ function return_route($called,$caller,$no_forward=false)
 	$res = query_to_array($query);
 
 	if(!count($res)) {
-		debug("Could not find a matching dial plan=> rejecting with error: no route");
-		set_retval(NULL,"no route");
+		debug("Could not find a matching dial plan=> rejecting with error: noroute");
+		set_retval(NULL,"noroute");
 		return;
 	}
-	$id = $ev->GetValue("id");
+	$id = ($ev->GetValue("true_party")) ? $ev->GetValue("true_party") : $ev->GetValue("id");
 	$start = count($res) - 1;
 	$j = 0;
 	$fallback = array();
@@ -572,7 +588,7 @@ function return_route($called,$caller,$no_forward=false)
 		$j++;
 	}
 	if(!count($fallback)) {
-		set_retval(NULL,"no route");
+		set_retval(NULL,"noroute");
 		return;
 	}
 	$best_option = count($fallback) - 1;
@@ -597,9 +613,23 @@ function return_route($called,$caller,$no_forward=false)
  */
 function set_retval($callto, $error = NULL)
 {
-	global $ev;
+	global $ev, $s_params_assistant_outgoing;
 
 	if($callto) {
+		$id = $ev->GetValue("id");
+		$s_params_assistant_outgoing[$id] = array();
+		$s_params_assistant_outgoing[$id]["pbxparams"] = $ev->GetValue("pbxparams");
+		$s_params_assistant_outgoing[$id]["copyparams"] = $ev->GetValue("copyparams");
+		if ($ev->GetValue("line")) {
+			// call is for outside
+			$s_params_assistant_outgoing[$id]["pbxguest"] = true; 
+			$s_params_assistant_outgoing[$id]["already-auth"] = $ev->GetValue("already-auth");
+			$s_params_assistant_outgoing[$id]["call_type"] = "from outside";
+		} else {
+			// call is for inside -> we can say the call_type for this party will be from inside
+			$s_params_assistant_outgoing[$id]["already-auth"] = $ev->GetValue("already-auth");
+			$s_params_assistant_outgoing[$id]["call_type"] = "from inside";
+		}
 		$ev->retval = $callto;
 		$ev->handled = true;
 		return true;
@@ -776,6 +806,16 @@ for (;;) {
 			case "call.answered":
 				$id = $ev->GetValue("targetid");
 			//	debug("Got call.answered for '$id'. Removing fallback if setted in fallback array :".format_array($s_fallbacks));
+				if (isset($s_params_assistant_outgoing[$id])) {
+					$params = $s_params_assistant_outgoing[$id];
+					$m = new Yate("chan.operation");
+					$m->params["id"] = $ev->GetValue("id");
+					$m->params["operation"] = "setstate";
+					$m->params["state"] = "";
+					foreach ($params as $key=>$value)
+						$m->params[$key] = $value;
+					$m->Dispatch();
+				}
 				if (isset($s_fallbacks[$id])) {
 					debug("Removing fallback for '$id'");
 					unset($s_fallbacks[$id]);
@@ -786,6 +826,10 @@ for (;;) {
 				$id = $ev->GetValue("id");
 				$reason = $ev->GetValue("reason");
 			//	debug("Got '".$ev->name."' for '$id' with reason '$reason'. Fallback :".format_array($s_fallbacks));
+				if (isset($params_assistant_outgoing[$id])) {
+					debug("Dropping pbxassist params for $id's party");
+					unset($s_params_assistant_outgoing[$id]);
+				}
 				if (isset($s_fallbacks[$id])) {
 					debug("Dropping all fallback for '$id'");
 					unset($s_fallbacks[$id]);
