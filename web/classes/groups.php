@@ -58,7 +58,7 @@ class Group extends Model
 		$this->select();
 		$this->setParams($params);
 		if(strlen($this->extension) != 2)
-			return array(false,"Field 'Extension' must be at least 2 digits long");
+			return array(false,"Field 'Extension' must be 2 digits long");
 
 		$this2 = new Group;
 		$this2->group_id = $this->group_id;
