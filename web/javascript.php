@@ -21,43 +21,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 ?>
-<style type="text/css"><!--
-
-    a.fontsizer  {
-        margin-left:2px;
-        padding:0 4px;
-        text-decoration:none;
-        font-weight:900;
-        border-top:1px solid #ccf;
-        border-left:1px solid #ccf;
-        border-right:1px solid #99c;
-        border-bottom:1px solid #99c;}
-    a.fontsizer:hover { background:#f9f9f9;}
-
-    .rfloat { float:right; margin-left:0.5em; }
-    .lfloat { float:left; margin-right:0.5em; }
---></style>
-
-
-
-<script type='text/javascript' language='JavaScript1.2'>
-    var increment = 10;
-    var cookiePrefix = 'triad3_triad3_';
-    var fsLabel = 'Text Size';
-    var fsBigger = 'bigger';
-    var fsNormal = 'default';
-    var fsSmaller = 'smaller';
-</script>
-
-
-
-<script type="text/javascript" language="JavaScript1.2">
-    var rshow = '1';
-    var lshow = '1';
-    var show = 'Show';
-    var hide = 'Hide';
-</script>
-
 <script type="text/javascript" language="JavaScript1.2">
 
 function getInternetExplorerVersion()
