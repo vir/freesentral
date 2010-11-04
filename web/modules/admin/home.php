@@ -151,8 +151,8 @@ function home()
 		$pos1 = strpos($uptime,"(");
 		$pos2 = strpos($uptime,")");
 		$time = substr($uptime, $pos1+1, $pos2-$pos1-1);
-		$user = new User;
-		$time = $user->fieldSelect("$time*'1 sec'::interval as interval");
+		$time = query_to_array(Database::query("SELECT $time*'1 sec'::interval as interval"));
+		$time = $time[0]["interval"];
 		$s_time = $time;
 		$time = explode(":",$time);
 		$days = floor($time[0]/24);
