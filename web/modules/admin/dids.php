@@ -175,7 +175,7 @@ function edit_did($error=NULL, $title=null)
 	);
 	if ($insert_destination != "")
 		unset($fields["insert_destination"]["triggered_by"]);
-	if ($destinations["selected"] == "external/nodata/auto_attendant.php")
+	if (isset($destinations["selected"]) && $destinations["selected"] == "external/nodata/auto_attendant.php")
 		unset($fields["default_destination"]["triggered_by"]);
 
 	start_form();

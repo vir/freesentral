@@ -153,7 +153,6 @@ function home()
 		$time = substr($uptime, $pos1+1, $pos2-$pos1-1);
 		$user = new User;
 		$time = $user->fieldSelect("$time*'1 sec'::interval as interval");
-		$time = $time[0]["interval"];
 		$s_time = $time;
 		$time = explode(":",$time);
 		$days = floor($time[0]/24);

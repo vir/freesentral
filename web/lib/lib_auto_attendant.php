@@ -177,10 +177,10 @@ function keys($wizard = false)
 	global $method;
 	$method  = "keys";
 
-	$prompt = Model::selection("prompt",array("status"=>"online"));
+	//$prompt = Model::selection("prompt",array("status"=>"online"));
 	//if(!count($prompt))
 	//	return;
-	$prompt_id = $prompt[0]->prompt_id;
+	//$prompt_id = $prompt[0]->prompt_id;
 	$key = new Key;
 	$key->extend(array("status"=>"prompts"));
 	$keys = $key->extendedSelect(NULL,"status,key");
