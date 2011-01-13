@@ -499,14 +499,15 @@ function edit_user($error = NULL)
 //make the database operation associated to adding/editing a user
 function edit_user_database()
 {
-	global $module;
+	global $module,$dont_change_admin_pass;
 
 	$user = new User;
 	$user->user_id = getparam("user_id");
+	$user->select();
 	$params = form_params(array("email", "firstname", "lastname", "description"));
 	if(!getparam("user_id"))
 		$params["username"] = getparam("username");
-	if (($password = getparam("password")))
+	if (($password = getparam("password")) && ($user->username!='admin' || $dont_change_admin_pass!==true))
 		$params["password"] = $password;
 
 	$res = ($user->user_id) ? $user->edit($params) : $user->add($params);
