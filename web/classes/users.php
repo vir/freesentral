@@ -99,6 +99,8 @@ class User extends Model
 
 	public function setObj($params)
 	{
+		global $dont_change_admin_pass;
+
 		if(isset($params["username"])) {
 			$this->username = $params["username"];
 			if(($msg = $this->objectExists()))
@@ -106,6 +108,10 @@ class User extends Model
 		}
 		if($this->user_id)
 			$this->select();
+
+		if(($this->username=="admin" || field_value("username",$params)=="admin") && $dont_change_admin_pass===true)
+			unset($params["password"]);
+
 		$this->setParams($params);
 		if(strlen($this->password) < 5)
 			return array(false, "Password  must be at least 5 digits long.");

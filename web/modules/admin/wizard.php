@@ -101,8 +101,8 @@ function change_password($fields)
 	if(!count($user))
 		return array(true, "Didn't change password for default admin. It was already deleted. <br/>");
 	$user = $user[0];
-	$user->password = $fields["new_password"];
-	$res = $user->update();
+	$params = array("password" => $fields["new_password"]);
+	$res = $user->edit($params);
 	if(!$res[0])
 		return array(false, $res[1]);
 	return array(true, "Password for default admin was changed.");
