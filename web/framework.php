@@ -173,17 +173,8 @@ class Database
 //			print "<br/>\n<br/>\nquery :'.$query.'<br/>\n<br/>\n";
 			Debug::output("query: $query");
 
-		// don't allow query to be formed from more than one query. Verify that  they aren't separated by ;
-		$in_value = false;
-		for($i=0; $i<strlen($query); $i++)
-		{
-			if($query[$i] == ";" && !$in_value)
-				return false;
-			elseif($query[$i] == "'" && !$in_value)
-				$in_value = true;
-			elseif($query[$i] == "'" && $in_value)
-				$in_value = false;
-		}
+		if (!self::is_single_query($query))
+			return false;
 
 		if (function_exists("pg_result_error_field"))
 		{
@@ -227,6 +218,23 @@ class Database
 	}
 
 	/**
+	 * Make sure queries separated by ; won't we run
+	 * @param $query String that will be verified
+	 * @return Bool - true if single query, false otherwise
+	 */
+	public static function is_single_query($query)
+	{
+	 	$pattern = "/'[^']*'/";
+		$replacement = "";
+		// all that is in between '' is ok
+		$mod_query = preg_replace($pattern,$replacement,$query);
+		// after striping all '..' if we still have ; then query is composed of multiple queries
+		if (strpos($mod_query,";"))
+			return false;   
+		return true;
+	}
+
+	/**
 	 * Perform query without verifying if it failed or not
 	 * @param $query Text representing the query to perform
 	 * @return Result received after the performinng of the query 
@@ -238,17 +246,8 @@ class Database
 		if(isset($_SESSION["debug_all"]))
 //			print "queryRaw: $query\n<br/>\n<br/>\n";
 			Debug::output("queryRaw: $query");
-		// don't allow query to be formed from more than one query. Verify that  they aren't separated by ;
-		$in_value = false;
-		for($i=0; $i<strlen($query); $i++)
-		{
-			if($query[$i] == ";" && !$in_value)
-				return false;
-			elseif($query[$i] == "'" && !$in_value)
-				$in_value = true;
-			elseif($query[$i] == "'" && $in_value)
-				$in_value = false;
-		}
+		if (!self::is_single_query($query))
+			return false;
 		return pg_query(self::$_connection,$query);
 	}
 
