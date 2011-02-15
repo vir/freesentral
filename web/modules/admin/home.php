@@ -219,7 +219,7 @@ function logs($lim = NULL)
 	}
 
 	$logs = Model::selection("actionlog",NULL,"date DESC",$use_limit,$page);
-	tableOfObjects($logs,array("function_select_date:date"=>"date", "function_select_time:time"=>"date","performer", "log"),"log");
+	tableOfObjects($logs,array("function_select_date:date"=>"date", "function_select_time:time"=>"date", "ip", "performer", "log"),"log");
 }
 
 function active_calls($lim = NULL)

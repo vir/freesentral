@@ -13,7 +13,8 @@ class ActionLog extends Model
 					"performer" => new Variable("text"), // name of the one performing the action (taken from $_SESSION)
 					"real_performer_id" => new Variable("text"),
 					"object" => new Variable("text"),  // name of class that was marked as performer for actions
-					"query" => new Variable("text") //query that was performed
+					"query" => new Variable("text"), //query that was performed
+					"ip" => new Variable("text")
 				);
 	}
 
@@ -25,8 +26,8 @@ class ActionLog extends Model
 	public static function index()
 	{
 		return array(
-					"date"
-				);
+			"date"
+		);
 	}
 
 	public static function writeLog($log, $query = NULL)
@@ -64,6 +65,8 @@ class ActionLog extends Model
 		$actionlog->real_performer_id = $real_performer_id;
 		$actionlog->object = $object;
 		$actionlog->query = $query;
+		if (isset($_SERVER['REMOTE_ADDR']))
+			$actionlog->ip = $_SERVER['REMOTE_ADDR'];
 		// insert  the log entry whitout trying to retrive the id and without going into a loop of inserting log for log
 		$actionlog->insert(false,false);
 	}
