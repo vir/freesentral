@@ -50,7 +50,7 @@ install: build
 
 	# Add here commands to install the package into debian/yate-freesentral.
 #	$(MAKE) DESTDIR=$(CURDIR)/debian/yate-freesentral install
-	env DESTDIR=$(CURDIR)/debian/yate-freesentral $(CURDIR)/install.sh --config /etc/yate/freesentral --dbhost localhost --apacheuser www-data --psql /bin/true --quiet
+	env DESTDIR=$(CURDIR)/debian/yate-freesentral $(CURDIR)/install.sh --config /etc/yate/freesentral --dbhost localhost --webuser www-data --psql /bin/true --quiet
 
 
 # Build architecture-independent files here.

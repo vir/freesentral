@@ -382,6 +382,10 @@ while [ "$#" != "0" ]; do
 	    webpage="$1"
 	    shift
 	    ;;
+	x--webuser)
+	    webuser="$1"
+	    shift
+	    ;;
 	x--psql)
 	    psqlcmd="$1"
 	    shift
