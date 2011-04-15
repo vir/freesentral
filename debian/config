@@ -1,0 +1,19 @@
+#!/bin/sh
+
+export DEBCONF_DEBUG=developer
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+db_beginblock
+db_input high yate-freesentral/dbhost
+db_input high yate-freesentral/dbname
+db_input high yate-freesentral/dbuser
+db_input high yate-freesentral/dbpass
+db_endblock
+db_input medium yate-freesentral/enable_logging
+db_go
+db_input high yate-freesentral/final_notice
+db_go
+
+

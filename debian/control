@@ -1,0 +1,15 @@
+Source: yate-freesentral
+Section: comm
+Priority: extra
+Maintainer: Vasily i. Redkin <vir@vir.ctm.ru>
+Build-Depends: debhelper (>= 7), tar
+Standards-Version: 3.8.1
+Homepage: http://www.freesentral.com/
+
+Package: yate-freesentral
+Architecture: all
+Depends: php5-pgsql | php4-pgsql, madplay, debconf, ${misc:Depends}
+Recommends: yate (>= 2.0)
+Description: FreeSentral is a web configuration tool
+ for a YATE telephony engine and scripts collection,
+ alloing YATE to be fully-functional PBX.

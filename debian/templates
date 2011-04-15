@@ -1,0 +1,55 @@
+Template: yate-freesentral/dbhost
+Type: string
+Default: localhost
+Description: Database host
+Description-ru.UTF-8: Адрес машины базы данных
+
+Template: yate-freesentral/dbname
+Type: string
+Default: freesentral
+Description: Database name
+Description-ru.UTF-8: Имя базы данных
+
+Template: yate-freesentral/dbuser
+Type: string
+Default: postgres
+Description: Database user name
+Description-ru.UTF-8: Пользователь базы данных
+
+Template: yate-freesentral/dbpass
+Type: string
+Default: 
+Description: Database password
+Description-ru.UTF-8: Пароль базы данных
+
+Template: yate-freesentral/enable_logging
+Type: boolean
+Default: false
+Description: Enable freesentral logging?
+Description-ru.UTF-8: Разрешить запись журнала freesentral?
+
+Template: yate-freesentral/final_notice
+Type: note
+Description: Sample YATE configuration files installed in /etc/yate/freesentral
+ Please edit your YATE configuration to match freesentral configuration
+ as shown in /etc/yate/freesentral.
+ .
+ Also you have to make sure that freesentral's database exists.
+ .
+ After installation completes, you can navigate with our favorite web browser
+ to http://your-server-name/freesentral/ and login as 'admin' with password 'admin'
+ to customise your system.
+ .
+ Do not forget to change admin's password!
+Description-ru.UTF-8: Примеры конфигурации YATE установлены в /etc/yate/freesentral
+ Отредактируйте конфтгурационные файлы YATEi, используя
+ в качестве примера файлы расположенные в /etc/yate/freesentral.
+ .
+ Кроме того, вы должны создать базу данных для freesentral.
+ .
+ После завершения установки интерфейс freesentral будет доступен по адресу
+ http://имя-вашего-сервера/freesentral/. Используйте имя admin и пароль admin для
+ первого входа.
+ .
+ Не забудьте сменить пароль пользователя admin!
+
