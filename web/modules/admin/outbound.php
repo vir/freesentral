@@ -83,7 +83,7 @@ function incoming_gateways()
 	$incoming_gateways = Model::selection("incoming_gateway", array("gateway_id"=>$gateway_id), "incoming_gateway");
 
 	$formats = array("incoming_gateway", "ip");
-	tableOfObjects($incoming_gateways, $formats, "incoming gateway", array("&method=edit_incoming_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_incoming_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_incoming_gateway"=>"Add incoming gateway"), "main.php?module=$module&gateway_id=$gateway_id");
+	tableOfObjects($incoming_gateways, $formats, "incoming gateways", array("&method=edit_incoming_gateway"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_incoming_gateway"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_incoming_gateway"=>"Add incoming gateway"), "main.php?module=$module&gateway_id=$gateway_id");
 }
 
 function edit_incoming_gateway()
