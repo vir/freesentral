@@ -644,6 +644,8 @@ function set_retval($callto, $error = NULL)
 // Always the first action to do 
 Yate::Init();
 //Yate::Debug(true);
+//Yate::Output(true);
+
 if(Yate::Arg()) {
 	Yate::Output("Executing startup time CDR cleanup");
 	$query = "UPDATE call_logs SET ended='t' where ended IS NOT TRUE or ended IS NULL;
@@ -742,11 +744,10 @@ for (;;) {
 				$query = "SELECT gateway,(CASE WHEN status IS NULL THEN 'offline' else status END) as status FROM gateways WHERE enabled IS TRUE AND username IS NOT NULL";
 				$res = query_to_array($query);
 				$str = $ev->retval;
-				$str .= 'name=register.php,users='.count($res);
+				$str .= 'name=register.php;users='.count($res);
 				for($i=0; $i<count($res);$i++) {
-					if ($i==0)
-						$str .= ",";
-					$str .= $res[$i]["gateway"] .'='.$res[$i]["status"].';';
+					$str .= ($i) ? "," : ";";
+					$str .= $res[$i]["gateway"].'='.$res[$i]["status"];
 				}
 				$str .= "\r\n";
 				$ev->retval = $str;
