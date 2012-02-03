@@ -250,6 +250,10 @@ function routeToGroup($called)
 		if(!isset($s_moh[$res[0]["playlist_id"]]))
 			set_moh();
 		$ev->params["mohlist"] = $s_moh[$res[0]["playlist_id"]];
+		if ($ev->GetValue("copyparams"))
+			$ev->params["copyparams"] .= ",caller,callername,billid";
+		else
+			$ev->params["copyparams"] = "caller,callername,billid";
 		return true;
 	}
 	return false;
