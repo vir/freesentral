@@ -583,6 +583,7 @@ $e" > "$fe"
 [scripts]
 register.php=param
 ctc-global.php=
+banbrutes.php=
 "
 
     if [ -e "$fe" ]; then
