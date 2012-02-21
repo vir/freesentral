@@ -52,6 +52,7 @@ function edit_gateway($error=NULL, $protocol = "sip", $gw_type = 'reg')
 						"password"=>array("comment"=>"Insert only when you wish to change", "display"=>"password", "autocomplete"=>"off"),
 						"server"=>array("compulsory"=>true, "comment"=>"Ex:10.5.5.5:5060 It is IP address of the gateway : port number used for sip on that machine."),
 						"description"=>array("display"=>"textarea"), 
+						"rtp_localip"=>array("comment"=>"IP address to bind the RTP to. This overwrittes setting from yrtpchan.conf, if set.", "advanced"=>true, "column_name"=>"RTP local IP"),
 						"authname"=>array("advanced"=>true, "comment"=>"Authentication ID is an ID used strictly for authentication purpose when the phone attempts to contact the SIP server. This may or may not be the same as the above field username. Set only if it's different."), 
 						"outbound"=>array("advanced"=>true, "comment"=>"An Outbound proxy is mostly used in presence of a firewall/NAT to handle the signaling and media traffic across the firewall. Generally, if you have an outbound proxy and you are not using STUN or other firewall/NAT traversal mechanisms, you can use it. However, if you are using STUN or other firewall/NAT traversal tools, do not use an outbound proxy at the same time."),
 						"domain"=>array("advanced"=>true, "comment"=>"Domain in which the server is in."),
@@ -90,6 +91,7 @@ function edit_gateway($error=NULL, $protocol = "sip", $gw_type = 'reg')
 							"gateway"=>array("compulsory"=>true),
 							'server'=>array("compulsory"=>true), 
 							'port'=>array("compulsory"=>true), 
+							"rtp_localip"=>array("comment"=>"IP address to bind the RTP to. This overwrittes setting from yrtpchan.conf, if set.", "advanced"=>true, "column_name"=>"RTP local IP"),
 							'formats'=>array("advanced"=>true,"display"=>"include_formats", "comment"=>"If none of the formats is checked then server will try to negociate formats automatically"), 
 						//	'check_not_to_specify_formats' => array($check_not_to_specify_formats, "display"=>"checkbox"), 
 							'rtp_forward'=> array("advanced"=>true,"display"=>"checkbox", "comment"=>"Check this box so that the rtp won't pass  through yate(when possible)"),
@@ -99,6 +101,7 @@ function edit_gateway($error=NULL, $protocol = "sip", $gw_type = 'reg')
 							"trusted"=>array("advanced"=>true, "display"=>"checkbox", "comment"=>"Allow calls from this gateway or it's associated gateways to be routed to another gateway."),
 							"default_dial_plan"=>array("display"=>"checkbox", "comment"=>"Check this box if you wish to automatically add a dial plan for this gateway. The new dial plan is going to match all prefixed and will have the smallesc priority.")
 						);
+	unset($h323["rtp_localip"]);
 
 	$pstn = array(
 						"gateway"=>array("compulsory"=>true, "comment"=>"This must be defined as a link in isigchan.conf"),
@@ -421,7 +424,7 @@ function edit_gateway_database()
 		for($i=0; $i<count($compulsory); $i++)
 			$params[$compulsory[$i]] = getparam($gw_type."_".$protocol.$compulsory[$i]);
 
-		$sip = array('authname','outbound', 'domain', 'localaddress', 'description', 'interval');
+		$sip = array('authname','outbound', 'domain', 'localaddress', 'description', 'interval', 'rtp_localip');
 		$h323 = $iax = array('description', 'interval');
 	
 		for($i=0; $i<count(${$protocol}); $i++)
@@ -438,6 +441,7 @@ function edit_gateway_database()
 				$params["iaxcontext"] = getparam($gw_type."_".$protocol."iaxcontext");
 				break;
 			case "sip":
+				$params["rtp_localip"] = getparam($gw_type."_".$protocol."rtp_localip");
 			case "h323":
 				$params["server"] = getparam($gw_type."_".$protocol."server");
 				$params["port"] = getparam($gw_type."_".$protocol."port");
