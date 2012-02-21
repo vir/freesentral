@@ -49,6 +49,7 @@ class Gateway extends Model
 					"outbound" => new Variable("text"),
 					"localaddress" => new Variable("text"),
 					"formats" => new Variable("text"),
+					"rtp_localip" => new Variable("text"),
 
 					// for gateways without registrations
 					//"ip" => new Variable("text"), -> was replaced with server

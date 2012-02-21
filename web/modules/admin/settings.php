@@ -42,6 +42,7 @@ else
 $explanation = array("default"=>"General settings for the system, set admins and define system's address book.", "admins"=>"The admin is the role in charge of the maintenance of the system. It has unlimited access to configurations, setup and any kind of changes inside FreeSentral. The administrator role is available via 'admin' account.", "address_book"=>"Address book entries - numbers associated with a person's name. This allows you to call a certain extension by typing the person's name(the digits corresponding that person's name).");
 $explanation["edit_admin"] = $explanation["admins"];
 $explanation["edit_short_name"] = $explanation["address_book"];
+$explanation["limits_international_calls"] = "Freesentral protects your system against attackers trying to make expensive calls. The system counts the number of calls for the specified prefixes and if counters reach a the specified limits, calls for those prefixes are disabled. By default all international calls are counted. <a class=\"llink\" href=\"main.php?module=outbound&method=international_calls\">Set prefixes</a>";
 
 $image = "images/address_book.png";
 
@@ -146,7 +147,7 @@ function settings()
 	global $method;
 	$method = "settings";
 
-	$settings = Model::selection("setting",array("param"=>array("!=version", "!=wizard")),"param");
+	$settings = Model::selection("setting",array("param"=>array("!=version", "!=wizard", "__NOT LIKEinternational")),"param");
 
 	$formats = array("setting"=>"param", "value", "description");
 	tableOfObjects($settings,$formats,"setting", array("&method=edit_setting"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>'));
@@ -698,6 +699,43 @@ function wizard_cards_database()
 	$mess .= "Starting wanrouter<br/>".str_replace("\n","<br/>",$out);
 
 	return array(true,$mess);
+}
+
+function limits_international_calls()
+{
+	$limits = Model::selection("limit_international", array(), "limit_international_id");
+
+	tableOfObjects($limits, array("Limit International calls"=>"limit_international", "value"), "limit", array("&method=edit_limit"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>'));
+}
+
+function edit_limit($error=NULL)
+{
+	if($error)
+		errornote($error);
+
+	$limit = new Limit_international;
+	$limit->limit_international_id = getparam("limit_international_id");
+	$limit->select();
+
+	$fields = array(
+		"limit_international" => array("display"=>"fixed"),
+		"value" => array("comment"=>"Numeric value.")
+	);
+
+	start_form();
+	addHidden("database",array("limit_international_id"=>getparam("limit_international_id")));
+	editObject($limit, $fields, "Edit international limit", "Save");
+	end_form();
+}
+
+function edit_limit_database()
+{
+	$nr = Numerify(getparam("value"));
+
+	$limit = new Limit_international;
+	$limit->value = ($nr=="NULL") ? "" : $nr;
+	$res = $limit->fieldUpdate(array("limit_international_id"=>getparam("limit_international_id")),array("value"));
+	notice($res[1], "limits_international_calls", $res[0]);
 }
 
 ?>

@@ -45,6 +45,9 @@ else
 $explanation = array("default"=>"Gateway: the connection to another FreeSentral, other PBX or network. It is the address you choose your call to go to. ", "dial_plan"=>"Dial Plan: to define a dial plan means to make the connection between a call and a gateway. You have the option to direct calls of your choice to go to a specified gateway.", "incoming_gateways"=>"Incoming gateway: define IPs that the system should accept calls from besides your extensions. <br/><br/>Note!! Calls from outgoing gateways are always accepted.", "System_CallerID"=>"The System's CallerID is the number that will be used as caller number when sending a call outside your system, and System's Callername is the name.<br/><br/>Both can be set per gateway also. If they weren't set per gateway then this will be used.");
 $explanation["edit_incoming_gateway"] = $explanation["incoming_gateways"];
 $explanation["edit_dial_plan"] = $explanation["dial_plan"];
+$explanation["international_calls"] = "Freesentral protects your system against attackers trying to make expensive calls. The system counts the number of calls for the specified prefixes and if counters reach a the specified limits, calls for those prefixes are disabled. By default all international calls are counted. <a class=\"llink\" href=\"main.php?module=settings&method=limits_international_calls\">Set counters</a>";
+$explanation["edit_prefix"] = $explanation["international_calls"];
+$explanation["delete_prefix"] = $explanation["international_calls"];
 
 explanations($image, "", $explanation);
 
@@ -608,6 +611,117 @@ function verify_system_prefix($prefix)
 		return false;
 	}
 	return true;
+}
+
+function international_calls()
+{
+	$setting = Model::selection("setting", array("param"=>"international_calls"));
+	$val = (isset($setting[0])) ? $setting[0]->value : "yes";
+	$en = ($val=="yes") ? " SELECTED" : "";
+	$dis = ($val!="yes") ? " SELECTED" : "";
+	print "<table style=\"width:90%;\"><tr><td>";
+	start_form();
+	addHidden("",array("method"=>"allow_international_calls"));
+	print "International calls: ";
+	print "<select name=\"international_calls\" onChange=\"document.forms['outbound'].submit();\">";
+	print "<option$en>enabled</option>";
+	print "<option$dis>disabled</option>";
+	print "</select>";
+	
+	end_form();
+	print "</td><td style=\"text-align:right;\">";
+	print "<a class=\"llink\" href=\"main.php?module=settings&method=limits_international_calls\"  style=\"\">Set&nbsp;counters</a>";
+	print "</td></tr></table>";
+	print "<hr/>";
+
+	print "<br/><div class='notify'>Please set prefixes marking international(expensive) calls:</div><br/>";
+
+	$prefixes = Model::selection("prefix", array("international"=>true), "prefix");
+	tableOfObjects($prefixes, array("name", "prefix"), "international prefix", array("&method=edit_prefix"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_prefix"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_prefix&international=t"=>"Add prefix"));
+
+	print "<br/><div class='notify'>You can set exceptions to the above prefixes:</div><br/>Ex: +44 and 0044 if you are located in the UK or you don't want this prefixes to be counted as international.<br/><br/>";
+	$prefixes = Model::selection("prefix", array("international"=>false), "prefix");
+	tableOfObjects($prefixes, array("name", "prefix"), "national prefixes", array("&method=edit_prefix"=>'<img src="images/edit.gif" title="Edit" alt="edit"/>', "&method=delete_prefix"=>'<img src="images/delete.gif" title="Delete" alt="delete"/>'), array("&method=add_prefix&international=f"=>"Add prefix"));
+}
+
+function allow_international_calls()
+{
+	$int_calls = getparam("international_calls");
+	$setting = Model::selection("setting", array("param"=>"international_calls"));
+	if (!isset($setting[0])) {
+		$setting->param = "international_calls";
+		$setting->value = ($int_calls=="enabled") ? "yes" : "no";
+		$res = $setting->insert();
+	} else {
+		$setting = $setting[0];
+		$prev = $setting->value;
+		$setting->value = ($int_calls=="enabled") ? "yes" : "no";
+		$res = $setting->fieldUpdate(array("setting_id"=>$setting->setting_id),array("value"));
+	}
+	if (!$res[0])
+		errormess("Could not change international calls setting: ".$res[1],"no");
+	international_calls();
+}
+
+function edit_prefix($error = NULL)
+{
+	global $module;
+
+	if($error)
+		errornote($error);
+	$exception = (getparam("international")!="t") ? true : false;
+
+	$prefix = new Prefix;
+	$prefix->prefix_id = getparam("prefix_id");
+	$prefix->select();
+
+	$fields = array(
+		"prefix"=>array("comment"=>"prefix marking the start of the number"),
+		"name"=>array()
+	);
+
+	if($prefix->prefix_id)
+		$title = ($exception) ? "Edit exception prefix" : "Edit prefix";
+	else{
+		$title = ($exception) ? "Add exception prefix" : "Add prefix";
+	}
+
+	start_form();
+	addHidden("database", array("prefix_id"=>$prefix->prefix_id, "international"=>getparam("international")));
+	editObject($prefix,$fields,$title, "Save",true);
+	end_form();
+}
+
+function edit_prefix_database()
+{
+	$prefix = new Prefix;
+	$prefix->prefix_id = getparam("prefix_id");
+	$params = array("prefix"=>trim(getparam("prefix")), "name"=>trim(getparam("name")));
+	$params["international"] = (getparam("international")=="f") ? "f" : "t";
+	$res = ($prefix->prefix_id) ? $prefix->edit($params) : $prefix->add($params);
+	if (!$res[0])
+		edit_prefix($res[1]);
+	else
+		notice($res[1], "international_calls", $res[0]);
+}
+
+function delete_prefix()
+{
+	$prefix = new Prefix;
+	$prefix->prefix_id = getparam("prefix_id");
+	$prefix->select();
+
+	$name = ($prefix->international == "t") ? "prefix" : "exception prefix";
+	ack_delete($name, getparam("prefix"), null, "prefix_id", getparam("prefix_id"));
+}
+
+function delete_prefix_database()
+{
+	$prefix = new Prefix;
+	$prefix->prefix_id = getparam("prefix_id");
+	$res = $prefix->objDelete();
+
+	notice($res[1], "international_calls", $res[0]);
 }
 
 /*function edit_dial_plan($error = NULL, $sel_protocol = NULL)

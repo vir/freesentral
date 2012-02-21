@@ -43,7 +43,15 @@ class Setting extends Model
 
 	public static function defaultObject()
 	{
-		$params = array('vm'=>array('external/nodata/leavemaildb.php','Script used for leaving a voicemail message.'), "version"=>'1', "annonymous_calls"=>array("no", "Allow calls from anomynous users if call is for one of the extensions. Use just 'yes' or 'no' as values."));
+		$params = array(
+		    'vm'=>array('external/nodata/leavemaildb.php','Script used for leaving a voicemail message.'),
+		    "version"=>'1', 
+		    "annonymous_calls"=>array("no", "Allow calls from anomynous users if call is for one of the extensions. Use just 'yes' or 'no' as values."),
+		    "international_calls"=>array("yes", "Allow calls to international/expensive destinations. This prefixes are set in Outbound>>International calls"), 
+		    "international_calls_live"=>array("yes", "Allow calls to international/expensive destinations. This prefixes are set in Outbound>>International calls"),
+		    "callerid"=>array("",""),
+		    "callername"=>array("","")
+		);
 		$setting = new Setting;
 		$nr_settings = $setting->fieldSelect("count(*)");
 		if ($nr_settings>=count($params))
@@ -60,11 +68,12 @@ class Setting extends Model
 			$setting->param = $key;
 			$setting->select(array("param"=>$key));
 			if($setting->setting_id) {
-				if($setting->value != $value) {
+				/*if($setting->value != $value) {
 					$setting->value = $value;
 					$setting->description = $description;
 					$setting->update();
-				}
+				}*/
+				continue;
 			}else{
 				$setting->description = $description;
 				$setting->value = $value;

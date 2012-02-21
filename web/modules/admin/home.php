@@ -164,6 +164,16 @@ function home()
 		else
 			$text_status.= $days.' days '.$hours.":".$time[1].":".$time[2]." ";
 		$err = "";
+		/*$sock->write("status register.php");
+		$sock->read();
+		$status_fs = $sock->read();
+		$status_fs = explode(";",$status_fs);
+
+		if (count($status_fs)>=1)
+			$international = str_replace("international=","",$status_fs[1]);
+		else
+			$international = "off";*/
+		$sock->close();
 	}else{
 		$status = ": Can't connect to yate<br/>".$sock->error;
 		$err = "error_";
@@ -173,6 +183,20 @@ function home()
 			<div style="float:right;"> Today, '.date('h:i a').'
 			</div>Yate '.$text_status;
 	print '</div>';
+
+	$setting = Model::selection("setting", array("param"=>array("__sql_relation"=>"OR", "international_calls", "international_calls_live")), "param");
+
+	$setting_international = (isset($setting[0]) && $setting[0]->param=="international_calls" && $setting[0]->value=="no") ? "off" : "on";
+	$international = (isset($setting[1]) && $setting[1]->param=="international_calls_live" && $setting[1]->value=="no") ? "off" : "on";
+	$when = (isset($setting[1])) ? $setting[1]->description : "";
+	$when = explode(".",$when);
+	$when = $when[0].$when[2];
+	if ($international!="on" && $setting_international!=$international) {
+		$link_enable = "&nbsp;&nbsp;<a class=\"llink\" href=\"main.php?module=home&method=enable_international\">Enable</a>";
+		print '<div class="error_systemstatus borded">
+				International calls: off'.$link_enable;
+		print '<br/><font style="font-size:11px;">'.$when.'</font></div>';
+	}
 	$admins = Model::selection("user", array("login_attempts"=>">=3"), "login_attempts DESC");
 	for($i=0; $i<count($admins); $i++) {
 		print '<div class="'.$err.'systemstatus borded"> '.'
@@ -181,13 +205,28 @@ function home()
 	}
 	$extensions = Model::selection("extension", array("login_attempts"=>">=3"), "login_attempts DESC");
 	for($i=0; $i<count($extensions); $i++) {
-		print '<div class="'.$err.'systemstatus borded"> '.'
+		print '<div class="error_systemstatus borded"> '.'
 				Extension '.$extensions[$i]->extension.': '.$extensions[$i]->login_attempts.' failed login attempts';
 		print '</div>';
 	}
 	if(!count($extensions) && !count($admins))
 		print '<br/><br/>';
 	print '</td></tr></table>';
+}
+
+function enable_international()
+{
+	$sock = new SocketConn;
+	if($sock->socket) {
+		$sock->write("international on");
+		// sleep 1 second, if closing too fast command won't be written
+		sleep(1);
+		$sock->close();
+	} else {
+		errormess("Can't connect to yate: ".$sock->error, "no");
+	}
+
+	home();
 }
 
 /*

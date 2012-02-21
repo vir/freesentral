@@ -22,6 +22,19 @@ $posib = array("no_groups", "no_pbx");
 
 $max_routes = 3;
 
+$international_calls = true;
+
+$limits_international = array(
+	"1minute"=>5,
+	"10minutes"=>10,
+	"1hour"=>20
+);
+$timers = array(
+	"1minute"=>60, 
+	"10minutes"=>600, 
+	"1hour"=>3600
+);
+
 for($i=0; $i<count($posib); $i++) {
 	if(isset(${$posib[$i]}))
 		if(${$posib[$i]} !== true)
@@ -30,6 +43,9 @@ for($i=0; $i<count($posib); $i++) {
 	if(!isset(${$posib[$i]}))
 		${$posib[$i]} = false;
 }
+
+$query_on = false;
+$debug_on = false;
 
 function debug($mess)
 {
@@ -56,8 +72,52 @@ function set_caller_id()
 		$caller_name = $res[0]["callername"];
 		$system_prefix = $res[0]["system_prefix"];
 	}
-	debug("Reseted CalledID to '$caller_id', Callername to '$caller_name', System prefix to '$system_prefix'");
+	debug("Reset CalledID to '$caller_id', Callername to '$caller_name', System prefix to '$system_prefix'");
 	$timer_caller_id = 0;
+}
+
+function fix_settings_international($settings)
+{
+	if (count($settings)==0)
+		$intlive = $int = true;
+	elseif ($settings[0]["param"]=="international_calls")
+		$intlive = true;
+	else
+		$int = true;
+	if ($int)
+		query_nores("INSERT INTO settings VALUES(param,value) VALUES('international_calls','yes')");
+	if ($intlive)
+		query_nores("INSERT INTO settings VALUES(param,value) VALUES('international_calls_live','yes')");
+}
+
+function set_prefixes()
+{
+	global $national_prefixes, $international_prefixes, $limits_international, $international_calls;
+
+	$national_prefixes = array();
+	$international_prefixes = array();
+
+	// yes, no the possible values, we want no at the end to override yes if values are different
+	$query = "SELECT * FROM settings WHERE param LIKE 'international%' order by value desc";
+	$res = query_to_array($query);
+	for ($i=0; $i<count($res); $i++) 
+		$international_calls = ($res[$i]["value"] == "yes") ? true : false;
+	if (count($res)<2)
+		fix_settings_international($res);
+
+	$query = "SELECT * FROM prefixes ORDER BY international";
+	$res = query_to_array($query);
+	for ($i=0; $i<count($res); $i++) {
+		if ($res[$i]["international"]=="t")
+			$international_prefixes[] = $res[$i]["prefix"];
+		else
+			$national_prefixes[] = $res[$i]["prefix"];
+	}
+
+	$limits = "SELECT * FROM limits_international";
+	$res = query_to_array($limits);
+	for ($i=0; $i<count($res); $i++)
+		$limits_international[$res[$i]["name"]] = $res[$i]["value"];	
 }
 
 /**
@@ -93,6 +153,8 @@ function set_moh($time = NULL)
  */ 
 function build_location($params, $called, &$copy_ev)
 {
+	set_additional_params($params, $copy_ev);
+
 	if($params["username"] && $params["username"] != '') {
 		// this is a gateway with registration
 		$copy_ev["line"] = $params["gateway"];
@@ -126,6 +188,16 @@ function build_location($params, $called, &$copy_ev)
 		}
 	}
 	return NULL;
+}
+
+function set_additional_params($gateway, &$copy_ev)
+{
+	$to_set = array("interval","authname","domain","outbound","localaddress","rtp_localip");
+
+	foreach ($gateway as $name=>$val)
+		if (in_array($name, $to_set) && $val) {
+			$copy_ev[$name] = $val;
+		 }
 }
 
 /**
@@ -554,6 +626,12 @@ function return_route($called,$caller,$no_forward=false)
 	if(routeToExtension($called))
 		return;
 
+	if(!checkInternationalCalls($called)) {
+		debug("Forbidding call to '$called' because because international calls are off.");
+		set_retval(null, "forbidden");
+		return;
+	}
+
 	if($call_type == "from outside" && $initial_called_number == $called && $trusted_auth != "yes") {
 		// if this is a call from outside our system and would be routed outside(from first step) and the number that was initially called was not modified with passing thought any of the above steps  => don't send it
 		debug("forbidding call to '$initial_called_number' because call is 'from outside'");
@@ -605,8 +683,89 @@ function return_route($called,$caller,$no_forward=false)
 		$s_fallbacks[$id] = $fallback;
 //	debug("There are ".count($s_fallbacks)." in fallback : ".format_array($s_fallbacks));
 	debug("There are ".count($s_fallbacks)." in fallback");
-
 	return;
+}
+
+function checkInternationalCalls($called)
+{
+	global $international_calls;
+
+	if (is_international($called)) {
+		if (!$international_calls)
+			return false;
+		update_counters($called);
+		if (!$international_calls)
+			return false;
+	}
+	return true;
+}
+
+function is_international($called)
+{
+	global $national_prefixes, $international_prefixes;
+
+	if (prefix_match($called, $international_prefixes) && !prefix_match($called, $national_prefixes)) {
+		debug("$called is international or expensive");
+		return true;
+	}
+	return false;
+}
+
+function prefix_match($called, $prefixes)
+{
+	for ($i=0; $i<count($prefixes); $i++) {
+		if (substr($called,0,strlen($prefixes[$i]))==$prefixes[$i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function update_counters($called)
+{
+	global $counters_international, $timers, $limits_international, $international_calls;
+
+/*	if (!is_international($called))
+		return;*/
+
+	if (!isset($counters_international)) {
+		foreach ($timers as $name=>$interval)
+			$counters_international[$name] = 1;
+		return;
+	}
+	foreach ($timers as $name=>$interval) {
+		$counters_international[$name]++;
+		if ($limits_international[$name]<$counters_international[$name]) {
+			$international_calls = false;
+			query_nores("UPDATE settings SET value='no',description='Disabled at ' || now() || '., limit $name' WHERE param='international_calls_live'");
+			debug("Disabled international calls. Counter per $name was reached, number of calls ".$counters_international[$name]);
+		}
+	}
+}
+
+function reset_counters($time)
+{
+	global $time_counters, $timers, $counters_international;
+
+	if (!isset($counters_international)) {
+		foreach ($timers as $name=>$interval)
+			$counters_international[$name] = 0;
+	}
+	if (!isset($time_counters)) {
+		$time_counters = array();
+		// initialize timers
+		foreach ($timers as $name=>$interval)
+			$time_counters[$name] = $time;
+		return;
+	}
+
+	foreach ($timers as $name=>$interval) {
+		if ($time_counters[$name]+$interval <= $time) {
+			//Yate::Debug("Reset counter for $name");
+			$time_counters[$name] = $time;
+			$counters_international[$name] = 0;
+		}
+	}
 }
 
 /**
@@ -647,8 +806,10 @@ function set_retval($callto, $error = NULL)
 
 // Always the first action to do 
 Yate::Init();
-//Yate::Debug(true);
-//Yate::Output(true);
+if ($debug_on) {
+	Yate::Debug(true);
+	Yate::Output(true);
+}
 
 if(Yate::Arg()) {
 	Yate::Output("Executing startup time CDR cleanup");
@@ -666,7 +827,7 @@ if(Yate::Arg()) {
 }
 
 // Install handler for the wave end notify messages 
-Yate::Install("engine.timer");
+Yate::Watch("engine.timer");
 Yate::Install("user.register");
 Yate::Install("user.unregister");
 Yate::Install("user.auth");
@@ -697,6 +858,8 @@ for($i=0; $i<count($res); $i++) {
 set_caller_id();
 
 set_moh();
+
+set_prefixes();
 
 // The main loop. We pick events and handle them 
 for (;;) {
@@ -737,7 +900,15 @@ for (;;) {
 					$query_on = true;
 				elseif($line == "query off")
 					$query_on = false;
-				else
+				elseif($line == "international on") {
+					$international_calls = true;
+					Yate::Output("Enabling international calls in Freesentral.");
+					query_nores("UPDATE settings SET value='yes' WHERE param='international_calls_live'");
+				} elseif($line == "international off") {
+					$international_calls = false;
+					Yate::Output("Disabling international calls in Freesentral.");
+					query_nores("UPDATE settings SET value='no',description='Disabled at ' || now() || '. from telnet' WHERE param='international_calls_live' AND value='yes'");
+				} else
 					break;
 				$ev->handled = true;
 				break;
@@ -748,7 +919,8 @@ for (;;) {
 				$query = "SELECT gateway,(CASE WHEN status IS NULL THEN 'offline' else status END) as status FROM gateways WHERE enabled IS TRUE AND username IS NOT NULL";
 				$res = query_to_array($query);
 				$str = $ev->retval;
-				$str .= 'name=register.php;users='.count($res);
+				$international = ($international_calls) ? "on" : "off";
+				$str .= 'name=register.php;international='.$international.';users='.count($res);
 				for($i=0; $i<count($res);$i++) {
 					$str .= ($i) ? "," : ";";
 					$str .= $res[$i]["gateway"].'='.$res[$i]["status"];
@@ -756,27 +928,6 @@ for (;;) {
 				$str .= "\r\n";
 				$ev->retval = $str;
 				$ev->handled = false;
-				break;
-			case "engine.timer":
-				$time = $ev->GetValue("time");
-				$timer_caller_id++;
-				if($timer_caller_id > 600)
-					// update caller_id every 10 minutes
-					set_caller_id();
-				if ($moh_next_time < $time)
-					set_moh($time);
-				if ($time < $next_time)
-					break;
-				$next_time = $time + $time_step;
-				$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND modified IS TRUE AND username is NOT NULL";
-				$res = query_to_array($query);
-				for($i=0; $i<count($res); $i++) {
-					$m = new Yate("user.login");
-					$m->params = $res[$i];
-					$m->Dispatch();
-				}
-				$query = "UPDATE extensions SET location=NULL,expires=NULL WHERE expires IS NOT NULL AND expires<=CURRENT_TIMESTAMP; UPDATE gateways SET modified='f' WHERE modified='t' AND username IS NOT NULL";
-				$res = query_nores($query);
 				break;
 			case "user.notify":
 				$gateway = $ev->GetValue("account") . '(' . $ev->GetValue("protocol") . ')';
@@ -874,6 +1025,7 @@ for (;;) {
 				$reason = $ev->GetValue("reason");
 				switch($operation) {
 					case "initialize":
+
 						$query = "INSERT INTO call_logs(time, chan, address, direction, billid, caller, called, duration, billtime, ringtime, status, reason, ended) VALUES(TIMESTAMP 'EPOCH' + INTERVAL '".$ev->GetValue("time")." s', '".$ev->GetValue("chan")."', '".$ev->GetValue("address")."', '".$ev->GetValue("direction")."', '".$ev->GetValue("billid")."', '".$ev->GetValue("caller")."', '".$ev->GetValue("called")."', INTERVAL '".$ev->GetValue("duration")." s', INTERVAL '".$ev->GetValue("billtime")." s', INTERVAL '".$ev->GetValue("ringtime")." s', '".$ev->GetValue("status")."', '$reason', false);UPDATE extensions SET inuse_count=(CASE WHEN inuse_count IS NOT NULL THEN inuse_count+1 ELSE 1 END) WHERE extension='".$ev->GetValue("external")."'";
 						$res = query_nores($query);
 						break;
@@ -894,6 +1046,37 @@ for (;;) {
 			$ev->Acknowledge();
 		break;
 	case "answer":
+		switch ($ev->name) {
+			case "engine.timer":
+				$time = $ev->GetValue("time");
+				$timer_caller_id++;
+				if($timer_caller_id > 600) {
+					// update caller_id every 10 minutes
+					set_caller_id();
+					
+				}
+				if ($time%50=="0") {
+					Yate::Output("----------------setting prefixes as $time");
+					set_prefixes(); // update prefixes and international settings every 50 seconds
+				}
+				if ($time%10=="1" || $time%10=="6")
+					reset_counters($time);
+				if ($moh_next_time < $time)
+					set_moh($time);
+				if ($time < $next_time)
+					break;
+				$next_time = $time + $time_step;
+				$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND modified IS TRUE AND username is NOT NULL";
+				$res = query_to_array($query);
+				for($i=0; $i<count($res); $i++) {
+					$m = new Yate("user.login");
+					$m->params = $res[$i];
+					$m->Dispatch();
+				}
+				$query = "UPDATE extensions SET location=NULL,expires=NULL WHERE expires IS NOT NULL AND expires<=CURRENT_TIMESTAMP; UPDATE gateways SET modified='f' WHERE modified='t' AND username IS NOT NULL";
+				$res = query_nores($query);
+				break;
+		}
 		// Yate::Debug("PHP Answered: " . $ev->name . " id: " . $ev->id);
 		break;
 	case "installed":
