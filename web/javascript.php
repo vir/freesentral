@@ -274,7 +274,7 @@ function advanced(identifier)
 	for(var i=0;i<elems.length;i++)
 	{
 		elem_name = elems[i].name;
-		if(identifier.length > elem_name.length && elem_name.substr(0,identifier.length) != identifier)
+		if(identifier.length < elem_name.length && elem_name.substr(0,identifier.length) != identifier)
 			continue;
 		var elem = document.getElementById("tr_"+elem_name); 
 		if(elem == null)
