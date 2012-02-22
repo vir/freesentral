@@ -44,7 +44,7 @@ class Limit_international extends Model
 	public static function defaultObject()
 	{
 		$params = array(
-			array("limit_international"=>"Limit 1 minute", "value"=>"5", "name"=>"1minute"),
+			array("limit_international"=>"Limit 1 minute", "value"=>"3", "name"=>"1minute"),
 			array("limit_international"=>"Limit 10 minutes", "value"=>"10", "name"=>"10minutes"),
 			array("limit_international"=>"Limit 1 hour", "value"=>"20", "name"=>"1hour")
 		);
