@@ -43,6 +43,7 @@ $explanation = array("default"=>"General settings for the system, set admins and
 $explanation["edit_admin"] = $explanation["admins"];
 $explanation["edit_short_name"] = $explanation["address_book"];
 $explanation["limits_international_calls"] = "Freesentral protects your system against attackers trying to make expensive calls. The system counts the number of calls for the specified prefixes and if counters reach a the specified limits, calls for those prefixes are disabled. By default all international calls are counted. <a class=\"llink\" href=\"main.php?module=outbound&method=international_calls\">Set prefixes</a>";
+$explanation["edit_limit"] = $explanation["limits_international_calls"];
 
 $image = "images/address_book.png";
 
