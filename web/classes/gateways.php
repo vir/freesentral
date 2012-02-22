@@ -49,7 +49,11 @@ class Gateway extends Model
 					"outbound" => new Variable("text"),
 					"localaddress" => new Variable("text"),
 					"formats" => new Variable("text"),
+
+					// for sip gateways 
 					"rtp_localip" => new Variable("text"),
+					"ip_transport" => new Variable("text"),
+					"oip_transport" => new Variable("text"),
 
 					// for gateways without registrations
 					//"ip" => new Variable("text"), -> was replaced with server

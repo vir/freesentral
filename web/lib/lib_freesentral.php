@@ -69,9 +69,10 @@ function include_formats($formats,$form_identifier)
 	<input type="checkbox" name="<?php print $form_identifier;?>alaw" <?php if (in_array("alaw",$formats)) print "CHECKED";?>>alaw
 	<input type="checkbox" name="<?php print $form_identifier;?>mulaw" <?php if (in_array("mulaw",$formats)) print "CHECKED";?>>mulaw
 	<input type="checkbox" name="<?php print $form_identifier;?>gsm" <?php if (in_array("gsm",$formats)) print "CHECKED";?>>gsm
+	<br/>
 	<input type="checkbox" name="<?php print $form_identifier;?>g729"<?php if (in_array("g729",$formats)) print "CHECKED";?>>g729
 	<input type="checkbox" name="<?php print $form_identifier;?>g723"<?php if (in_array("g723",$formats)) print "CHECKED";?>>g723
-	<input type="checkbox" name="<?php print $form_identifier;?>ilbc"<?php if (in_array("ilbc",$formats)) print "CHECKED";?>>ilbc
+	&nbsp;&nbsp;&nbsp;<input type="checkbox" name="<?php print $form_identifier;?>ilbc"<?php if (in_array("ilbc",$formats)) print "CHECKED";?>>ilbc
 	<?php
 }
 

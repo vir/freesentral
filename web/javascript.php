@@ -812,4 +812,15 @@ function set_voice_channels()
 	return true;
 }
 
+function check_transport()
+{
+	var transport = document.getElementById("noreg_sipoip_transport");
+	var transport_type = transport.options[transport.selectedIndex].value || transport.options[transport.selectedIndex].text;
+
+	if (transport_type=="TLS" && document.getElementById("noreg_sipport").value == 5060)
+		document.getElementById("noreg_sipport").value = 5061;
+	else if (document.getElementById("noreg_sipport").value == 5061)
+		document.getElementById("noreg_sipport").value = 5060;
+}
+
 </script>

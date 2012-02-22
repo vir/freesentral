@@ -192,7 +192,7 @@ function build_location($params, $called, &$copy_ev)
 
 function set_additional_params($gateway, &$copy_ev)
 {
-	$to_set = array("interval","authname","domain","outbound","localaddress","rtp_localip");
+	$to_set = array("interval","authname","domain","outbound","localaddress","rtp_localip","oip_transport");
 
 	foreach ($gateway as $name=>$val)
 		if (in_array($name, $to_set) && $val) {
@@ -846,7 +846,7 @@ Yate::Install("engine.debug");
 // Ask to be restarted if dying unexpectedly 
 Yate::SetLocal("restart","true");
 
-$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, TRUE AS gw FROM gateways WHERE enabled IS TRUE AND gateway IS NOT NULL AND username IS NOT NULL ORDER BY gateway";
+$query = "SELECT enabled, protocol, username, description, interval, formats, authname, password, server, domain, outbound , localaddress, modified, gateway as account, gateway_id, status, TRUE AS gw, ip_transport FROM gateways WHERE enabled IS TRUE AND gateway IS NOT NULL AND username IS NOT NULL ORDER BY gateway";
 $res = query_to_array($query);
 
 for($i=0; $i<count($res); $i++) {
@@ -1056,7 +1056,6 @@ for (;;) {
 					
 				}
 				if ($time%50=="0") {
-					Yate::Output("----------------setting prefixes as $time");
 					set_prefixes(); // update prefixes and international settings every 50 seconds
 				}
 				if ($time%10=="1" || $time%10=="6")
