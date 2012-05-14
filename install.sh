@@ -110,6 +110,7 @@ cat << EOF
 \$limit = 20;  //max number to display on page
 \$enable_logging = "${enable_logging}"; // possible values: "on"/"off", true/false, "yes"/"no" 
 \$upload_path = "${upload_dir}";     // path where file for importing extensions will be uploaded
+\$conf_path = "${configs}"; // path to yate's configuration files
 \$default_ip = "ssl://${ip_yate}";	//	ip address where yate runs
 \$default_port = "5039";	// port used to connect to
 \$block = array("admin_settings"=>array("cards"));	// don't change this. This option is still being tested
@@ -1013,6 +1014,7 @@ verify=none
 $e" > "$fe"
     fi
     test "x${generate_certificate}" = "xyes" && generate_certificate_now
+    test X`id -u` = "X0" && chown -R $webuser "$DESTDIR$configs"
 fi
 
 if [ -n "$scripts" -a -d scripts ]; then
@@ -1047,7 +1049,7 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
 	export PGPASSWORD="$dbpass"
     fi
 	echo "If you are updating then ignore: 'ERROR:  database \"${dbname}\" already exists'. If you are installing please use another name for the database."
-    "$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE $dbname"
+    "$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE \"$dbname\""
     unset PGPASSWORD
 fi
 

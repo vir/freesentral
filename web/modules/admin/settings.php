@@ -26,7 +26,7 @@ global $dir, $module, $method, $path, $action, $page, $target_path, $telephony_c
 
 require_once("lib/telephony_cards.php");
 require_once("lib/lib_wizard.php");
-
+require_once("socketconn.php");
 
 if(!$method)
 	$method = $module;
@@ -43,7 +43,9 @@ $explanation = array("default"=>"General settings for the system, set admins and
 $explanation["edit_admin"] = $explanation["admins"];
 $explanation["edit_short_name"] = $explanation["address_book"];
 $explanation["limits_international_calls"] = "Freesentral protects your system against attackers trying to make expensive calls. The system counts the number of calls for the specified prefixes and if counters reach a the specified limits, calls for those prefixes are disabled. By default all international calls are counted. <a class=\"llink\" href=\"main.php?module=outbound&method=international_calls\">Set prefixes</a>";
+$explanation["NAT"] = "Set 'nat_address' and RTP port range when Freesentral is behind the NAT so yate advertises the set address in SDP.";
 $explanation["edit_limit"] = $explanation["limits_international_calls"];
+$explanation["edit_nat_settings"] = $explanation["NAT"];
 
 $image = "images/address_book.png";
 
@@ -148,7 +150,7 @@ function settings()
 	global $method;
 	$method = "settings";
 
-	$settings = Model::selection("setting",array("param"=>array("!=version", "!=wizard", "__NOT LIKEinternational")),"param");
+	$settings = Model::selection("setting",array("param"=>array("!=version", "!=wizard", "__NOT LIKEinternational", "__NOT LIKE%rtp_port", "!=nat_address")),"param");
 
 	$formats = array("setting"=>"param", "value", "description");
 	tableOfObjects($settings,$formats,"setting", array("&method=edit_setting"=>'<img src="images/edit.gif" title="Edit" alt="Edit"/>'));
@@ -737,6 +739,151 @@ function edit_limit_database()
 	$limit->value = ($nr=="NULL") ? "" : $nr;
 	$res = $limit->fieldUpdate(array("limit_international_id"=>getparam("limit_international_id")),array("value"));
 	notice($res[1], "limits_international_calls", $res[0]);
+}
+
+function nat()
+{
+	global $method;
+	$method = "nat";
+
+	$settings = Model::selection("setting",array("param"=>array("__sql_relation"=>"OR", "min_rtp_port", "max_rtp_port", "nat_address")),"param DESC");
+	if (!count($settings))
+		return edit_nat_settings();
+
+	$formats = array("setting"=>"param", "value", "description");
+	tableOfObjects($settings,$formats,"setting", array(), array("&method=edit_nat_settings"=>"Edit"));
+}
+
+function edit_nat_settings($error=null)
+{
+	global $method;
+
+	$method = "edit_nat_settings";
+	$settings = Model::selection("setting",array("param"=>array("__sql_relation"=>"OR", "min_rtp_port", "max_rtp_port", "nat_address")),"param DESC");
+
+	$fields = array();
+
+	if (!count($settings)) {
+		$fields = array(
+				"nat_address" => array("comment"=>"IP address to advertise in SDP, empty to use the local RTP"),
+				"min_rtp_port" => array("comment"=>"Minimum port range to allocate for RTP"),
+				"max_rtp_port"=>array("comment"=>"Maximum port range to allocate for RTP")
+			);
+	}
+       	else {
+		for ($i=0; $i<count($settings); $i++) 
+			$fields[$settings[$i]->param] = array("value"=>$settings[$i]->value, "comment"=>$settings[$i]->description);
+	}
+
+        if($error)
+		errornote($error);
+
+	start_form();
+	addHidden("database");
+	editObject(NULL, $fields, "Edit behind NAT setup", "Save");
+	end_form();
+}
+
+function edit_nat_settings_database()
+{
+	global $conf_path;
+
+	$min_rtp_port = getparam("min_rtp_port");
+	if (!$min_rtp_port)
+		$min_rtp_port = 16384;
+	$max_rtp_port = getparam("max_rtp_port");
+	if (!$max_rtp_port)
+		$max_rtp_port = 32768;
+	$nat_address = getparam("nat_address");
+
+	if (Numerify($min_rtp_port)=="NULL")
+		return edit_nat_settings("Field 'min port rtp' nust be numeric.");
+	if (Numerify($max_rtp_port)=="NULL")
+		return edit_nat_settings("Field 'max port rtp' must be numeric.");
+	if ($min_rtp_port >= $max_rtp_port)
+		return edit_nat_settings("Field 'min port rtp' must be smaller than 'max port rtp'");
+
+	Database::transaction();
+	$changes = false;
+
+	$arr = array(
+		"nat_address"=>"IP address to advertise in SDP, empty to use the local RTP",
+		"min_rtp_port"=>"Minimum port range to allocate for RTP",
+		"max_rtp_port"=>"Maximum port range to allocate for RTP"
+	);
+	foreach ($arr as $name=>$comment) {
+		$setting = Model::selection("setting", array("param"=>$name));
+		if (!count($setting))
+			$setting = new Setting;
+		else {
+			$setting = $setting[0];
+		}
+		if ($setting->setting_id && $setting->value == ${$name})
+			continue;
+		$setting->param = $name;
+		$setting->value = ${$name};
+		$setting->description = $comment;
+		$res = ($setting->setting_id) ? $setting->update() : $setting->insert();
+		if (!$res[0]) {
+			Database::rollback();
+			return edit_nat_setting($res[1]);
+		}
+		$changes = true;
+	}
+
+	//	}
+
+	if ($changes) {
+		if (!isset($conf_path)) {
+			errormess('Could not make modifications. Please reinstall freesentral or set in $conf_path the path to yate\'s configuration files.');
+			Database::rollback();
+			return nat();
+		}
+
+		$yrtp = "$conf_path/yrtpchan.conf";
+		$file = new ConfFile("$yrtp");
+		if (isset($file->sections["general"])) {
+			$file->sections["general"]["minport"] = $min_rtp_port;
+			$file->sections["general"]["maxport"] = $max_rtp_port;
+			$file->structure["general"]["minport"] = $min_rtp_port;
+			$file->structure["general"]["maxport"] = $max_rtp_port;
+		} else {
+			$file->sections = array("general"=>array("minport"=> $min_rtp_port, "maxport"=>$max_rtp_port));
+			$file->structure = $file->sections;
+		}
+		$file->save(true);
+		
+		$ysip = "$conf_path/ysipchan.conf";
+		$file = new ConfFile("$ysip");
+		if (isset($file->sections["listener general"])) {
+			if ($nat_address) {
+				$file->sections["listener general"]["nat_address"] = $nat_address;
+				$file->structure["listener general"]["nat_address"] = $nat_address;
+			} else {
+				unset($file->sections["listener general"]["nat_address"]);
+				unset($file->structure["listener general"]["nat_address"]);
+			}
+		} elseif ($nat_address) {
+			$file->sections = array("general"=>array(), "listener general"=>array("nat_address"=>$nat_address));
+			$file->structure = $file->sections;
+		}
+		$file->save(true);
+
+		$sock = new SocketConn;
+		if($sock->socket) {
+			$res = $sock->command("reload");
+		} else {
+			errormess ('Could not reload yate. Settings were not saved.');
+			Database::rollback();
+			$sock->close();
+			return nat();
+		}
+		$sock->close();
+		
+	}
+
+	Database::commit();
+	nat();
 }
 
 ?>

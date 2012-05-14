@@ -50,7 +50,10 @@ class Setting extends Model
 		    "international_calls"=>array("yes", "Allow calls to international/expensive destinations. This prefixes are set in Outbound>>International calls"), 
 		    "international_calls_live"=>array("yes", "Allow calls to international/expensive destinations. This prefixes are set in Outbound>>International calls"),
 		    "callerid"=>array("",""),
-		    "callername"=>array("","")
+		    "callername"=>array("",""),
+		    "nat_address"=>array("","IP address to advertise in SDP, empty to use the local RTP"),
+		    "min_rtp_port"=>array("16384","Minimum port range to allocate for RTP"),
+		    "max_rtp_port"=>array("32768","Maximum port range to allocate for RTP")
 		);
 		$setting = new Setting;
 		$nr_settings = $setting->fieldSelect("count(*)");
