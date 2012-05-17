@@ -1078,6 +1078,14 @@ if [ -n "$webpage" -a -d web ]; then
     fi
 fi
 
+if [ "x$psqlcmd" = "x" -a -n "$dbhost" ]; then
+	echo "Are you sure you have Postgresql installed? Don't have PostgreSQL command."
+	pass=`readopt "Do you want to continue yes/no?" "no"`
+	if [ "x$pass" != "xyes" ]; then
+		exit
+	fi
+fi
+
 if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
 	if [ "$dbuser" = "postgres" ]; then
 		pg_hba_name="pg_hba.conf"
