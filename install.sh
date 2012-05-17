@@ -1095,19 +1095,31 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
 		do
 			if [ -f "$pg_hba" ]; then
 				found=1
-				line=`fgrep '127.0.0.1/32' $pg_hba`
-				if [ "x$line" != "x" ]; then
-					if [[ "$line" =~ 'ident' ]]; then
-						rpl_line="${line/%ident/trust}"
-						echo "Modifying $pg_hba"
-						echo "Replacing $line"
-						echo "with      $rpl_line"
-						esc_line="${line/\//\\/}"
-						esc_rpl_line="${rpl_line/\//\\/}"
-						# must replace line
-						sed -i "s/$esc_line/$esc_rpl_line/g" "$pg_hba"
-						modified=1
+				fgrep '127.0.0.1/32' $pg_hba > tempfile
+				exec 3<tempfile
+				while read line <&3; do
+					if [[ "x$line" != "x" && ! "x$line" =~ "x#" ]]; then
+						rpl_line=""
+						if [[ "$line" =~ 'ident' ]]; then
+							rpl_line="${line/%ident/trust}"
+						fi
+						if [[ "$line" =~ 'md5' ]]; then
+							rpl_line="${line/%md5/trust}"
+						fi
+						if [ "x$rpl_line" != "x" ]; then
+							echo "Modifying $pg_hba"
+							echo "Replacing $line"
+							echo "with      $rpl_line"
+							esc_line="${line/\//\\/}"
+							esc_rpl_line="${rpl_line/\//\\/}"
+							# must replace line
+							sed -i "s/$esc_line/$esc_rpl_line/g" "$pg_hba"
+							modified=1
+						fi
 					fi
+				done
+				if  [ -f "testfile" ]; then
+					rm -f testfile
 				fi
 			fi
 		done
