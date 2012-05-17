@@ -427,6 +427,42 @@ while [ "$#" != "0" ]; do
     esac
 done
 
+httpd=("apache2" "httpd")
+found=0
+for name in ${httpd[@]} 
+do
+	cmd_res=`which $name 2> /dev/null`
+	if [ "x$cmd_res" != "x" ]; then
+		found=1
+		break
+	fi
+done
+if [ "$found" -eq 0 ]; then
+	echo "Could not detect installed apache/httpd on this computer."
+	pass=`readopt "Do you want to continue yes/no?" "no"`
+	if [ "x$pass" != "xyes" ]; then
+		exit
+	fi	
+fi
+
+files_mod_php=("mod_php5.so" "mod_php.so" "libphp5.so")
+found=0
+for name in ${files_mod_php[@]}
+do
+	cmd_res=`locate $name`
+	if [ "x$cmd_res" != "x" ]; then
+                found=1
+                break
+        fi
+done
+if [ "$found" -eq 0 ]; then
+	echo "Could not detect apache's php extension."
+	pass=`readopt "Do you want to continue yes/no?" "no"`
+	if [ "x$pass" != "xyes" ]; then
+		exit
+	fi
+fi
+
 echo "Installer for $version"
 
 if [ "x$interactive" != "xno" ]; then
@@ -1043,14 +1079,62 @@ if [ -n "$webpage" -a -d web ]; then
 fi
 
 if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
-    echo "Initializing the database"
-    if [ -n "$dbpass" ]; then
-	tty -s && echo "At the password prompt please enter: $dbpass"
-	export PGPASSWORD="$dbpass"
-    fi
+	if [ "$dbuser" = "postgres" ]; then
+		pg_hba_name="pg_hba.conf"
+		found=0
+		modified=0
+		for pg_hba in `locate "$pg_hba_name"`;
+		do
+			if [ -f "$pg_hba" ]; then
+				found=1
+				line=`fgrep '127.0.0.1/32' $pg_hba`
+				if [ "x$line" != "x" ]; then
+					if [[ "$line" =~ 'ident' ]]; then
+						rpl_line="${line/%ident/trust}"
+						echo "Modifying $pg_hba"
+						echo "Replacing $line"
+						echo "with      $rpl_line"
+						esc_line="${line/\//\\/}"
+						esc_rpl_line="${rpl_line/\//\\/}"
+						# must replace line
+						sed -i "s/$esc_line/$esc_rpl_line/g" "$pg_hba"
+						modified=1
+					fi
+				fi
+			fi
+		done
+
+		if [ "$found" -eq 0 ]; then
+			echo "Could not find pg_hba.conf to make sure trust autentication is set for postgresql server."
+			echo "Are you sure you have Postgresql installed?"
+		        pass=`readopt "Do you want to continue yes/no?" "no"`
+		        if [ "x$pass" != "xyes" ]; then
+                		exit
+		        fi
+		else
+			if [ "$modified" -eq 1 ]; then
+				cd /etc/init.d
+				cmd_res=`find postgres*`
+				if [ "x$cmd_res" != "x" ]; then
+					"/etc/init.d/$cmd_res" restart
+				else
+					# this will probably fail but try anyway
+					service postgresql restart
+				fi
+			fi
+		fi
+	fi
+
+	echo "Initializing the database"
+    	if [ -n "$dbpass" ]; then
+		tty -s && echo "At the password prompt please enter: $dbpass"
+		export PGPASSWORD="$dbpass"
+    	fi
 	echo "If you are updating then ignore: 'ERROR:  database \"${dbname}\" already exists'. If you are installing please use another name for the database."
-    "$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE \"$dbname\""
-    unset PGPASSWORD
+
+
+	"$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE \"$dbname\""
+    	unset PGPASSWORD
 fi
 
 if [ -n "$webpage" ]; then
