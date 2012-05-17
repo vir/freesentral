@@ -449,7 +449,7 @@ files_mod_php=("mod_php5.so" "mod_php.so" "libphp5.so")
 found=0
 for name in ${files_mod_php[@]}
 do
-	cmd_res=`locate $name`
+	cmd_res=`find /|grep $name`
 	if [ "x$cmd_res" != "x" ]; then
                 found=1
                 break
@@ -1091,7 +1091,7 @@ if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
 		pg_hba_name="pg_hba.conf"
 		found=0
 		modified=0
-		for pg_hba in `locate "$pg_hba_name"`;
+		for pg_hba in `find /|grep "$pg_hba_name"`;
 		do
 			if [ -f "$pg_hba" ]; then
 				found=1
