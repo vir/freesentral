@@ -1910,7 +1910,10 @@ class ConfFile
 
 	function save($write_comments=false)
 	{
-		$file = fopen($this->filename,"w") or exit("Could not open ".$this->filename." for writing");
+		$file = fopen($this->filename,"w");
+		if (!$file)
+			return array(false, "Could not open ".$this->filename." for writing.");
+
 		$wrote_something = false;
 		if($this->initial_comment)
 			fwrite($file, $this->initial_comment."\n");
@@ -1947,6 +1950,7 @@ class ConfFile
 			fwrite($file, "\n");
 		}
 		fclose($file);
+		return array(true);
 	}
 }
 
