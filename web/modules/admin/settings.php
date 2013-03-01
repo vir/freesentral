@@ -369,10 +369,18 @@ function edit_network_interface_database()
 	$err = "Don't know command to stop network";
 	if(substr($out,0,strlen($err)) != $err) {
 		print str_replace("\n","<br/>",$out);
-		$conf->save(true);
+		$res = $conf->save(true);
 	}else{
+		$out = shell_command("network_start");
+		print str_replace("\n","<br/>",$out);
 		notice("Could not configure network interface: ".$err, "network", false);
 		return;
+	}
+	if (!$res[0]) {
+		// restart network
+		$out = shell_command("network_start");
+		print str_replace("\n","<br/>",$out);
+		return notice($res[1],"network",false);
 	}
 	exec("chmod +x ".$conf->filename);
 	$out = shell_command("network_start");
@@ -696,12 +704,15 @@ function wizard_cards_database()
 	// add all configured interfaces in wanrouter.rc from  /etc/wanpipe
 	$conf_file = new ConfFile("/etc/wanpipe/wanrouter.rc");
 	$conf_file->sections["WAN_DEVICES"] = '"'.$interfaces.'"';
-	$conf_file->save();
+	$res = $conf_file->save();
 
 	$out = shell_command("server_start");
 	$mess .= "Starting wanrouter<br/>".str_replace("\n","<br/>",$out);
 
-	return array(true,$mess);
+	if ($res[0])
+		return array(true,$mess);
+	else
+		return array(false,$res[1]);
 }
 
 function limits_international_calls()
@@ -851,7 +862,12 @@ function edit_nat_settings_database()
 			$file->sections = array("general"=>array("minport"=> $min_rtp_port, "maxport"=>$max_rtp_port));
 			$file->structure = $file->sections;
 		}
-		$file->save(true);
+		$res = $file->save(true);
+		if (!$res[0]) {
+			Database::rollback();
+			errormess($res[1],"no");
+			return nat();
+		}
 		
 		$ysip = "$conf_path/ysipchan.conf";
 		$file = new ConfFile("$ysip");
@@ -867,7 +883,12 @@ function edit_nat_settings_database()
 			$file->sections = array("general"=>array(), "listener general"=>array("nat_address"=>$nat_address));
 			$file->structure = $file->sections;
 		}
-		$file->save(true);
+		$res = $file->save(true);
+		if (!$res[0]) {
+			Database::rollback();
+			errormess($res[1],"no");
+			return nat();
+		}
 
 		$sock = new SocketConn;
 		if($sock->socket) {
