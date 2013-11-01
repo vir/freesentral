@@ -1,7 +1,7 @@
 Source: yate-freesentral
 Section: comm
 Priority: extra
-Maintainer: Vasily i. Redkin <vir@vir.ctm.ru>
+Maintainer: Vasily i. Redkin <vir@ctm.ru>
 Build-Depends: debhelper (>= 7), tar
 Standards-Version: 3.8.1
 Homepage: http://www.freesentral.com/
