@@ -1,3 +1,9 @@
+yate-freesentral (1.2~vir2013110101) UNRELEASED; urgency=low
+
+  * Merged upstream changes for past few years
+
+ -- Vasily i. Redkin <vir@vir.otvt.ru>  Fri, 01 Nov 2013 13:14:23 +0400
+
 yate-freesentral (1) unstable; urgency=low
 
   * Initial Release.
