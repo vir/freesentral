@@ -19,6 +19,6 @@ if [ "x$file" = "x" -o "x$1" = "x" ]; then
     exit 1
 fi
 
-/usr/local/bin/lame -x -m mono --resample 11.025 "$@" "$file"
+lame -x -m mono --resample 11.025 "$@" "$file"
 chown apache "$file"
 rm -f "$@"

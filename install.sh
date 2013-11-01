@@ -110,6 +110,7 @@ cat << EOF
 \$limit = 20;  //max number to display on page
 \$enable_logging = "${enable_logging}"; // possible values: "on"/"off", true/false, "yes"/"no" 
 \$upload_path = "${upload_dir}";     // path where file for importing extensions will be uploaded
+\$conf_path = "${configs}"; // path to yate's configuration files
 \$default_ip = "ssl://${ip_yate}";	//	ip address where yate runs
 \$default_port = "5039";	// port used to connect to
 \$block = array("admin_settings"=>array("cards"));	// don't change this. This option is still being tested
@@ -430,6 +431,42 @@ while [ "$#" != "0" ]; do
     esac
 done
 
+httpd=("apache2" "httpd")
+found=0
+for name in ${httpd[@]} 
+do
+	cmd_res=`which $name 2> /dev/null`
+	if [ "x$cmd_res" != "x" ]; then
+		found=1
+		break
+	fi
+done
+if [ "$found" -eq 0 ]; then
+	echo "Could not detect installed apache/httpd on this computer."
+	pass=`readopt "Do you want to continue yes/no?" "no"`
+	if [ "x$pass" != "xyes" ]; then
+		exit
+	fi	
+fi
+
+files_mod_php=("mod_php5.so" "mod_php.so" "libphp5.so")
+found=0
+for name in ${files_mod_php[@]}
+do
+	cmd_res=`find /|grep $name`
+	if [ "x$cmd_res" != "x" ]; then
+                found=1
+                break
+        fi
+done
+if [ "$found" -eq 0 ]; then
+	echo "Could not detect apache's php extension."
+	pass=`readopt "Do you want to continue yes/no?" "no"`
+	if [ "x$pass" != "xyes" ]; then
+		exit
+	fi
+fi
+
 echo "Installer for $version"
 
 if [ "x$interactive" != "xno" ]; then
@@ -587,6 +624,7 @@ $e" > "$fe"
 [scripts]
 register.php=param
 ctc-global.php=
+banbrutes.php=
 "
 
     if [ -e "$fe" ]; then
@@ -1016,6 +1054,7 @@ verify=none
 $e" > "$fe"
     fi
     test "x${generate_certificate}" = "xyes" && generate_certificate_now
+    test X`id -u` = "X0" && chown -R $webuser "$DESTDIR$configs"
 fi
 
 if [ -n "$scripts" -a -d scripts ]; then
@@ -1043,15 +1082,83 @@ if [ -n "$webpage" -a -d web ]; then
     fi
 fi
 
+if [ "x$psqlcmd" = "x" -a -n "$dbhost" ]; then
+	echo "Are you sure you have Postgresql installed? Don't have PostgreSQL command."
+	pass=`readopt "Do you want to continue yes/no?" "no"`
+	if [ "x$pass" != "xyes" ]; then
+		exit
+	fi
+fi
+
 if [ -n "$psqlcmd" -a -n "$dbhost" ]; then
-    echo "Initializing the database"
-    if [ -n "$dbpass" ]; then
-	tty -s && echo "At the password prompt please enter: $dbpass"
-	export PGPASSWORD="$dbpass"
-    fi
+	if [ "$dbuser" = "postgres" ]; then
+		pg_hba_name="pg_hba.conf"
+		found=0
+		modified=0
+		for pg_hba in `find /|grep "$pg_hba_name"`;
+		do
+			if [ -f "$pg_hba" ]; then
+				found=1
+				fgrep '127.0.0.1/32' $pg_hba > tempfile
+				exec 3<tempfile
+				while read line <&3; do
+					if [[ "x$line" != "x" && ! "x$line" =~ "x#" ]]; then
+						rpl_line=""
+						if [[ "$line" =~ 'ident' ]]; then
+							rpl_line="${line/%ident/trust}"
+						fi
+						if [[ "$line" =~ 'md5' ]]; then
+							rpl_line="${line/%md5/trust}"
+						fi
+						if [ "x$rpl_line" != "x" ]; then
+							echo "Modifying $pg_hba"
+							echo "Replacing $line"
+							echo "with      $rpl_line"
+							esc_line="${line/\//\\/}"
+							esc_rpl_line="${rpl_line/\//\\/}"
+							# must replace line
+							sed -i "s/$esc_line/$esc_rpl_line/g" "$pg_hba"
+							modified=1
+						fi
+					fi
+				done
+				if  [ -f "testfile" ]; then
+					rm -f testfile
+				fi
+			fi
+		done
+
+		if [ "$found" -eq 0 ]; then
+			echo "Could not find pg_hba.conf to make sure trust autentication is set for postgresql server."
+			echo "Are you sure you have Postgresql installed?"
+		        pass=`readopt "Do you want to continue yes/no?" "no"`
+		        if [ "x$pass" != "xyes" ]; then
+                		exit
+		        fi
+		else
+			if [ "$modified" -eq 1 ]; then
+				cd /etc/init.d
+				cmd_res=`find postgres*`
+				if [ "x$cmd_res" != "x" ]; then
+					"/etc/init.d/$cmd_res" restart
+				else
+					# this will probably fail but try anyway
+					service postgresql restart
+				fi
+			fi
+		fi
+	fi
+
+	echo "Initializing the database"
+    	if [ -n "$dbpass" ]; then
+		tty -s && echo "At the password prompt please enter: $dbpass"
+		export PGPASSWORD="$dbpass"
+    	fi
 	echo "If you are updating then ignore: 'ERROR:  database \"${dbname}\" already exists'. If you are installing please use another name for the database."
-    "$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE $dbname"
-    unset PGPASSWORD
+
+
+	"$psqlcmd" -h "$dbhost" -U "$dbuser" -d template1 -c "CREATE DATABASE \"$dbname\""
+    	unset PGPASSWORD
 fi
 
 if [ -n "$webpage" ]; then

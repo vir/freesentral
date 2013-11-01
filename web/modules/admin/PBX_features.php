@@ -95,7 +95,7 @@ function digits()
 ),
 "Enable/Disable PBX features"=>array(
 	array(
-		"digits"=>"***",
+		"digits"=>"**",
 		"text"=>"disable the pbx features. You need to use this feature when you wish to use an IVR(interactive voice response). Ex: Auto Attendant for a certain company you called to"
 	),
 	array(

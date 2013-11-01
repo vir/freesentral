@@ -1036,7 +1036,7 @@ function tableOfObjects($objects, $formats, $object_name, $object_actions=array(
 		}
 		$link = '';
 		foreach($vars as $var_name => $var)
-			$link .= "&$var_name=".$objects[$i]->{$var_name};
+			$link .= "&$var_name=".urlencode($objects[$i]->{$var_name});
 		$link_no = 0;
 		foreach($object_actions as $methd=>$methd_name)
 		{
@@ -1245,7 +1245,7 @@ function table($array, $formats, $element_name, $id_name, $element_actions =arra
 		}
 		$link = '';
 		foreach($array[$i] as $col_name => $col_value)
-			$link .= "&$col_name=$col_value";
+			$link .= "&$col_name=".urlencode($col_value);
 		$link_no = 0;
 		foreach($element_actions as $methd=>$methd_name)
 		{
@@ -1910,7 +1910,10 @@ class ConfFile
 
 	function save($write_comments=false)
 	{
-		$file = fopen($this->filename,"w") or exit("Could not open ".$this->filename." for writing");
+		$file = fopen($this->filename,"w");
+		if (!$file)
+			return array(false, "Could not open ".$this->filename." for writing.");
+
 		$wrote_something = false;
 		if($this->initial_comment)
 			fwrite($file, $this->initial_comment."\n");
@@ -1947,6 +1950,7 @@ class ConfFile
 			fwrite($file, "\n");
 		}
 		fclose($file);
+		return array(true);
 	}
 }
 

@@ -274,7 +274,7 @@ function advanced(identifier)
 	for(var i=0;i<elems.length;i++)
 	{
 		elem_name = elems[i].name;
-		if(identifier.length > elem_name.length && elem_name.substr(0,identifier.length) != identifier)
+		if(identifier.length < elem_name.length && elem_name.substr(0,identifier.length) != identifier)
 			continue;
 		var elem = document.getElementById("tr_"+elem_name); 
 		if(elem == null)
@@ -810,6 +810,17 @@ function set_voice_channels()
 		voice_chan.value = t1_voice_chan;
 	}
 	return true;
+}
+
+function check_transport()
+{
+	var transport = document.getElementById("noreg_sipoip_transport");
+	var transport_type = transport.options[transport.selectedIndex].value || transport.options[transport.selectedIndex].text;
+
+	if (transport_type=="TLS" && document.getElementById("noreg_sipport").value == 5060)
+		document.getElementById("noreg_sipport").value = 5061;
+	else if (document.getElementById("noreg_sipport").value == 5061)
+		document.getElementById("noreg_sipport").value = 5060;
 }
 
 </script>
