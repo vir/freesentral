@@ -42,7 +42,8 @@ class Extension extends Model
 					"used_minutes" => new Variable("interval","00:00:00"),
 					"inuse_count" => new Variable("int2"),
 					"inuse_last" => new Variable("timestamp"),
-					"login_attempts" => new Variable("int2","0")
+					"login_attempts" => new Variable("int2","0"),
+					"connection_id" => new Variable("text"),
 			/*		"mac_address" => new Variable("text"),
 					"equipment_id" => new Variable("serial",NULL,"equipments")*/
 				);

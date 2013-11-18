@@ -106,5 +106,11 @@ function getCustomVoicemailDir($called)
     return $dir;
 }
 
+function escape($value)
+{
+	global $conn;
+
+	return pg_escape_string($conn,$value);
+}
 
 ?>

@@ -44,8 +44,8 @@ for($i=0; $i<count($posib); $i++) {
 		${$posib[$i]} = false;
 }
 
-$query_on = false;
-$debug_on = false;
+$query_on = true;
+$debug_on = true;
 
 function debug($mess)
 {
@@ -203,10 +203,11 @@ function set_additional_params($gateway, &$copy_ev)
 /**
  * Get the location where to send a call
  * @param $called Number the call was placed to
+ * @param &$connection_id Connection the user might be registered on
  * @return String representing the resource where to place the call
  * Note!! this function is used only when diverting calls. does not check for any kind of forward, and mimics the fallback when diverting using fork to send the call to each destination
  */ 
-function get_location($called)
+function get_location($called, &$connection_id=NULL)
 {
 	global $voicemail, $system_prefix;
 
@@ -230,10 +231,12 @@ function get_location($called)
 	}
 
 	// divert to an extension without thinking of it's divert functions
-	$query = "SELECT location FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called'";
+	$query = "SELECT location,connection_id FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called'";
 	$res = query_to_array($query);
-	if(count($res)) 
+	if(count($res)) {
+		$connection_id = $res[0]["connection_id"];
 		return $res[0]["location"];
+	}
 
 	// if we got here there divert is to a group or dial plans must be used
 	// it's better to use the lateroute module
@@ -386,13 +389,14 @@ function routeToExtension($called)
 	$pref_ext = $system_prefix.$called;
 	debug("trying routeToExtension(called='$called' or called='$pref_ext')");
 
-	$query = "SELECT location,extension_id FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called'";
+	$query = "SELECT location,extension_id,connection_id FROM extensions WHERE extension='$called' OR '$system_prefix' || extension='$called'";
 	$res = query_to_array($query);
 	if(!count($res))
 		return false;
 
 	$destination = $res[0]["location"];
 	$extension_id = $res[0]["extension_id"];
+	$connection_id = $res[0]["connection_id"];
 	if(!$no_pbx) {
 		// select voicemail location
 		$query = "SELECT value FROM settings WHERE param='vm'";
@@ -414,14 +418,14 @@ function routeToExtension($called)
 		if ($div==$called || !$div)  {
 			// set the additional divert params
 			if($div_busy && $div_busy != '')
-				$ev->params["divert_busy"] = get_location($div_busy);
+				$ev->params["divert_busy"] =  "lateroute/$div_busy"; //get_location($div_busy);
 			if ($div_noanswer != '' && $div_noanswer) {
-				$ev->params["divert_noanswer"] = get_location($div_noanswer);
+				$ev->params["divert_noanswer"] = "lateroute/$div_noanswer"; //get_location($div_noanswer);
 				$ev->params["maxcall"] = $noans_timeout * 1000;	
 			}
 		}else{
 			// all calls should be diverted to $div
-			$destination = get_location($div);
+			$destination = get_location($div, $connection_id);
 			if($destination && $div != "vm")
 				$ev->params["called"] = $div;
 		}
@@ -432,6 +436,8 @@ function routeToExtension($called)
 		$destination = $voicemail;
 	$ev->params["query_on"] = ($query_on) ? "yes" : "no";
 	$ev->params["debug_on"] = ($debug_on) ? "yes" : "no";
+	if (strlen($connection_id))
+		$ev->params["oconnection_id"] = $connection_id;
 	set_retval($destination, "offline");
 	return true;
 }
@@ -546,6 +552,16 @@ function return_route($called,$caller,$no_forward=false)
 {
 	global $ev, $pickup_key, $max_routes, $s_fallbacks, $no_groups, $no_pbx, $caller_id, $caller_name, $system_prefix;
 
+	$route_loop_count = $ev->GetValue("route_loop_count");
+	if (!$route_loop_count)
+		$ev->params["route_loop_count"] = "1";
+	elseif ($route_loop_count>=4) {
+	       set_retval(NULL,"looping");
+	       return false;
+	} else 
+		$ev->params["route_loop_count"] = $route_loop_count+1;
+		
+
 	$rtp_f = $ev->GetValue("rtp_forward");
 	// keep the initial called number
 	$initial_called_number = $called;
@@ -562,9 +578,9 @@ function return_route($called,$caller,$no_forward=false)
 	$already_auth = $ev->GetValue("already-auth");
 	$trusted_auth = $ev->GetValue("trusted-auth");
 	$call_type = $ev->GetValue("call_type");
-	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason', trusted='$trusted_auth', call_type='$call_type')");
+	debug("entered return_route(called='$called',caller='$caller',username='$username',address='$address',already-auth='$already_auth',reason='$reason', trusted='$trusted_auth', call_type='$call_type', route_loop_count='$route_loop_count')");
 
-	$params_to_copy = "maxcall,call_type,already-auth,trusted-auth";
+	$params_to_copy = "maxcall,call_type,already-auth,trusted-auth,route_loop_count";
 	// make sure that if we forward any calls and for calls from pbxassist are accepted
 	$ev->params["copyparams"] = $params_to_copy;
 	$ev->params["pbxparams"] = "$params_to_copy,copyparams";
@@ -947,12 +963,19 @@ for (;;) {
 				}
 				break;
 			case "user.register":
-				$query = "UPDATE extensions SET location='".$ev->GetValue("data")."',expires=CURRENT_TIMESTAMP + INTERVAL '".$ev->GetValue("expires")." s' WHERE extension='".$ev->GetValue("username")."'";
+				$oconn = ($ev->GetValue("oconnection_id")) ? $ev->GetValue("oconnection_id") : $ev->GetValue("connection_id");
+				$oconn = escape($oconn);
+				$query = "UPDATE extensions SET location='".$ev->GetValue("data")."',expires=CURRENT_TIMESTAMP + INTERVAL '".$ev->GetValue("expires")." s',connection_id='$oconn' WHERE extension='".$ev->GetValue("username")."'";
 				$res = query_nores($query);
 				$ev->handled = true;
 				break;
 			case "user.unregister":
-				$query = "UPDATE extensions SET location=NULL,expires=NULL WHERE expires IS NOT NULL AND extension='".$ev->GetValue("username")."'";
+				$oconn = ($ev->GetValue("oconnection_id")) ? $ev->GetValue("oconnection_id") : $ev->GetValue("connection_id");
+				$oconn = escape($oconn);
+				if ($ev->GetValue("username"))
+				    $query = "UPDATE extensions SET location=NULL,expires=NULL WHERE expires IS NOT NULL AND extension='".$ev->GetValue("username")."'";
+				else
+				    $query = "UPDATE extensions SET location=NULL,expires=NULL WHERE connection_id='$oconn'";
 				$res = query_nores($query);
 				$ev->handled = true;
 				break;
